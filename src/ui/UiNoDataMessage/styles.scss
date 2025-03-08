@@ -1,0 +1,11 @@
+.ui-no-data-message {
+  @apply grid place-items-center gap-3 text-center;
+}
+
+.ui-no-data-message__img {
+  @apply h-auto w-full;
+}
+
+.ui-no-data-message__message {
+  @apply text-[18px];
+}

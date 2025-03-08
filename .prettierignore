@@ -1,0 +1,8 @@
+node_modules
+dist
+coverage
+.eslintcache
+yarn.lock
+scripts/*.js
+index.html
+*.md

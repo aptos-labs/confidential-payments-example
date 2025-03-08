@@ -1,7 +1,7 @@
 import i18n from 'i18next'
 import { initReactI18next } from 'react-i18next'
 
-import resources from '@/localization/resources'
+import { resources } from '@/localization/resources'
 
 declare module 'i18next' {
   interface CustomTypeOptions {

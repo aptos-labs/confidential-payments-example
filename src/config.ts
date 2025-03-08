@@ -9,6 +9,13 @@ type Config = {
   BUILD_VERSION: string
 
   erc20Token: `0x${string}`
+  DEFAULT_TOKEN: {
+    address: string
+    name: string
+    symbol: string
+    decimals: number
+    iconUri: string
+  }
 }
 
 export const config: Config = {
@@ -18,6 +25,14 @@ export const config: Config = {
   BUILD_VERSION: packageJson.version || import.meta.env.VITE_APP_BUILD_VERSION,
 
   erc20Token: '0x08BE00b659713E615795954B778dbacD1F14efEb',
+
+  DEFAULT_TOKEN: {
+    address: '',
+    name: 'Mocked token',
+    symbol: 'MTK',
+    decimals: 0,
+    iconUri: 'https://picsum.photos/200',
+  },
 }
 
 /**

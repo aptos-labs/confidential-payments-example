@@ -8,6 +8,7 @@ import {
 
 import { RoutePaths } from '@/enums'
 import { MainLayout } from '@/layouts'
+import { ConfidentialCoinContextProvider } from '@/pages/Dashboard/context'
 
 export const AppRoutes = () => {
   const Homepage = lazy(() => import('@/pages/Homepage'))
@@ -51,7 +52,11 @@ export const AppRoutes = () => {
             },
             {
               path: RoutePaths.Dashboard,
-              element: <Dashboard />,
+              element: (
+                <ConfidentialCoinContextProvider>
+                  <Dashboard />
+                </ConfidentialCoinContextProvider>
+              ),
             },
             {
               path: '*',

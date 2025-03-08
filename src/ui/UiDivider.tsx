@@ -6,7 +6,7 @@ export default function UiDivider(props: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       {...props}
-      className={cn('bg-componentPrimary h-[1px] w-full', props.className)}
+      className={cn('h-[1px] w-full bg-componentPrimary', props.className)}
     />
   )
 }

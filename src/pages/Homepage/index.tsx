@@ -26,12 +26,12 @@ export default function Homepage({ ...rest }: Props) {
       <div className='flex flex-col gap-2'>
         <UiIcon
           name={IconNames.Microphone}
-          className={'text-errorDark size-8'}
+          className={'size-8 text-errorDark'}
         />
         <span className='typography-h4'>Hello world</span>
         <UiSpinner />
         <UiDivider />
-        <button className='bg-primaryMain w-min whitespace-nowrap px-4 py-3 text-white'>
+        <button className='w-min whitespace-nowrap bg-primaryMain px-4 py-3 text-white'>
           Press me
         </button>
       </div>,
@@ -45,7 +45,7 @@ export default function Homepage({ ...rest }: Props) {
         <UiDivider />
         {state1}
         <button
-          className='bg-primaryMain text-textPrimary w-min whitespace-nowrap px-4 py-3'
+          className='w-min whitespace-nowrap bg-primaryMain px-4 py-3 text-textPrimary'
           onClick={testToasts}
         >
           Test toasts

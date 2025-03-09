@@ -10,6 +10,10 @@ export const isMobile = () => {
   )
 }
 
+export const isMacos = () => {
+  return navigator.userAgent.includes('Macintosh')
+}
+
 export const isWebpSupported = () => {
   const elem = document.createElement('canvas')
 

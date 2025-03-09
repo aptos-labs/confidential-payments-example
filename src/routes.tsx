@@ -1,33 +1,32 @@
 import { lazy, Suspense } from 'react'
 import {
   createBrowserRouter,
+  LoaderFunctionArgs,
   Navigate,
   Outlet,
+  redirect,
   RouterProvider,
 } from 'react-router-dom'
 
 import { RoutePaths } from '@/enums'
 import { MainLayout } from '@/layouts'
 import { ConfidentialCoinContextProvider } from '@/pages/Dashboard/context'
+import { authStore } from '@/store/auth'
 
 export const AppRoutes = () => {
   const Homepage = lazy(() => import('@/pages/Homepage'))
   const Login = lazy(() => import('@/pages/Login'))
   const Dashboard = lazy(() => import('@/pages/Dashboard'))
 
-  const pageAnimationOpts = {
-    initial: 'hide',
-    animate: 'show',
-    exit: 'hide',
-    variants: {
-      hide: {
-        opacity: 0,
-      },
-      show: {
-        opacity: 1,
-      },
-    },
-    transition: { duration: 0.5 },
+  const isAuthorized = authStore.useIsAuthorized()
+
+  // eslint-disable-next-line unused-imports/no-unused-vars
+  const authProtectedGuard = ({ request }: LoaderFunctionArgs) => {
+    if (!isAuthorized) {
+      return redirect(RoutePaths.Login)
+    }
+
+    return null
   }
 
   const router = createBrowserRouter([
@@ -44,7 +43,7 @@ export const AppRoutes = () => {
           children: [
             {
               path: RoutePaths.Root,
-              element: <Homepage {...pageAnimationOpts} />,
+              element: <Homepage />,
             },
             {
               path: RoutePaths.Login,
@@ -52,6 +51,7 @@ export const AppRoutes = () => {
             },
             {
               path: RoutePaths.Dashboard,
+              loader: authProtectedGuard,
               element: (
                 <ConfidentialCoinContextProvider>
                   <Dashboard />

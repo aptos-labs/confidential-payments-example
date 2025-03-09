@@ -1,5 +1,11 @@
-import { ComponentProps } from 'react'
+import { ComponentProps, useCallback, useEffect } from 'react'
+import { useNavigate } from 'react-router-dom'
 
+import { RoutePaths } from '@/enums'
+import { ErrorHandler } from '@/helpers'
+import { useForm } from '@/hooks'
+import { authStore } from '@/store/auth'
+import { walletStore } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiButton } from '@/ui/UiButton'
 import { UiCard, UiCardContent } from '@/ui/UiCard'
@@ -10,13 +16,62 @@ export default function LoginPage({
   className,
   ...props
 }: ComponentProps<'div'>) {
+  const navigate = useNavigate()
+
+  const addAndSetPrivateKey = walletStore.useWalletStore(
+    state => state.addAndSetPrivateKey,
+  )
+  const login = authStore.useLogin()
+
+  const { handleSubmit, disableForm, enableForm, setValue } = useForm(
+    {
+      privateKey: '',
+    },
+    yup =>
+      yup.object().shape({
+        privateKey: yup.string().required(),
+      }),
+  )
+
+  const submit = useCallback(
+    () =>
+      handleSubmit(async formData => {
+        disableForm()
+        try {
+          addAndSetPrivateKey(formData.privateKey)
+          await login(formData.privateKey)
+
+          navigate(RoutePaths.Dashboard)
+        } catch (error) {
+          ErrorHandler.process(error)
+        }
+        enableForm()
+      })(),
+    [
+      addAndSetPrivateKey,
+      disableForm,
+      enableForm,
+      handleSubmit,
+      login,
+      navigate,
+    ],
+  )
+
+  useEffect(() => {
+    const privateKey = walletStore.generatePrivateKeyHex()
+
+    setValue('privateKey', privateKey)
+
+    /* eslint-disable-next-line react-hooks/exhaustive-deps */
+  }, [])
+
   return (
     <div className='bg-muted flex min-h-svh flex-col items-center justify-center p-6 md:p-10'>
       <div className='w-full max-w-sm md:max-w-3xl'>
         <div className={cn('flex flex-col gap-6', className)} {...props}>
           <UiCard className='overflow-hidden'>
             <UiCardContent className='grid p-0 md:grid-cols-2'>
-              <form className='p-6 md:p-8'>
+              <form className='p-6 md:p-8' onSubmit={handleSubmit(submit)}>
                 <div className='flex flex-col gap-6'>
                   <div className='flex flex-col items-center text-center'>
                     <h1 className='text-2xl font-bold'>Welcome back</h1>
@@ -54,7 +109,11 @@ export default function LoginPage({
                     </span>
                   </div>
                   <div className='grid grid-cols-3 gap-4'>
-                    <UiButton variant='outline' className='w-full'>
+                    <UiButton
+                      type='button'
+                      variant='outline'
+                      className='w-full'
+                    >
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
                         viewBox='0 0 24 24'
@@ -66,7 +125,11 @@ export default function LoginPage({
                       </svg>
                       <span className='sr-only'>Login with Apple</span>
                     </UiButton>
-                    <UiButton variant='outline' className='w-full'>
+                    <UiButton
+                      type='button'
+                      variant='outline'
+                      className='w-full'
+                    >
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
                         viewBox='0 0 24 24'
@@ -78,7 +141,11 @@ export default function LoginPage({
                       </svg>
                       <span className='sr-only'>Login with Google</span>
                     </UiButton>
-                    <UiButton variant='outline' className='w-full'>
+                    <UiButton
+                      type='button'
+                      variant='outline'
+                      className='w-full'
+                    >
                       <svg
                         xmlns='http://www.w3.org/2000/svg'
                         viewBox='0 0 24 24'

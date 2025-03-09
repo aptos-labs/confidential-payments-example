@@ -134,7 +134,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   removeToken: () => {},
   setSelectedTokenAddress: () => {},
 
-  selectedAccountDecryptionKey: new TwistedEd25519PrivateKey('0x0'),
+  selectedAccountDecryptionKey: TwistedEd25519PrivateKey.generate(),
   selectedAccountDecryptionKeyStatus: {
     isFrozen: false,
     isNormalized: true,
@@ -163,17 +163,18 @@ export const useConfidentialCoinContext = () => {
 }
 
 const useAccounts = () => {
-  const {
-    privateKeyHexList,
-    addAndSetPrivateKey,
-    removePrivateKey,
-    setSelectedPrivateKeyHex,
-  } = walletStore.useWalletStore(state => ({
-    privateKeyHexList: state.privateKeyHexList,
-    addAndSetPrivateKey: state.addAndSetPrivateKey,
-    removePrivateKey: state.removePrivateKey,
-    setSelectedPrivateKeyHex: state.setSelectedPrivateKeyHex,
-  }))
+  const privateKeyHexList = walletStore.useWalletStore(
+    state => state.privateKeyHexList,
+  )
+  const addAndSetPrivateKey = walletStore.useWalletStore(
+    state => state.addAndSetPrivateKey,
+  )
+  const removePrivateKey = walletStore.useWalletStore(
+    state => state.removePrivateKey,
+  )
+  const setSelectedPrivateKeyHex = walletStore.useWalletStore(
+    state => state.setSelectedPrivateKeyHex,
+  )
 
   const selectedPrivateKeyHex = walletStore.useSelectedPrivateKeyHex()
 
@@ -223,31 +224,36 @@ const useAccounts = () => {
     [accountsList, setSelectedPrivateKeyHex],
   )
 
-  const removeAccount = (accountAddressHex: string) => {
-    const currentAccountsListLength = accountsList.length
+  const removeAccount = useCallback(
+    (accountAddressHex: string) => {
+      const currentAccountsListLength = accountsList.length
 
-    const filteredAccountsList = accountsList.filter(
-      el =>
-        el.accountAddress.toString().toLowerCase() !==
-        accountAddressHex.toLowerCase(),
-    )
-
-    if (
-      currentAccountsListLength !== filteredAccountsList.length &&
-      filteredAccountsList.length > 0
-    ) {
-      const accountToRemove = accountsList.find(
+      const filteredAccountsList = accountsList.filter(
         el =>
-          el.accountAddress.toString().toLowerCase() ===
+          el.accountAddress.toString().toLowerCase() !==
           accountAddressHex.toLowerCase(),
       )
 
-      if (accountToRemove?.privateKey) {
-        removePrivateKey(accountToRemove.privateKey.toString())
-        setSelectedPrivateKeyHex(filteredAccountsList[0].privateKey.toString())
+      if (
+        currentAccountsListLength !== filteredAccountsList.length &&
+        filteredAccountsList.length > 0
+      ) {
+        const accountToRemove = accountsList.find(
+          el =>
+            el.accountAddress.toString().toLowerCase() ===
+            accountAddressHex.toLowerCase(),
+        )
+
+        if (accountToRemove?.privateKey) {
+          removePrivateKey(accountToRemove.privateKey.toString())
+          setSelectedPrivateKeyHex(
+            filteredAccountsList[0].privateKey.toString(),
+          )
+        }
       }
-    }
-  }
+    },
+    [accountsList, removePrivateKey, setSelectedPrivateKeyHex],
+  )
 
   return {
     accountsList,
@@ -287,23 +293,27 @@ const useSelectedAccountDecryptionKey = () => {
 }
 
 const useTokens = (decryptionKeyHex: string | undefined) => {
-  const tokensStoreManager = walletStore.useWalletStore(state => ({
-    tokensListToDecryptionKeyHexMap: state.tokensListToDecryptionKeyHexMap,
-    decryptionKeyPerTokenTxHistory: state.decryptionKeyPerTokenTxHistory,
-    setSelectedTokenAddress: state.setSelectedTokenAddress,
-    addToken: state.addToken,
-    removeToken: state.removeToken,
-    addTxHistoryItem: state.addTxHistoryItem,
-  }))
+  const tokensListToDecryptionKeyHexMap = walletStore.useWalletStore(
+    state => state.tokensListToDecryptionKeyHexMap,
+  )
+  const decryptionKeyPerTokenTxHistory = walletStore.useWalletStore(
+    state => state.decryptionKeyPerTokenTxHistory,
+  )
+  const setSelectedTokenAddress = walletStore.useWalletStore(
+    state => state.setSelectedTokenAddress,
+  )
+  const _addToken = walletStore.useWalletStore(state => state.addToken)
+  const _removeToken = walletStore.useWalletStore(state => state.removeToken)
+  const _addTxHistoryItem = walletStore.useWalletStore(
+    state => state.addTxHistoryItem,
+  )
 
   const selectedTokenAddress = walletStore.useSelectedTokenAddress()
 
   const savedTokensPerDK = useMemo(
     () =>
-      decryptionKeyHex
-        ? tokensStoreManager.tokensListToDecryptionKeyHexMap[decryptionKeyHex]
-        : [],
-    [decryptionKeyHex, tokensStoreManager.tokensListToDecryptionKeyHexMap],
+      decryptionKeyHex ? tokensListToDecryptionKeyHexMap[decryptionKeyHex] : [],
+    [decryptionKeyHex, tokensListToDecryptionKeyHexMap],
   )
 
   const tokens = useMemo(() => {
@@ -329,53 +339,43 @@ const useTokens = (decryptionKeyHex: string | undefined) => {
     if (!selectedToken) return []
 
     const mappedTxHistory =
-      tokensStoreManager.decryptionKeyPerTokenTxHistory[decryptionKeyHex]?.[
-        selectedToken.address
-      ]
+      decryptionKeyPerTokenTxHistory[decryptionKeyHex]?.[selectedToken.address]
 
     return mappedTxHistory ?? []
-  }, [
-    decryptionKeyHex,
-    selectedToken,
-    tokensStoreManager.decryptionKeyPerTokenTxHistory,
-  ])
+  }, [decryptionKeyHex, selectedToken, decryptionKeyPerTokenTxHistory])
 
   const addToken = useCallback(
     (token: TokenBaseInfo) => {
       if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
 
-      tokensStoreManager.addToken(decryptionKeyHex, token)
+      _addToken(decryptionKeyHex, token)
     },
-    [decryptionKeyHex, tokensStoreManager],
+    [_addToken, decryptionKeyHex],
   )
 
   const removeToken = useCallback(
     (address: string) => {
       if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
 
-      tokensStoreManager.removeToken(decryptionKeyHex, address)
+      _removeToken(decryptionKeyHex, address)
     },
-    [decryptionKeyHex, tokensStoreManager],
+    [decryptionKeyHex, _removeToken],
   )
 
   const addTxHistoryItem = useCallback(
     (details: TxHistoryItem) => {
       if (!decryptionKeyHex) throw new TypeError('decryptionKeyHex is not set')
 
-      tokensStoreManager.addTxHistoryItem(
-        decryptionKeyHex,
-        selectedToken.address,
-        details,
-      )
+      _addTxHistoryItem(decryptionKeyHex, selectedToken.address, details)
     },
-    [decryptionKeyHex, selectedToken.address, tokensStoreManager],
+    [decryptionKeyHex, selectedToken.address, _addTxHistoryItem],
   )
 
   return {
     tokens,
     selectedToken,
     txHistory,
-    setSelectedTokenAddress: tokensStoreManager.setSelectedTokenAddress,
+    setSelectedTokenAddress: setSelectedTokenAddress,
     addToken,
     removeToken,
     addTxHistoryItem: addTxHistoryItem,
@@ -563,7 +563,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       return 'success'
     }, [isEmpty, isLoading, isLoadingError])
 
-  const normalizeAccount = async () => {
+  const normalizeAccount = useCallback(async () => {
     if (!decryptionKeyHex || !tokenAddress)
       throw new TypeError('Decryption key is not set')
 
@@ -581,17 +581,22 @@ const useSelectedAccountDecryptionKeyStatus = (
       actualBalance.amount,
       tokenAddress,
     )
-  }
+  }, [
+    decryptionKeyHex,
+    perTokenStatusesRaw,
+    selectedPrivateKeyHex,
+    tokenAddress,
+  ])
 
-  // FIXME: implement
+  // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  const unfreezeAccount = async (): Promise<CommittedTransactionResponse> => {
+  const unfreezeAccount = useCallback(async () => {
     if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
 
     // TODO: implement me
     // mb: rotate keys with unfreeze
-  }
+  }, [decryptionKeyHex])
 
   const rolloverAccount = useCallback(async () => {
     if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
@@ -754,7 +759,11 @@ export const ConfidentialCoinContextProvider = ({
         selectedAccountDecryptionKey,
         registerAccountEncryptionKey,
         normalizeAccount,
+
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-expect-error
         unfreezeAccount,
+
         rolloverAccount,
         transfer,
         withdraw,

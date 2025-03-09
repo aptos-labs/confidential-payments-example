@@ -1,3 +1,4 @@
+import { DashboardSidebar } from '@/pages/Dashboard/components/DashboardSidebar'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
   UiSidebarInset,
@@ -5,9 +6,203 @@ import {
   UiSidebarTrigger,
 } from '@/ui/UiSidebar'
 
-import { DashboardSidebar } from './components/DashboardSidebar'
-
 export default function Dashboard() {
+  // const [isSubmitting, setIsSubmitting] = useState(false)
+  //
+  // const {
+  //   selectedToken,
+  //
+  //   // selectedAccountDecryptionKey,
+  //   selectedAccountDecryptionKeyStatus,
+  //
+  //   registerAccountEncryptionKey,
+  //   unfreezeAccount,
+  //   normalizeAccount,
+  //   rolloverAccount,
+  //   transfer,
+  //   withdraw,
+  //
+  //   loadSelectedDecryptionKeyState,
+  //   // decryptionKeyStatusLoadingState,
+  //
+  //   txHistory,
+  //   addTxHistoryItem,
+  //
+  //   testMintTokens,
+  //
+  //   reloadAptBalance,
+  // } = useConfidentialCoinContext()
+  //
+  // const isActionsDisabled =
+  //   !selectedAccountDecryptionKeyStatus.isRegistered || isSubmitting
+  //
+  // const [isRefreshing, setIsRefreshing] = useState(false)
+  //
+  // const tryRefresh = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   setIsRefreshing(true)
+  //   try {
+  //     await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()])
+  //   } catch (error) {
+  //     ErrorHandler.processWithoutFeedback(error)
+  //   }
+  //   setIsRefreshing(false)
+  //   setIsSubmitting(false)
+  // }, [loadSelectedDecryptionKeyState, reloadAptBalance])
+  //
+  // const tryRollover = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const rolloverAccountTxReceipts = await rolloverAccount()
+  //
+  //     rolloverAccountTxReceipts.forEach(el => {
+  //       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  //       // @ts-ignore
+  //       if (el.payload.function.includes('rollover')) {
+  //         addTxHistoryItem({
+  //           txHash: el.hash,
+  //           txType: 'rollover',
+  //           createdAt: time().timestamp,
+  //         })
+  //
+  //         return
+  //       }
+  //
+  //       addTxHistoryItem({
+  //         txHash: el.hash,
+  //         txType: 'normalize',
+  //         createdAt: time().timestamp,
+  //       })
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [addTxHistoryItem, rolloverAccount, tryRefresh])
+  //
+  // const tryUnfreeze = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const txReceipt = await unfreezeAccount()
+  //     addTxHistoryItem({
+  //       txHash: txReceipt.hash,
+  //       txType: 'unfreeze',
+  //       createdAt: time().timestamp,
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
+  //
+  // const tryRegister = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const txReceipt = await registerAccountEncryptionKey(
+  //       selectedToken.address,
+  //     )
+  //     addTxHistoryItem({
+  //       txHash: txReceipt.hash,
+  //       txType: 'register',
+  //       createdAt: time().timestamp,
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [
+  //   addTxHistoryItem,
+  //   registerAccountEncryptionKey,
+  //   selectedToken.address,
+  //   tryRefresh,
+  // ])
+  //
+  // const tryNormalize = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const txReceipt = await normalizeAccount()
+  //     addTxHistoryItem({
+  //       txHash: txReceipt.hash,
+  //       txType: 'normalize',
+  //       createdAt: time().timestamp,
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [addTxHistoryItem, normalizeAccount, tryRefresh])
+  //
+  // const tryTransfer = useCallback(
+  //   async (
+  //     receiverAddress: string,
+  //     amount: number,
+  //     auditorsEncryptionKeyHexList?: string[],
+  //   ) => {
+  //     setIsSubmitting(true)
+  //     try {
+  //       const txReceipt = await transfer(
+  //         receiverAddress,
+  //         amount,
+  //         auditorsEncryptionKeyHexList,
+  //       )
+  //       addTxHistoryItem({
+  //         txHash: txReceipt.hash,
+  //         txType: 'transfer',
+  //         createdAt: time().timestamp,
+  //       })
+  //       await tryRefresh()
+  //     } catch (error) {
+  //       ErrorHandler.process(error)
+  //     }
+  //     setIsSubmitting(false)
+  //   },
+  //   [addTxHistoryItem, transfer, tryRefresh],
+  // )
+  //
+  // const tryWithdraw = useCallback(
+  //   async (amount: number) => {
+  //     setIsSubmitting(true)
+  //     try {
+  //       const txReceipt = await withdraw(amount)
+  //       addTxHistoryItem({
+  //         txHash: txReceipt.hash,
+  //         txType: 'withdraw',
+  //         createdAt: time().timestamp,
+  //       })
+  //       await tryRefresh()
+  //     } catch (error) {
+  //       ErrorHandler.process(error)
+  //     }
+  //     setIsSubmitting(false)
+  //   },
+  //   [addTxHistoryItem, tryRefresh, withdraw],
+  // )
+  //
+  // const tryTestMint = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const [mintTxReceipt, depositTxReceipt] = await testMintTokens()
+  //     addTxHistoryItem({
+  //       txHash: mintTxReceipt.hash,
+  //       txType: 'mint',
+  //       createdAt: time().timestamp,
+  //     })
+  //     addTxHistoryItem({
+  //       txHash: depositTxReceipt.hash,
+  //       txType: 'deposit',
+  //       createdAt: time().timestamp,
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [addTxHistoryItem, testMintTokens, tryRefresh])
+
   return (
     <UiSidebarProvider>
       <DashboardSidebar />

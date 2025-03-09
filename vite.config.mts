@@ -1,11 +1,9 @@
 import react from '@vitejs/plugin-react'
-/**
- * @description Enable import if you need polyfills
- *
- * import { nodePolyfills } from 'vite-plugin-node-polyfills'
- * import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
- * import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill'
- */
+
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
+import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill'
+import { nodePolyfills } from 'vite-plugin-node-polyfills'
+
 import * as fs from 'fs'
 import * as path from 'path'
 import { visualizer } from 'rollup-plugin-visualizer'
@@ -88,34 +86,31 @@ export default defineConfig(({ mode }) => {
         '@static': `${root}/../static`,
       },
     },
-    /**
-     * @description Enable configuration for polyfills
-     *
-     * optimizeDeps: {
-     *       esbuildOptions: {
-     *         define: {
-     *           global: 'globalThis',
-     *         },
-     *       },
-     *       // Enable esbuild polyfill plugins
-     *       plugins: [
-     *         NodeGlobalsPolyfillPlugin({
-     *           process: true,
-     *           buffer: true,
-     *         }),
-     *         NodeModulesPolyfillPlugin(),
-     *       ],
-     *     },
-     *     build: {
-     *       target: 'esnext',
-     *       rollupOptions: {
-     *         plugins: [
-     *           // Enable rollup polyfills plugin
-     *           // used during production bundling
-     *           nodePolyfills(),
-     *         ],
-     *       },
-     *     },
-     */
+    optimizeDeps: {
+      include: ['buffer'],
+      esbuildOptions: {
+        define: {
+          global: 'globalThis',
+        },
+      },
+      plugins: [
+        NodeGlobalsPolyfillPlugin({
+          process: true,
+          buffer: true,
+        }),
+        NodeModulesPolyfillPlugin(),
+      ],
+    },
+    build: {
+      sourcemap: true, // Source map generation must be turned on for Sentry
+      target: 'esnext',
+      rollupOptions: {
+        plugins: [
+          // Enable rollup polyfills plugin
+          // used during production bundling
+          nodePolyfills(),
+        ],
+      },
+    },
   }
 })

@@ -1,56 +1,38 @@
 import { motion, MotionProps } from 'motion/react'
 import { HTMLAttributes } from 'react'
+import { useNavigate } from 'react-router-dom'
 
-import { useToastsManager } from '@/contexts'
-import { IconNames } from '@/enums'
-import { bus, BusEvents } from '@/helpers'
-import Erc20 from '@/pages/Homepage/components/erc20'
-import { sampleStore } from '@/store/sample'
-import { UiContainer, UiDivider, UiIcon, UiSpinner } from '@/ui'
+import { RoutePaths } from '@/enums'
+import { UiButton } from '@/ui/UiButton'
+import UiThreads from '@/ui/UiThreads'
 
 type Props = HTMLAttributes<HTMLDivElement> & MotionProps
 
 export default function Homepage({ ...rest }: Props) {
-  const state1 = sampleStore.useSampleStore(state => state.state1)
-
-  const toastManager = useToastsManager()
-
-  const testToasts = () => {
-    bus.emit(BusEvents.Success, 'Success')
-    bus.emit(BusEvents.Error, 'Error')
-    bus.emit(BusEvents.Warning, 'Warning')
-    bus.emit(BusEvents.Info, 'Info')
-
-    toastManager.showToast(
-      'success',
-      <div className='flex flex-col gap-2'>
-        <UiIcon
-          name={IconNames.Microphone}
-          className={'size-8 text-errorDark'}
-        />
-        <span className='typography-h4'>Hello world</span>
-        <UiSpinner />
-        <UiDivider />
-        <button className='w-min whitespace-nowrap bg-primaryMain px-4 py-3 text-white'>
-          Press me
-        </button>
-      </div>,
-    )
-  }
+  const navigate = useNavigate()
 
   return (
-    <motion.div {...rest}>
-      <UiContainer className={'flex flex-col gap-4'}>
-        <Erc20 />
-        <UiDivider />
-        {state1}
-        <button
-          className='w-min whitespace-nowrap bg-primaryMain px-4 py-3 text-textPrimary'
-          onClick={testToasts}
+    <motion.div {...rest} className='isolate size-full bg-backgroundPrimary'>
+      <div className='absolute inset-0 z-10 size-full'>
+        <UiThreads amplitude={1} distance={0} enableMouseInteraction={true} />
+      </div>
+
+      <div className='absolute inset-0 z-20 flex size-full flex-col items-center justify-center gap-4 text-center'>
+        <span className='tex-textPrimary typography-h1'>
+          Confidential Assets
+        </span>
+
+        <span className='tex-textPrimary typography-subtitle1'>
+          Bringing innovative solutions to secure your digital world.
+        </span>
+
+        <UiButton
+          className='mt-3 min-w-[200px] bg-textPrimary px-6 py-3 text-backgroundPrimary hover:cursor-pointer'
+          onClick={() => navigate(RoutePaths.Login)}
         >
-          Test toasts
-        </button>
-      </UiContainer>
+          Begin
+        </UiButton>
+      </div>
     </motion.div>
   )
 }

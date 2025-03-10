@@ -27,7 +27,8 @@ export const config: Config = {
   erc20Token: '0x08BE00b659713E615795954B778dbacD1F14efEb',
 
   DEFAULT_TOKEN: {
-    address: '',
+    address:
+      '0x2a0c0d0d3d213a120a0bac6aecf2bf4a59c4d5e5be0721ca2b3566f0013e7e3d',
     name: 'Mocked token',
     symbol: 'MTK',
     decimals: 0,

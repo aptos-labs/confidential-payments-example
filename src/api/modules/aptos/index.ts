@@ -34,8 +34,9 @@ RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP)
 RangeProofExecutor.setGenerateRangeZKP(generateRangeZKP)
 RangeProofExecutor.setVerifyRangeZKP(verifyRangeZKP)
 
-const APTOS_NETWORK: Network = NetworkToNetworkName[Network.DEVNET]
-const config = new AptosConfig({ network: APTOS_NETWORK })
+const config = new AptosConfig({
+  network: NetworkToNetworkName[Network.DEVNET],
+})
 export const aptos = new Aptos(config)
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {

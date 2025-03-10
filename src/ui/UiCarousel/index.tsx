@@ -132,7 +132,7 @@ export default function UiCarousel({
       }}
     >
       <motion.div
-        className='flex'
+        className='mx-auto flex'
         drag='x'
         {...dragProps}
         style={{
@@ -150,6 +150,7 @@ export default function UiCarousel({
         {carouselItems.map((item, index) => {
           return (
             <CarouselItem
+              key={index}
               children={item}
               index={index}
               trackItemOffset={trackItemOffset}

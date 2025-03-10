@@ -100,10 +100,10 @@ type ConfidentialCoinContextType = {
   rolloverAccount: () => Promise<CommittedTransactionResponse[]>
   transfer: (
     receiverEncryptionKeyHex: string,
-    amount: number,
+    amount: string,
     auditorsEncryptionKeyHexList?: string[],
   ) => Promise<CommittedTransactionResponse>
-  withdraw: (amount: number) => Promise<CommittedTransactionResponse>
+  withdraw: (amount: string) => Promise<CommittedTransactionResponse>
   deposit: (amount: number) => Promise<CommittedTransactionResponse>
   // TODO: rotate keys
 
@@ -666,7 +666,7 @@ export const ConfidentialCoinContextProvider = ({
   const transfer = useCallback(
     async (
       receiverEncryptionKey: string,
-      amount: number,
+      amount: string,
       auditorsEncryptionKeyHexList?: string[],
     ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
@@ -691,7 +691,7 @@ export const ConfidentialCoinContextProvider = ({
   )
 
   const withdraw = useCallback(
-    async (amount: number) => {
+    async (amount: string) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
         throw new TypeError('actual amount not loaded')
 

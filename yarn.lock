@@ -4149,6 +4149,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"boring-avatars@npm:^1.11.2":
+  version: 1.11.2
+  resolution: "boring-avatars@npm:1.11.2"
+  checksum: b574bbbd926faeca7615c82a1bc2e0dda85803ed677c5e243b27cdda7b1ee97289d53f81bfe89087429b73897e2a329e306f13fd65c279e23b394595cfa15828
+  languageName: node
+  linkType: hard
+
 "bowser@npm:^2.9.0":
   version: 2.11.0
   resolution: "bowser@npm:2.11.0"
@@ -11644,6 +11651,7 @@ __metadata:
     "@vitejs/plugin-react": "npm:^4.3.4"
     autoprefixer: "npm:^10.4.20"
     axios: "npm:^1.8.2"
+    boring-avatars: "npm:^1.11.2"
     buffer: "npm:^6.0.3"
     chalk: "npm:^5.4.1"
     class-variance-authority: "npm:^0.7.1"

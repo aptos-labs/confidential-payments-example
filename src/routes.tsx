@@ -5,7 +5,6 @@ import {
   Navigate,
   Outlet,
   redirect,
-  RouterProvider,
 } from 'react-router-dom'
 
 import { RoutePaths } from '@/enums'
@@ -13,23 +12,21 @@ import { MainLayout } from '@/layouts'
 import { ConfidentialCoinContextProvider } from '@/pages/Dashboard/context'
 import { authStore } from '@/store/auth'
 
-export const AppRoutes = () => {
+export const createRouter = () => {
   const Homepage = lazy(() => import('@/pages/Homepage'))
   const Login = lazy(() => import('@/pages/Login'))
   const Dashboard = lazy(() => import('@/pages/Dashboard'))
 
-  const isAuthorized = authStore.useIsAuthorized()
-
   // eslint-disable-next-line unused-imports/no-unused-vars
   const authProtectedGuard = ({ request }: LoaderFunctionArgs) => {
-    if (!isAuthorized) {
+    if (!authStore.useAuthStore.getState().accessToken) {
       return redirect(RoutePaths.Login)
     }
 
     return null
   }
 
-  const router = createBrowserRouter([
+  return createBrowserRouter([
     {
       path: RoutePaths.Root,
       element: (
@@ -67,6 +64,4 @@ export const AppRoutes = () => {
       ],
     },
   ])
-
-  return <RouterProvider router={router} />
 }

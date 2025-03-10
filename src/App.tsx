@@ -1,12 +1,15 @@
 import { config } from '@config'
 import { useCallback, useState } from 'react'
+import { RouterProvider } from 'react-router-dom'
 import { useEffectOnce } from 'react-use'
 
 import { Web3ContextProvider } from '@/contexts/Web3Provider'
 import { ErrorHandler } from '@/helpers'
 import { useViewportSizes } from '@/hooks'
-import { AppRoutes } from '@/routes'
+import { createRouter } from '@/routes'
 import { UiSpinner } from '@/ui'
+
+const router = createRouter()
 
 export function App() {
   const [isAppInitialized, setIsAppInitialized] = useState(false)
@@ -33,7 +36,7 @@ export function App() {
 
   return (
     <Web3ContextProvider>
-      <AppRoutes />
+      <RouterProvider router={router} />
     </Web3ContextProvider>
   )
 }

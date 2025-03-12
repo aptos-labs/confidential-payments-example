@@ -7,6 +7,8 @@ import {
 } from 'motion/react'
 import { ReactNode, useEffect, useRef, useState } from 'react'
 
+import { cn } from '@/theme/utils'
+
 export interface CarouselProps {
   items: ReactNode[]
   baseWidth?: number
@@ -15,6 +17,7 @@ export interface CarouselProps {
   pauseOnHover?: boolean
   loop?: boolean
   round?: boolean
+  isShowPagination?: boolean
 }
 
 const DRAG_BUFFER = 0
@@ -30,6 +33,7 @@ export default function UiCarousel({
   pauseOnHover = false,
   loop = false,
   round = false,
+  isShowPagination = false,
 }: CarouselProps): JSX.Element {
   const containerPadding = 16
   const itemWidth = baseWidth - containerPadding * 2
@@ -162,23 +166,27 @@ export default function UiCarousel({
           )
         })}
       </motion.div>
-      <div className={`flex w-full justify-center ${round ? 'round' : ''}`}>
-        <div className='mt-4 flex w-[150px] justify-between px-8 py-0'>
-          {items.map((_, index) => (
-            <motion.div
-              key={index}
-              className={`duration h-2 w-2 cursor-pointer rounded-[50%] transition-[background-color] ${
-                currentIndex % items.length === index ? 'active' : 'inactive'
-              }`}
-              animate={{
-                scale: currentIndex % items.length === index ? 1.2 : 1,
-              }}
-              onClick={() => setCurrentIndex(index)}
-              transition={{ duration: 0.15 }}
-            />
-          ))}
+
+      {isShowPagination && (
+        <div className={`flex w-full justify-center ${round ? 'round' : ''}`}>
+          <div className='flex w-[150px] justify-between px-8 py-0'>
+            {items.map((_, index) => (
+              <motion.div
+                key={index}
+                className={cn(
+                  `duration size-2 cursor-pointer rounded-[50%] bg-componentPrimary transition-[background-color]`,
+                  currentIndex % items.length === index && 'text-textPrimary',
+                )}
+                animate={{
+                  scale: currentIndex % items.length === index ? 1.2 : 1,
+                }}
+                onClick={() => setCurrentIndex(index)}
+                transition={{ duration: 0.15 }}
+              />
+            ))}
+          </div>
         </div>
-      </div>
+      )}
     </div>
   )
 }

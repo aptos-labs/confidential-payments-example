@@ -9,7 +9,7 @@ import { cn } from '@/theme/utils'
 
 export default function ConfidentialAssetCard({
   token,
-  encryptionKey,
+  // encryptionKey,
   actualAmount,
 
   // isNormalized,
@@ -155,43 +155,7 @@ export default function ConfidentialAssetCard({
               </span>
             </div>
           </div>
-
-          <CopyField text={encryptionKey} />
         </div>
-      </div>
-    </div>
-  )
-}
-
-function CopyField({
-  text,
-  label,
-  ...rest
-}: { text: string; label?: string } & HTMLAttributes<HTMLDivElement>) {
-  const { isCopied, copy } = useCopyToClipboard()
-
-  return (
-    <div {...rest} className={cn('flex flex-col gap-2', rest.className)}>
-      {label && (
-        <span className='ml-4 text-textSecondary typography-body3'>
-          {label}
-        </span>
-      )}
-      <div
-        className={cn(
-          'flex items-center justify-between rounded-2xl bg-componentPrimary px-4 pr-0',
-        )}
-      >
-        <span className='max-w-[224px] flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-textPrimary typography-body2'>
-          {text}
-        </span>
-        <button className='p-4' onClick={() => copy(text)}>
-          {isCopied ? (
-            <Check size={22} className='text-textSecondary' />
-          ) : (
-            <Copy size={22} className='text-textSecondary' />
-          )}
-        </button>
       </div>
     </div>
   )

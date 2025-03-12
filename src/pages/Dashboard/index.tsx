@@ -26,6 +26,8 @@ import {
   useRef,
   useState,
 } from 'react'
+import { useSearchParams } from 'react-router-dom'
+import { useTimeoutFn } from 'react-use'
 
 import { ErrorHandler, formatDateDMYT } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
@@ -53,17 +55,24 @@ import {
   UiSidebarTrigger,
 } from '@/ui/UiSidebar'
 
-import TransferForm from './components/TransferForm'
+import Deposit from './components/Deposit'
+import {
+  TransferFormSheet,
+  useTransferFormSheet,
+} from './components/TransferFormSheet'
 
 export default function Dashboard() {
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false)
   const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false)
   const [isWithdrawSheetOpen, setIsWithdrawSheetOpen] = useState(false)
-  const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
   const [isAddTokenSheetOpen, setIsAddTokenSheetOpen] = useState(false)
+
+  const transferFormSheet = useTransferFormSheet()
 
   const {
     selectedToken,
+    setSelectedTokenAddress,
 
     // selectedAccountDecryptionKey,
     selectedAccountDecryptionKeyStatus,
@@ -182,6 +191,28 @@ export default function Dashboard() {
 
   const carouselWrpRef = useRef<HTMLDivElement>(null)
 
+  const [searchParams] = useSearchParams()
+
+  // TODO: enchance to more fabric orchestration
+  useTimeoutFn(async () => {
+    const action = searchParams.get('action')
+
+    if (!action) return
+
+    if (action === 'send') {
+      const asset = searchParams.get('asset')
+      const to = searchParams.get('to')
+
+      if (!asset || !to) return
+
+      if (selectedToken.address.toLowerCase() !== asset.toLowerCase()) {
+        setSelectedTokenAddress(asset)
+      }
+
+      transferFormSheet.open(to)
+    }
+  }, 500)
+
   return (
     <UiSidebarProvider>
       <DashboardSidebar />
@@ -239,6 +270,16 @@ export default function Dashboard() {
 
           <div className='flex w-full flex-row items-center justify-center gap-8'>
             <CircleButton
+              caption={'Deposit'}
+              iconProps={{
+                name: 'ArrowDownIcon',
+              }}
+              onClick={() => {
+                setIsDepositSheetOpen(true)
+              }}
+            />
+
+            <CircleButton
               caption={'Token Info'}
               iconProps={{
                 name: 'InfoIcon',
@@ -265,82 +306,76 @@ export default function Dashboard() {
                 name: 'ArrowRightIcon',
               }}
               onClick={() => {
-                setIsTransferSheetOpen(true)
+                transferFormSheet.open()
               }}
-              disabled={isActionsDisabled}
+              // disabled={isActionsDisabled}
             />
           </div>
 
-          <div className='mt-10 flex w-full flex-1 flex-col overflow-hidden rounded-t-[24] bg-componentPrimary'>
-            <div className='flex w-full flex-1 flex-col'>
-              <div className='flex flex-col gap-4 p-4'>
-                <span className='uppercase text-textPrimary typography-caption3'>
-                  Don't forget
-                </span>
-
-                {!selectedAccountDecryptionKeyStatus.isRegistered ? (
+          <div className='flex flex-col gap-4 p-4'>
+            {!selectedAccountDecryptionKeyStatus.isRegistered ? (
+              <ActionCard
+                title='Register Balance'
+                desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                leadingContent={
+                  <UiIcon
+                    name={'IdCardIcon'}
+                    className='size-8 text-textPrimary'
+                  />
+                }
+                onClick={tryRegister}
+                disabled={isSubmitting}
+              />
+            ) : (
+              <>
+                {selectedAccountDecryptionKeyStatus.isFrozen && (
                   <ActionCard
-                    title='Register Balance'
+                    title='Unfreeze Balance'
                     desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
                     leadingContent={
-                      <IdCardIcon
+                      <Snowflake
                         size={32}
                         className='self-center text-textPrimary'
                       />
                     }
-                    onClick={tryRegister}
+                    onClick={tryUnfreeze}
                     disabled={isSubmitting}
                   />
-                ) : (
-                  <>
-                    {selectedAccountDecryptionKeyStatus.isFrozen && (
-                      <ActionCard
-                        title='Unfreeze Balance'
-                        desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                        leadingContent={
-                          <Snowflake
-                            size={32}
-                            className='self-center text-textPrimary'
-                          />
-                        }
-                        onClick={tryUnfreeze}
-                        disabled={isSubmitting}
-                      />
-                    )}
-
-                    {!selectedAccountDecryptionKeyStatus.isNormalized && (
-                      <ActionCard
-                        title='Normalize Balance'
-                        desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                        leadingContent={
-                          <TriangleAlertIcon
-                            size={32}
-                            className='self-center text-textPrimary'
-                          />
-                        }
-                        onClick={tryNormalize}
-                        disabled={isSubmitting}
-                      />
-                    )}
-
-                    <ActionCard
-                      title='Test Mint'
-                      desc='Mint 10 test tokens'
-                      leadingContent={
-                        <HandCoinsIcon
-                          size={32}
-                          className='self-center text-textPrimary'
-                        />
-                      }
-                      onClick={tryTestMint}
-                      disabled={isSubmitting}
-                    />
-                  </>
                 )}
-              </div>
 
-              <UiSeparator className='my-4' />
+                {!selectedAccountDecryptionKeyStatus.isNormalized && (
+                  <ActionCard
+                    title='Normalize Balance'
+                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                    leadingContent={
+                      <TriangleAlertIcon
+                        size={32}
+                        className='self-center text-textPrimary'
+                      />
+                    }
+                    onClick={tryNormalize}
+                    disabled={isSubmitting}
+                  />
+                )}
 
+                <ActionCard
+                  title='Test Mint'
+                  desc='Mint 10 test tokens'
+                  leadingContent={
+                    <HandCoinsIcon
+                      size={32}
+                      className='self-center text-textPrimary'
+                    />
+                  }
+                  onClick={tryTestMint}
+                  disabled={isSubmitting}
+                />
+              </>
+            )}
+          </div>
+
+          <div className='flex w-full flex-1 flex-col overflow-hidden rounded-t-[24px] bg-componentPrimary'>
+            <div className='flex w-full flex-1 flex-col'>
               {txHistory.length ? (
                 <div className='flex flex-col gap-6'>
                   {txHistory.reverse().map((el, idx) => (
@@ -348,15 +383,30 @@ export default function Dashboard() {
                   ))}
                 </div>
               ) : (
-                <FolderOpenIcon
-                  size={128}
-                  className='my-auto self-center text-componentDisabled'
-                />
+                <div className='my-auto flex flex-col items-center gap-4 self-center'>
+                  <FolderOpenIcon
+                    size={128}
+                    className='text-componentDisabled'
+                  />
+
+                  <span className='text-textSecondary typography-subtitle2'>
+                    No transactions yet.
+                  </span>
+                </div>
               )}
             </div>
           </div>
         </div>
 
+        <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
+          <UiSheetContent>
+            <UiSheetHeader>
+              <UiSheetTitle>Deposit</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <Deposit />
+          </UiSheetContent>
+        </UiSheet>
         <UiSheet
           open={isTokenInfoSheetOpen}
           onOpenChange={setIsTokenInfoSheetOpen}
@@ -366,7 +416,7 @@ export default function Dashboard() {
               <UiSheetTitle>Token Info</UiSheetTitle>
             </UiSheetHeader>
 
-            <UiSeparator />
+            <UiSeparator className='mb-4 mt-2' />
 
             <TokenInfo token={selectedToken} />
           </UiSheetContent>
@@ -388,23 +438,14 @@ export default function Dashboard() {
             />
           </UiSheetContent>
         </UiSheet>
-        <UiSheet
-          open={isTransferSheetOpen}
-          onOpenChange={setIsTransferSheetOpen}
-        >
-          <UiSheetContent>
-            <UiSheetHeader>
-              <UiSheetTitle>Transfer</UiSheetTitle>
-            </UiSheetHeader>
-            <UiSeparator className='mb-4 mt-2' />
-            <TransferForm
-              token={selectedToken}
-              onSubmit={() => {
-                setIsTransferSheetOpen(false)
-              }}
-            />
-          </UiSheetContent>
-        </UiSheet>
+
+        <TransferFormSheet
+          ref={transferFormSheet.ref}
+          token={selectedToken}
+          onSubmit={() => {
+            transferFormSheet.close()
+          }}
+        />
 
         <UiSheet
           open={isAddTokenSheetOpen}
@@ -519,8 +560,8 @@ function ActionCard({
           <span className='text-textSecondary typography-body3'>{desc}</span>
         )}
       </div>
-      <div className='flex size-[36] flex-col items-center justify-center self-center rounded-full bg-componentSelected'>
-        <ArrowRightIcon size={18} className='text-baseWhite' />
+      <div className='flex size-9 flex-col items-center justify-center self-center rounded-full bg-componentSelected'>
+        <UiIcon name={'ChevronRightIcon'} className='size-6 text-textPrimary' />
       </div>
     </button>
   )

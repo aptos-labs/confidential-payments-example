@@ -34,6 +34,7 @@ import {
 import { ErrorHandler, formatBalance, formatDateDMYT } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import DashboardHeader from '@/pages/Dashboard/components/DashboardHeader'
+import { DashboardSidebar } from '@/pages/Dashboard/components/DashboardSidebar'
 import TokenInfo from '@/pages/Dashboard/components/TokenInfo'
 import WithdrawForm from '@/pages/Dashboard/components/WithdrawForm'
 import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
@@ -48,6 +49,11 @@ import {
   UiSheetTitle,
   UiSheetTrigger,
 } from '@/ui/UiSheet'
+import {
+  UiSidebarInset,
+  UiSidebarProvider,
+  UiSidebarTrigger,
+} from '@/ui/UiSidebar'
 
 import TransferForm from './components/TransferForm'
 
@@ -172,174 +178,182 @@ export default function Dashboard() {
   }, [addTxHistoryItem, testMintTokens, tryRefresh])
 
   return (
-    <div className='flex size-full flex-1 flex-col'>
-      <DashboardHeader />
+    <UiSidebarProvider>
+      <DashboardSidebar />
+      <UiSidebarInset>
+        <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12'>
+          <UiSidebarTrigger className='-ml-1' />
 
-      <div className='mx-auto self-center'>
-        <ConfidentialAssetsList />
-      </div>
-
-      <div className='flex w-full flex-row items-center justify-center gap-8'>
-        <UiSheet
-          open={isTokenInfoSheetOpen}
-          onOpenChange={setIsTokenInfoSheetOpen}
-        >
-          <UiSheetTrigger disabled={isActionsDisabled}>
-            <div className={'flex flex-col items-center gap-2 text-center'}>
-              <InfoIcon size={32} className='text-textPrimary' />
-              <span className='text-textSecondary typography-body2'>
-                Token Info
-              </span>
-            </div>
-          </UiSheetTrigger>
-
-          <UiSheetContent className='bg-backgroundContainer'>
-            <UiSheetHeader>
-              <UiSheetTitle>Token Info</UiSheetTitle>
-            </UiSheetHeader>
-
-            <TokenInfo token={selectedToken} />
-          </UiSheetContent>
-        </UiSheet>
-
-        <UiSheet
-          open={isWithdrawSheetOpen}
-          onOpenChange={setIsWithdrawSheetOpen}
-        >
-          <UiSheetTrigger disabled={isActionsDisabled}>
-            <div className={'flex flex-col items-center gap-2 text-center'}>
-              <ArrowUpIcon size={32} className='text-textPrimary' />
-              <span className='text-textSecondary typography-body2'>
-                Withdraw
-              </span>
-            </div>
-          </UiSheetTrigger>
-
-          <UiSheetContent className='bg-backgroundContainer'>
-            <UiSheetHeader>
-              <UiSheetTitle>Withdraw</UiSheetTitle>
-            </UiSheetHeader>
-
-            <WithdrawForm
-              token={selectedToken}
-              onSubmit={() => {
-                setIsWithdrawSheetOpen(false)
-              }}
-            />
-          </UiSheetContent>
-        </UiSheet>
-
-        <UiSheet
-          open={isTransferSheetOpen}
-          onOpenChange={setIsTransferSheetOpen}
-        >
-          <UiSheetTrigger disabled={isActionsDisabled}>
-            <div className={'flex flex-col items-center gap-2 text-center'}>
-              <ArrowRightIcon size={32} className='text-textPrimary' />
-              <span className='text-textSecondary typography-body2'>
-                Transfer
-              </span>
-            </div>
-          </UiSheetTrigger>
-          <UiSheetContent className='bg-backgroundContainer'>
-            <UiSheetHeader>
-              <UiSheetTitle>Transfer</UiSheetTitle>
-            </UiSheetHeader>
-            <TransferForm
-              token={selectedToken}
-              onSubmit={() => {
-                setIsTransferSheetOpen(false)
-              }}
-            />
-          </UiSheetContent>
-        </UiSheet>
-      </div>
-
-      <div className='mt-10 flex w-full flex-1 flex-col overflow-hidden rounded-t-[24] bg-componentPrimary'>
-        <div className='flex w-full flex-1 flex-col'>
-          <div className='flex flex-col gap-4 p-4'>
-            <span className='uppercase text-textPrimary typography-caption3'>
-              Don't forget
-            </span>
-
-            {!selectedAccountDecryptionKeyStatus.isRegistered ? (
-              <ActionCard
-                title='Register Balance'
-                desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                leadingContent={
-                  <IdCardIcon
-                    size={32}
-                    className='self-center text-textPrimary'
-                  />
-                }
-                onClick={tryRegister}
-                disabled={isSubmitting}
-              />
-            ) : (
-              <>
-                {selectedAccountDecryptionKeyStatus.isFrozen && (
-                  <ActionCard
-                    title='Unfreeze Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <Snowflake
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryUnfreeze}
-                    disabled={isSubmitting}
-                  />
-                )}
-
-                {!selectedAccountDecryptionKeyStatus.isNormalized && (
-                  <ActionCard
-                    title='Normalize Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <TriangleAlertIcon
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryNormalize}
-                    disabled={isSubmitting}
-                  />
-                )}
-
-                <ActionCard
-                  title='Test Mint'
-                  desc='Mint 10 test tokens'
-                  leadingContent={
-                    <HandCoinsIcon
-                      size={32}
-                      className='self-center text-textPrimary'
-                    />
-                  }
-                  onClick={tryTestMint}
-                  disabled={isSubmitting}
-                />
-              </>
-            )}
+          <DashboardHeader className='ml-auto' />
+        </header>
+        <div className='flex size-full flex-1 flex-col'>
+          <div className='mx-auto self-center'>
+            <ConfidentialAssetsList />
           </div>
 
-          <UiSeparator className='my-4' />
+          <div className='flex w-full flex-row items-center justify-center gap-8'>
+            <UiSheet
+              open={isTokenInfoSheetOpen}
+              onOpenChange={setIsTokenInfoSheetOpen}
+            >
+              <UiSheetTrigger disabled={isActionsDisabled}>
+                <div className={'flex flex-col items-center gap-2 text-center'}>
+                  <InfoIcon size={32} className='text-textPrimary' />
+                  <span className='text-textSecondary typography-body2'>
+                    Token Info
+                  </span>
+                </div>
+              </UiSheetTrigger>
 
-          {txHistory.length ? (
-            <div className='flex flex-col gap-6'>
-              {txHistory.reverse().map((el, idx) => (
-                <TxItem key={idx} {...el} />
-              ))}
+              <UiSheetContent>
+                <UiSheetHeader>
+                  <UiSheetTitle>Token Info</UiSheetTitle>
+                </UiSheetHeader>
+
+                <TokenInfo token={selectedToken} />
+              </UiSheetContent>
+            </UiSheet>
+
+            <UiSheet
+              open={isWithdrawSheetOpen}
+              onOpenChange={setIsWithdrawSheetOpen}
+            >
+              <UiSheetTrigger disabled={isActionsDisabled}>
+                <div className={'flex flex-col items-center gap-2 text-center'}>
+                  <ArrowUpIcon size={32} className='text-textPrimary' />
+                  <span className='text-textSecondary typography-body2'>
+                    Withdraw
+                  </span>
+                </div>
+              </UiSheetTrigger>
+
+              <UiSheetContent>
+                <UiSheetHeader>
+                  <UiSheetTitle>Withdraw</UiSheetTitle>
+                </UiSheetHeader>
+
+                <WithdrawForm
+                  token={selectedToken}
+                  onSubmit={() => {
+                    setIsWithdrawSheetOpen(false)
+                  }}
+                />
+              </UiSheetContent>
+            </UiSheet>
+
+            <UiSheet
+              open={isTransferSheetOpen}
+              onOpenChange={setIsTransferSheetOpen}
+            >
+              <UiSheetTrigger disabled={isActionsDisabled}>
+                <div className={'flex flex-col items-center gap-2 text-center'}>
+                  <ArrowRightIcon size={32} className='text-textPrimary' />
+                  <span className='text-textSecondary typography-body2'>
+                    Transfer
+                  </span>
+                </div>
+              </UiSheetTrigger>
+              <UiSheetContent className='bg-backgroundContainer'>
+                <UiSheetHeader>
+                  <UiSheetTitle>Transfer</UiSheetTitle>
+                </UiSheetHeader>
+                <TransferForm
+                  token={selectedToken}
+                  onSubmit={() => {
+                    setIsTransferSheetOpen(false)
+                  }}
+                />
+              </UiSheetContent>
+            </UiSheet>
+          </div>
+
+          <div className='mt-10 flex w-full flex-1 flex-col overflow-hidden rounded-t-[24] bg-componentPrimary'>
+            <div className='flex w-full flex-1 flex-col'>
+              <div className='flex flex-col gap-4 p-4'>
+                <span className='uppercase text-textPrimary typography-caption3'>
+                  Don't forget
+                </span>
+
+                {!selectedAccountDecryptionKeyStatus.isRegistered ? (
+                  <ActionCard
+                    title='Register Balance'
+                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                    leadingContent={
+                      <IdCardIcon
+                        size={32}
+                        className='self-center text-textPrimary'
+                      />
+                    }
+                    onClick={tryRegister}
+                    disabled={isSubmitting}
+                  />
+                ) : (
+                  <>
+                    {selectedAccountDecryptionKeyStatus.isFrozen && (
+                      <ActionCard
+                        title='Unfreeze Balance'
+                        desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                        leadingContent={
+                          <Snowflake
+                            size={32}
+                            className='self-center text-textPrimary'
+                          />
+                        }
+                        onClick={tryUnfreeze}
+                        disabled={isSubmitting}
+                      />
+                    )}
+
+                    {!selectedAccountDecryptionKeyStatus.isNormalized && (
+                      <ActionCard
+                        title='Normalize Balance'
+                        desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                        leadingContent={
+                          <TriangleAlertIcon
+                            size={32}
+                            className='self-center text-textPrimary'
+                          />
+                        }
+                        onClick={tryNormalize}
+                        disabled={isSubmitting}
+                      />
+                    )}
+
+                    <ActionCard
+                      title='Test Mint'
+                      desc='Mint 10 test tokens'
+                      leadingContent={
+                        <HandCoinsIcon
+                          size={32}
+                          className='self-center text-textPrimary'
+                        />
+                      }
+                      onClick={tryTestMint}
+                      disabled={isSubmitting}
+                    />
+                  </>
+                )}
+              </div>
+
+              <UiSeparator className='my-4' />
+
+              {txHistory.length ? (
+                <div className='flex flex-col gap-6'>
+                  {txHistory.reverse().map((el, idx) => (
+                    <TxItem key={idx} {...el} />
+                  ))}
+                </div>
+              ) : (
+                <FolderOpenIcon
+                  size={128}
+                  className='my-auto self-center text-componentDisabled'
+                />
+              )}
             </div>
-          ) : (
-            <FolderOpenIcon
-              size={128}
-              className='my-auto self-center text-componentDisabled'
-            />
-          )}
+          </div>
         </div>
-      </div>
-    </div>
+      </UiSidebarInset>
+    </UiSidebarProvider>
   )
 }
 

@@ -1,6 +1,5 @@
 import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
-import { TrashIcon } from 'lucide-react'
 import { motion } from 'motion/react'
 import { HTMLAttributes, useCallback } from 'react'
 import { Control, Controller, useFieldArray } from 'react-hook-form'
@@ -11,6 +10,7 @@ import { useForm } from '@/hooks'
 import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
+import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import { UiInput } from '@/ui/UiInput'
 import { UiSeparator } from '@/ui/UiSeparator'
@@ -201,7 +201,7 @@ const AuditorsList = ({
                   className='flex min-w-[60] flex-col items-center justify-center self-stretch bg-errorMain'
                   onClick={() => removeAuditor(index)}
                 >
-                  <TrashIcon size={24} className='text-baseWhite' />
+                  <UiIcon name={'Trash'} size={24} className='text-baseWhite' />
                 </button>
               </div>
             </motion.div>

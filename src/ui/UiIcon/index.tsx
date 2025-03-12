@@ -1,23 +1,156 @@
-import { HTMLAttributes } from 'react'
+import {
+  ArrowDownIcon,
+  ArrowRightIcon,
+  ArrowUpIcon,
+  AudioWaveformIcon,
+  BadgeCheckIcon,
+  BellIcon,
+  BookOpenIcon,
+  BotIcon,
+  CameraIcon,
+  CheckIcon,
+  ChevronDownIcon,
+  ChevronRightIcon,
+  ChevronsUpDownIcon,
+  CommandIcon,
+  CopyIcon,
+  CreditCardIcon,
+  EditIcon,
+  FolderIcon,
+  FolderOpenIcon,
+  FolderSyncIcon,
+  ForwardIcon,
+  FrameIcon,
+  GalleryVerticalEndIcon,
+  HandCoinsIcon,
+  IdCardIcon,
+  InfoIcon,
+  KeyIcon,
+  LockIcon,
+  LogOutIcon,
+  LucideProps,
+  MapIcon,
+  MoreHorizontalIcon,
+  PieChartIcon,
+  PlusIcon,
+  Settings2Icon,
+  SnowflakeIcon,
+  SparklesIcon,
+  SquareTerminalIcon,
+  Trash2Icon,
+  TrashIcon,
+  TriangleAlertIcon,
+  UnlockIcon,
+} from 'lucide-react'
+import { HTMLAttributes, RefAttributes } from 'react'
 
 import { IconNames } from '@/enums'
 import { cn } from '@/theme/utils'
 
-interface Props extends HTMLAttributes<HTMLOrSVGElement> {
+type CustomIconProps = {
   name: IconNames
-}
+} & HTMLAttributes<HTMLOrSVGElement>
 
-export default function UiIcon({ name, ...rest }: Props) {
+function CustomIcon({ name, ...rest }: CustomIconProps) {
   return (
     <svg
       {...rest}
       className={cn(
-        rest.className,
         'pointer-events-none flex items-center justify-center',
+        rest.className,
       )}
       aria-hidden='true'
     >
       <use href={`#${name}-icon`} />
     </svg>
   )
+}
+
+const LIB_ICONS = {
+  CameraIcon: CameraIcon,
+  ArrowDownIcon: ArrowDownIcon,
+  ArrowRightIcon: ArrowRightIcon,
+  ArrowUpIcon: ArrowUpIcon,
+  Check: CheckIcon,
+  CheckIcon: CheckIcon,
+  Copy: CopyIcon,
+  CopyIcon: CopyIcon,
+  CreditCard: CreditCardIcon,
+  EditIcon: EditIcon,
+  FolderOpenIcon: FolderOpenIcon,
+  FolderSync: FolderSyncIcon,
+  FolderSyncIcon: FolderSyncIcon,
+  HandCoinsIcon: HandCoinsIcon,
+  IdCardIcon: IdCardIcon,
+  InfoIcon: InfoIcon,
+  KeyIcon: KeyIcon,
+  LockIcon: LockIcon,
+  Snowflake: SnowflakeIcon,
+  TriangleAlertIcon: TriangleAlertIcon,
+  UnlockIcon: UnlockIcon,
+  AudioWaveform: AudioWaveformIcon,
+  BadgeCheck: BadgeCheckIcon,
+  Bell: BellIcon,
+  BookOpen: BookOpenIcon,
+  Bot: BotIcon,
+  ChevronRight: ChevronRightIcon,
+  ChevronsUpDown: ChevronsUpDownIcon,
+  Command: CommandIcon,
+  Folder: FolderIcon,
+  Forward: ForwardIcon,
+  Frame: FrameIcon,
+  GalleryVerticalEnd: GalleryVerticalEndIcon,
+  LogOut: LogOutIcon,
+  Map: MapIcon,
+  MoreHorizontal: MoreHorizontalIcon,
+  PieChart: PieChartIcon,
+  Plus: PlusIcon,
+  Settings2: Settings2Icon,
+  Sparkles: SparklesIcon,
+  SquareTerminal: SquareTerminalIcon,
+  Trash: TrashIcon,
+  Trash2: Trash2Icon,
+  ChevronDown: ChevronDownIcon,
+}
+
+type LibIconProps = {
+  name: keyof typeof LIB_ICONS
+} & Omit<LucideProps, 'ref'> &
+  RefAttributes<SVGSVGElement>
+
+function LibIcon({ name, ...rest }: LibIconProps) {
+  const Component = LIB_ICONS[name]
+
+  return <Component {...rest} />
+}
+
+type Props<T extends IconNames | keyof typeof LIB_ICONS> = T extends IconNames
+  ? CustomIconProps
+  : T extends keyof typeof LIB_ICONS
+    ? LibIconProps
+    : undefined
+
+export default function UiIcon<T extends IconNames | keyof typeof LIB_ICONS>({
+  name,
+  ...rest
+}: Props<T>) {
+  if (name in IconNames) {
+    return (
+      <CustomIcon
+        {...(rest as unknown as CustomIconProps)}
+        name={name as IconNames}
+      />
+    )
+  }
+
+  if (name in LIB_ICONS) {
+    return (
+      <LibIcon
+        {...(rest as unknown as LibIconProps)}
+        name={name as keyof typeof LIB_ICONS}
+      />
+    )
+  } else {
+    throw new Error(`Icon with name "${name}" not found.`)
+  }
 }

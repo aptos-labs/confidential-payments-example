@@ -1,12 +1,12 @@
 import { BN, time } from '@distributedlab/tools'
+import Avatar from 'boring-avatars'
 import {
-  ArrowDownIcon,
-  CheckCircleIcon,
   CheckIcon,
+  ChevronDown,
   CopyIcon,
+  EllipsisIcon,
   TrashIcon,
 } from 'lucide-react'
-import { motion } from 'motion/react'
 import {
   type ComponentProps,
   HTMLAttributes,
@@ -24,8 +24,13 @@ import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard, useForm } from '@/hooks'
 import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { cn } from '@/theme/utils'
-import { UiLogo } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
+import {
+  UiDropdownMenu,
+  UiDropdownMenuContent,
+  UiDropdownMenuItem,
+  UiDropdownMenuTrigger,
+} from '@/ui/UiDropdownMenu'
 import { UiInput } from '@/ui/UiInput'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
@@ -34,6 +39,7 @@ import {
   UiSheetHeader,
   UiSheetTitle,
 } from '@/ui/UiSheet'
+import { UiSidebarMenuButton } from '@/ui/UiSidebar'
 
 export default function DashboardHeader({
   className,
@@ -68,19 +74,19 @@ export default function DashboardHeader({
 
   return (
     <div {...rest} className={cn('flex flex-row items-center', className)}>
-      <UiLogo />
-
       <button
-        className='mx-auto'
+        className='mx-auto flex flex-row items-center gap-2'
         onClick={() => setIsAccountsBottomSheet(true)}
       >
-        <div className='flex flex-row items-center gap-2'>
-          <span className='line-clamp-1 max-w-[150] text-center uppercase text-textPrimary'>
+        <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
+
+        <div className='max-w-[200px] overflow-hidden text-ellipsis'>
+          <span className='w-full whitespace-nowrap uppercase text-textPrimary typography-subtitle4'>
             {selectedAccount.accountAddress.toString()}
           </span>
-
-          <ArrowDownIcon size={24} className='text-textPrimary' />
         </div>
+
+        <ChevronDown className='size-5 text-textPrimary' />
       </button>
 
       <button
@@ -103,7 +109,7 @@ export default function DashboardHeader({
         open={isAccountsBottomSheet}
         onOpenChange={setIsAccountsBottomSheet}
       >
-        <UiSheetContent className={'bg-backgroundContainer'}>
+        <UiSheetContent>
           <UiSheetHeader>
             <UiSheetTitle>Accounts</UiSheetTitle>
           </UiSheetHeader>
@@ -185,54 +191,60 @@ function AccountListItem({
     <div
       {...rest}
       className={cn(
-        'flex h-[60] flex-row items-center bg-backgroundPure py-2',
-        // isActive && 'rounded-md bg-backgroundPrimary',
+        'flex items-center gap-2',
+        isActive && 'rounded-xl bg-componentPrimary px-2',
         className,
       )}
     >
-      {isActive && <CheckCircleIcon size={20} className='text-textPrimary' />}
+      <Avatar name={accountAddress} size={40} />
 
-      <button
-        onClick={onSelect}
-        className='flex h-full flex-1 flex-col justify-center px-4'
-      >
-        <span className='line-clamp-1 text-center uppercase text-textPrimary'>
+      <button onClick={onSelect} className='overflow-hidden text-ellipsis'>
+        <span className='text-center uppercase text-textPrimary typography-caption2'>
           {accountAddress}
         </span>
       </button>
 
-      <motion.div>
-        <div className='flex h-full flex-row items-center'>
-          {isRemovable && (
-            <button
-              className='flex min-w-[60] flex-col items-center justify-center self-stretch bg-errorMain'
-              onClick={onRemove}
+      <div className='ml-auto text-textPrimary'>
+        <UiDropdownMenu>
+          <UiDropdownMenuTrigger asChild>
+            <UiSidebarMenuButton>
+              <EllipsisIcon className='size-5' />
+            </UiSidebarMenuButton>
+          </UiDropdownMenuTrigger>
+          <UiDropdownMenuContent>
+            <UiDropdownMenuItem
+              onClick={() => addrCopyManager.copy(accountAddress)}
             >
-              <TrashIcon size={24} className={'text-baseWhite'} />
-            </button>
-          )}
-          <button
-            className='flex min-w-[60] flex-col items-center justify-center self-stretch bg-textSecondary'
-            onClick={() => addrCopyManager.copy(accountAddress)}
-          >
-            {addrCopyManager.isCopied ? (
-              <CheckIcon size={18} className={'text-baseWhite'} />
-            ) : (
-              <CopyIcon size={18} className={'text-baseWhite'} />
+              {addrCopyManager.isCopied ? (
+                <CheckIcon className={'size-4'} />
+              ) : (
+                <CopyIcon className={'size-4'} />
+              )}
+              Copy public
+            </UiDropdownMenuItem>
+            <UiDropdownMenuItem
+              onClick={() => pkCopyManager.copy(privateKeyHex)}
+            >
+              {pkCopyManager.isCopied ? (
+                <CheckIcon className={'size-4'} />
+              ) : (
+                <CopyIcon className={'size-4'} />
+              )}
+              Copy private
+            </UiDropdownMenuItem>
+
+            {isRemovable && (
+              <UiDropdownMenuItem
+                className='flex items-center gap-2'
+                onClick={onRemove}
+              >
+                <TrashIcon className={'size-4 text-errorMain'} />
+                Delete
+              </UiDropdownMenuItem>
             )}
-          </button>
-          <button
-            className='flex min-w-[60] flex-col items-center justify-center self-stretch bg-warningMain'
-            onClick={() => pkCopyManager.copy(privateKeyHex)}
-          >
-            {pkCopyManager.isCopied ? (
-              <CheckIcon size={18} className={'text-baseWhite'} />
-            ) : (
-              <CopyIcon size={18} className={'text-baseWhite'} />
-            )}
-          </button>
-        </div>
-      </motion.div>
+          </UiDropdownMenuContent>
+        </UiDropdownMenu>
+      </div>
     </div>
   )
 }
@@ -245,21 +257,27 @@ function AddNewAccountBottomSheet({
   onSubmit,
   ...rest
 }: AddNewAccountBottomSheetProps) {
-  const { isFormDisabled, handleSubmit, disableForm, enableForm, control } =
-    useForm(
-      {
-        privateKeyHex: '',
-      },
-      yup =>
-        yup.object().shape({
-          privateKeyHex: yup
-            .string()
-            .required('Enter private key')
-            .test('The key is not valid', value => {
-              return validatePrivateKeyHex(value)
-            }),
-        }),
-    )
+  const {
+    formState,
+    isFormDisabled,
+    handleSubmit,
+    disableForm,
+    enableForm,
+    control,
+  } = useForm(
+    {
+      privateKeyHex: '',
+    },
+    yup =>
+      yup.object().shape({
+        privateKeyHex: yup
+          .string()
+          .required('Enter private key')
+          .test('The key is not valid', value => {
+            return validatePrivateKeyHex(value)
+          }),
+      }),
+  )
 
   const submit = useCallback(
     () =>
@@ -277,7 +295,7 @@ function AddNewAccountBottomSheet({
 
   return (
     <UiSheet {...rest}>
-      <UiSheetContent className={'bg-backgroundContainer'}>
+      <UiSheetContent>
         <UiSheetHeader>
           <UiSheetTitle>Add Account</UiSheetTitle>
         </UiSheetHeader>
@@ -301,7 +319,10 @@ function AddNewAccountBottomSheet({
         <div className='mt-[50] pt-4'>
           <UiSeparator className='mb-4' />
           <div className='flex flex-col gap-3'>
-            <UiButton onClick={submit} disabled={isFormDisabled}>
+            <UiButton
+              onClick={submit}
+              disabled={isFormDisabled || !formState.privateKeyHex}
+            >
               Import
             </UiButton>
             <UiButton
@@ -329,6 +350,7 @@ function TransferNativeBottomSheet({
     useConfidentialCoinContext()
 
   const {
+    formState,
     isFormDisabled,
     handleSubmit,
     disableForm,
@@ -392,41 +414,50 @@ function TransferNativeBottomSheet({
 
   return (
     <UiSheet {...rest}>
-      <UiSheetContent className={'bg-backgroundContainer'}>
+      <UiSheetContent>
         <UiSheetHeader>
           <UiSheetTitle>Send APT</UiSheetTitle>
         </UiSheetHeader>
         <UiSeparator className='my-4' />
 
-        <Controller
-          control={control}
-          name='receiverAccountAddress'
-          render={({ field }) => (
-            <UiInput
-              {...field}
-              placeholder='Enter account address'
-              disabled={isFormDisabled}
-            />
-          )}
-        />
+        <div className='flex flex-col gap-4'>
+          <Controller
+            control={control}
+            name='receiverAccountAddress'
+            render={({ field }) => (
+              <UiInput
+                {...field}
+                placeholder='Enter account address'
+                disabled={isFormDisabled}
+              />
+            )}
+          />
 
-        <Controller
-          control={control}
-          name='amount'
-          render={({ field }) => (
-            <UiInput
-              {...field}
-              placeholder='Enter amount'
-              type='decimal'
-              disabled={isFormDisabled}
-            />
-          )}
-        />
+          <Controller
+            control={control}
+            name='amount'
+            render={({ field }) => (
+              <UiInput
+                {...field}
+                placeholder='Enter amount'
+                type='decimal'
+                disabled={isFormDisabled}
+              />
+            )}
+          />
+        </div>
 
         <div className='mt-[50] pt-4'>
           <UiSeparator className='mb-4' />
           <div className='flex flex-col gap-3'>
-            <UiButton onClick={submit} disabled={isFormDisabled}>
+            <UiButton
+              onClick={submit}
+              disabled={
+                isFormDisabled ||
+                !formState.amount ||
+                !formState.receiverAccountAddress
+              }
+            >
               Send
             </UiButton>
           </div>

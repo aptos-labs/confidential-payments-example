@@ -1,3 +1,4 @@
+import Avatar from 'boring-avatars'
 import { HTMLAttributes } from 'react'
 
 import { TokenBaseInfo } from '@/store/wallet'
@@ -8,12 +9,14 @@ export default function TokenInfo({
 }: { token: TokenBaseInfo } & HTMLAttributes<HTMLDivElement>) {
   return (
     <div className='mt-3 flex flex-col gap-3'>
-      {token.iconUri && (
+      {token.iconUri ? (
         <img
           src={token.iconUri}
           alt={token.name}
           className='size-[75] rounded-full'
         />
+      ) : (
+        <Avatar name={token.address} size={75} variant='pixel' />
       )}
       <TokenInfoItem label='Name' value={token.name} />
       <TokenInfoItem label='Symbol' value={token.symbol} />

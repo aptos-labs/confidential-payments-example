@@ -32,7 +32,7 @@ export const config: Config = {
     name: 'Mocked token',
     symbol: 'MTK',
     decimals: 0,
-    iconUri: 'https://picsum.photos/200',
+    iconUri: '',
   },
 }
 

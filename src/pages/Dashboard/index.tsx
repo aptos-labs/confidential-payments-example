@@ -1,45 +1,44 @@
 import { time } from '@distributedlab/tools'
-import Avatar from 'boring-avatars'
 import {
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowUpIcon,
-  Check,
   CheckIcon,
-  Copy,
   CopyIcon,
-  CreditCard,
   EditIcon,
   FolderOpenIcon,
-  FolderSync,
   FolderSyncIcon,
   HandCoinsIcon,
   IdCardIcon,
-  InfoIcon,
   KeyIcon,
   LockIcon,
+  PlusCircleIcon,
   Snowflake,
   TriangleAlertIcon,
   UnlockIcon,
 } from 'lucide-react'
 import {
   ButtonHTMLAttributes,
+  ComponentProps,
   HTMLAttributes,
   ReactElement,
   useCallback,
-  useMemo,
+  useRef,
   useState,
 } from 'react'
 
-import { ErrorHandler, formatBalance, formatDateDMYT } from '@/helpers'
+import { ErrorHandler, formatDateDMYT } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
+import AddTokenForm from '@/pages/Dashboard/components/AddTokenForm'
+import ConfidentialAssetCard from '@/pages/Dashboard/components/ConfidentialAssetCard'
 import DashboardHeader from '@/pages/Dashboard/components/DashboardHeader'
 import { DashboardSidebar } from '@/pages/Dashboard/components/DashboardSidebar'
 import TokenInfo from '@/pages/Dashboard/components/TokenInfo'
 import WithdrawForm from '@/pages/Dashboard/components/WithdrawForm'
 import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
-import { TokenBaseInfo, TxHistoryItem } from '@/store/wallet'
+import { TxHistoryItem } from '@/store/wallet'
 import { cn } from '@/theme/utils'
+import { UiIcon } from '@/ui'
 import UiCarousel from '@/ui/UiCarousel'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
@@ -47,7 +46,6 @@ import {
   UiSheetContent,
   UiSheetHeader,
   UiSheetTitle,
-  UiSheetTrigger,
 } from '@/ui/UiSheet'
 import {
   UiSidebarInset,
@@ -62,6 +60,7 @@ export default function Dashboard() {
   const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false)
   const [isWithdrawSheetOpen, setIsWithdrawSheetOpen] = useState(false)
   const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
+  const [isAddTokenSheetOpen, setIsAddTokenSheetOpen] = useState(false)
 
   const {
     selectedToken,
@@ -82,6 +81,10 @@ export default function Dashboard() {
     testMintTokens,
 
     reloadAptBalance,
+
+    perTokenStatuses,
+    selectedAccountDecryptionKey,
+    tokens,
   } = useConfidentialCoinContext()
 
   const isActionsDisabled =
@@ -177,6 +180,8 @@ export default function Dashboard() {
     setIsSubmitting(false)
   }, [addTxHistoryItem, testMintTokens, tryRefresh])
 
+  const carouselWrpRef = useRef<HTMLDivElement>(null)
+
   return (
     <UiSidebarProvider>
       <DashboardSidebar />
@@ -186,85 +191,84 @@ export default function Dashboard() {
 
           <DashboardHeader className='ml-auto' />
         </header>
+        <UiSeparator />
         <div className='flex size-full flex-1 flex-col'>
-          <div className='mx-auto self-center'>
-            <ConfidentialAssetsList />
+          <div ref={carouselWrpRef} className='w-full self-center'>
+            {carouselWrpRef.current && (
+              <UiCarousel
+                baseWidth={carouselWrpRef.current?.clientWidth}
+                items={[
+                  ...tokens.map((token, idx) => {
+                    const currTokenStatuses = perTokenStatuses[token.address]
+
+                    return (
+                      <ConfidentialAssetCard
+                        key={idx}
+                        className='w-full'
+                        token={token}
+                        encryptionKey={selectedAccountDecryptionKey
+                          .publicKey()
+                          .toString()}
+                        pendingAmount={currTokenStatuses.pendingAmount}
+                        actualAmount={currTokenStatuses.actualAmount}
+                        isNormalized={currTokenStatuses.isNormalized}
+                        isFrozen={currTokenStatuses.isFrozen}
+                        isRegistered={currTokenStatuses.isRegistered}
+                        onRollover={() => {}}
+                      />
+                    )
+                  }),
+                  <div className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'>
+                    <button
+                      className='flex flex-col items-center gap-2 uppercase'
+                      onClick={() => {
+                        setIsAddTokenSheetOpen(true)
+                      }}
+                    >
+                      <PlusCircleIcon
+                        size={64}
+                        className='text-textPrimary typography-caption1'
+                      />
+                      Add Token
+                    </button>
+                  </div>,
+                ]}
+              />
+            )}
           </div>
 
           <div className='flex w-full flex-row items-center justify-center gap-8'>
-            <UiSheet
-              open={isTokenInfoSheetOpen}
-              onOpenChange={setIsTokenInfoSheetOpen}
-            >
-              <UiSheetTrigger disabled={isActionsDisabled}>
-                <div className={'flex flex-col items-center gap-2 text-center'}>
-                  <InfoIcon size={32} className='text-textPrimary' />
-                  <span className='text-textSecondary typography-body2'>
-                    Token Info
-                  </span>
-                </div>
-              </UiSheetTrigger>
+            <CircleButton
+              caption={'Token Info'}
+              iconProps={{
+                name: 'InfoIcon',
+              }}
+              onClick={() => {
+                setIsTokenInfoSheetOpen(true)
+              }}
+            />
 
-              <UiSheetContent>
-                <UiSheetHeader>
-                  <UiSheetTitle>Token Info</UiSheetTitle>
-                </UiSheetHeader>
+            <CircleButton
+              caption={'Withdraw'}
+              iconProps={{
+                name: 'ArrowUpIcon',
+              }}
+              onClick={() => {
+                setIsWithdrawSheetOpen(true)
+              }}
+              disabled={isActionsDisabled}
+            />
 
-                <TokenInfo token={selectedToken} />
-              </UiSheetContent>
-            </UiSheet>
-
-            <UiSheet
-              open={isWithdrawSheetOpen}
-              onOpenChange={setIsWithdrawSheetOpen}
-            >
-              <UiSheetTrigger disabled={isActionsDisabled}>
-                <div className={'flex flex-col items-center gap-2 text-center'}>
-                  <ArrowUpIcon size={32} className='text-textPrimary' />
-                  <span className='text-textSecondary typography-body2'>
-                    Withdraw
-                  </span>
-                </div>
-              </UiSheetTrigger>
-
-              <UiSheetContent>
-                <UiSheetHeader>
-                  <UiSheetTitle>Withdraw</UiSheetTitle>
-                </UiSheetHeader>
-
-                <WithdrawForm
-                  token={selectedToken}
-                  onSubmit={() => {
-                    setIsWithdrawSheetOpen(false)
-                  }}
-                />
-              </UiSheetContent>
-            </UiSheet>
-
-            <UiSheet
-              open={isTransferSheetOpen}
-              onOpenChange={setIsTransferSheetOpen}
-            >
-              <UiSheetTrigger disabled={isActionsDisabled}>
-                <div className={'flex flex-col items-center gap-2 text-center'}>
-                  <ArrowRightIcon size={32} className='text-textPrimary' />
-                  <span className='text-textSecondary typography-body2'>
-                    Transfer
-                  </span>
-                </div>
-              </UiSheetTrigger>
-              <UiSheetContent className='bg-backgroundContainer'>
-                <UiSheetHeader>
-                  <UiSheetTitle>Transfer</UiSheetTitle>
-                </UiSheetHeader>
-                <TransferForm
-                  token={selectedToken}
-                  onSubmit={() => {
-                    setIsTransferSheetOpen(false)
-                  }}
-                />
-              </UiSheetContent>
-            </UiSheet>
+            <CircleButton
+              caption={'Send'}
+              iconProps={{
+                name: 'ArrowRightIcon',
+              }}
+              onClick={() => {
+                setIsTransferSheetOpen(true)
+              }}
+              disabled={isActionsDisabled}
+            />
           </div>
 
           <div className='mt-10 flex w-full flex-1 flex-col overflow-hidden rounded-t-[24] bg-componentPrimary'>
@@ -352,6 +356,72 @@ export default function Dashboard() {
             </div>
           </div>
         </div>
+
+        <UiSheet
+          open={isTokenInfoSheetOpen}
+          onOpenChange={setIsTokenInfoSheetOpen}
+        >
+          <UiSheetContent>
+            <UiSheetHeader>
+              <UiSheetTitle>Token Info</UiSheetTitle>
+            </UiSheetHeader>
+
+            <UiSeparator />
+
+            <TokenInfo token={selectedToken} />
+          </UiSheetContent>
+        </UiSheet>
+        <UiSheet
+          open={isWithdrawSheetOpen}
+          onOpenChange={setIsWithdrawSheetOpen}
+        >
+          <UiSheetContent>
+            <UiSheetHeader>
+              <UiSheetTitle>Withdraw</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <WithdrawForm
+              token={selectedToken}
+              onSubmit={() => {
+                setIsWithdrawSheetOpen(false)
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
+        <UiSheet
+          open={isTransferSheetOpen}
+          onOpenChange={setIsTransferSheetOpen}
+        >
+          <UiSheetContent>
+            <UiSheetHeader>
+              <UiSheetTitle>Transfer</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <TransferForm
+              token={selectedToken}
+              onSubmit={() => {
+                setIsTransferSheetOpen(false)
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
+
+        <UiSheet
+          open={isAddTokenSheetOpen}
+          onOpenChange={setIsAddTokenSheetOpen}
+        >
+          <UiSheetContent>
+            <UiSheetHeader>
+              <UiSheetTitle>Add Token</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <AddTokenForm
+              onSubmit={() => {
+                setIsAddTokenSheetOpen(false)
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
       </UiSidebarInset>
     </UiSidebarProvider>
   )
@@ -456,254 +526,29 @@ function ActionCard({
   )
 }
 
-function ConfidentialAssetsList() {
-  const {
-    perTokenStatuses,
-    selectedAccountDecryptionKey,
-    tokens,
-    // selectedToken,
-    // setSelectedTokenAddress,
-    // decryptionKeyStatusLoadingState,
-    // addToken,
-  } = useConfidentialCoinContext()
-
-  return (
-    <div className=''>
-      <UiCarousel
-        baseWidth={500}
-        items={tokens.map((token, idx) => {
-          const currTokenStatuses = perTokenStatuses[token.address]
-
-          return (
-            <ConfidentialAsset
-              key={idx}
-              className='w-full'
-              token={token}
-              encryptionKey={selectedAccountDecryptionKey
-                .publicKey()
-                .toString()}
-              pendingAmount={currTokenStatuses.pendingAmount}
-              actualAmount={currTokenStatuses.actualAmount}
-              isNormalized={currTokenStatuses.isNormalized}
-              isFrozen={currTokenStatuses.isFrozen}
-              isRegistered={currTokenStatuses.isRegistered}
-              onRollover={() => {}}
-            />
-          )
-        })}
-      />
-    </div>
-  )
-}
-
-function ConfidentialAsset({
-  token,
-  encryptionKey,
-  pendingAmount,
-  actualAmount,
-
-  isNormalized,
-  isFrozen,
-  isRegistered,
-
-  onRollover,
-
+function CircleButton({
+  caption,
+  iconProps,
   className,
-
   ...rest
 }: {
-  token: TokenBaseInfo
-  encryptionKey: string
-
-  pendingAmount: string
-  actualAmount: string
-
-  isNormalized: boolean
-  isFrozen: boolean
-  isRegistered: boolean
-
-  onRollover: () => void
-} & HTMLAttributes<HTMLDivElement>) {
-  const {
-    rolloverAccount,
-    addTxHistoryItem,
-    reloadAptBalance,
-    loadSelectedDecryptionKeyState,
-  } = useConfidentialCoinContext()
-
-  const VBStatusContent = useMemo(() => {
-    const commonClasses =
-      'z-10 flex flex-col justify-center items-center gap-2 overflow-hidden bg-errorMain pt-1'
-
-    if (!isRegistered) {
-      return (
-        <div className={cn(commonClasses, 'bg-textSecondary')}>
-          <span className='text-textPrimary typography-body2'>
-            Balance is not registered
-          </span>
-          <CreditCard size={18} className='text-baseWhite' />
-        </div>
-      )
-    }
-
-    if (isFrozen) {
-      return (
-        <div className={cn(commonClasses, 'bg-componentDisabled')}>
-          <span className='text-textPrimary typography-body2'>
-            Balance is Frozen
-          </span>
-          <Snowflake size={18} className='text-baseWhite' />
-        </div>
-      )
-    }
-
-    if (!isNormalized) {
-      return (
-        <div className={cn(commonClasses, 'bg-warningDarker')}>
-          <span className='text-textPrimary typography-body2'>
-            Balance is unnormalized
-          </span>
-          <TriangleAlertIcon size={18} className='text-baseWhite' />
-        </div>
-      )
-    }
-
-    return
-  }, [isFrozen, isNormalized, isRegistered])
-
-  const { copy, isCopied } = useCopyToClipboard()
-
-  const tryRollover = useCallback(async () => {
-    try {
-      const rolloverAccountTxReceipts = await rolloverAccount()
-
-      rolloverAccountTxReceipts.forEach(el => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (el.payload.function.includes('rollover')) {
-          addTxHistoryItem({
-            txHash: el.hash,
-            txType: 'rollover',
-            createdAt: time().timestamp,
-          })
-
-          return
-        }
-
-        addTxHistoryItem({
-          txHash: el.hash,
-          txType: 'normalize',
-          createdAt: time().timestamp,
-        })
-
-        onRollover()
-      })
-      await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-  }, [
-    addTxHistoryItem,
-    loadSelectedDecryptionKeyState,
-    onRollover,
-    reloadAptBalance,
-    rolloverAccount,
-  ])
-
+  caption?: string
+  iconProps: ComponentProps<typeof UiIcon>
+} & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
-    <div
+    <button
       {...rest}
-      className={cn('relative overflow-hidden rounded-2xl', className)}
+      className={cn('flex flex-col items-center gap-2 text-center', className)}
     >
-      <div className={cn('relative isolate')}>
-        {token.address && (
-          <Avatar
-            name={token.address}
-            size={600}
-            className='absolute left-1/2 top-1/2 z-10 -translate-x-1/2 -translate-y-1/2 object-cover object-center'
-          />
-        )}
-
-        <div className='z-20 flex size-full flex-col gap-4 rounded-2xl bg-componentPrimary p-4'>
-          {VBStatusContent}
-
-          <div className='z-20 flex items-center gap-2'>
-            <span className='text-textPrimary typography-subtitle2'>
-              {token.name}
-            </span>
-
-            <button onClick={() => copy(token.address)}>
-              {isCopied ? (
-                <Check size={18} className={'pl-2 text-textSecondary'} />
-              ) : (
-                <Copy size={18} className={'pl-2 text-textSecondary'} />
-              )}
-            </button>
-          </div>
-
-          <div className='z-20 flex items-center'>
-            <div className='flex flex-col gap-1'>
-              <span className='text-textSecondary typography-caption1'>
-                Pending / <span className='text-textPrimary'>Actual</span>
-              </span>
-              <div className='text-textPrimary typography-subtitle1'>
-                <span className='text-textSecondary'>
-                  {formatBalance(pendingAmount, token.decimals)}
-                </span>
-                {' / '}
-                {formatBalance(actualAmount, token.decimals)}
-              </div>
-            </div>
-
-            {/*TODO: isNaN*/}
-            {Boolean(+pendingAmount) && (
-              <button className='ml-auto' onClick={tryRollover}>
-                <FolderSync size={16} className='text-textPrimary' />
-              </button>
-            )}
-          </div>
-
-          <CopyField
-            className='z-20'
-            label='Encryption Key'
-            text={encryptionKey}
-          />
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function CopyField({
-  text,
-  label,
-  ...rest
-}: { text: string; label?: string } & HTMLAttributes<HTMLDivElement>) {
-  const { isCopied, copy } = useCopyToClipboard()
-
-  return (
-    <div {...rest} className={cn('flex flex-col gap-2', rest.className)}>
-      {label && (
-        <span className='ml-4 text-textSecondary typography-body3'>
-          {label}
-        </span>
-      )}
-      <div
-        className={cn(
-          'flex items-center justify-between rounded-2xl bg-componentPrimary px-4 pr-0',
-        )}
-      >
-        <span className='line-clamp-1 flex-1 text-textPrimary typography-body2'>
-          {text}
-        </span>
-        <button className='p-4' onClick={() => copy(text)}>
-          {isCopied ? (
-            <Check size={22} className='text-textSecondary' />
-          ) : (
-            <Copy size={22} className='text-textSecondary' />
-          )}
-        </button>
-      </div>
-    </div>
+      <span className='flex size-10 items-center justify-center rounded-[50%] bg-componentPrimary'>
+        <UiIcon
+          {...iconProps}
+          className={cn('size-4 text-textPrimary', iconProps.className)}
+        />
+      </span>
+      <span className='uppercase text-textSecondary typography-caption3'>
+        {caption}
+      </span>
+    </button>
   )
 }

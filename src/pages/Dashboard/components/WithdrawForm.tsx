@@ -103,9 +103,9 @@ export default function WithdrawForm({
         />
       </div>
 
-      <div className='mt-[100] pt-4'>
+      <div className='pt-4'>
         <UiSeparator className='mb-4' />
-        <UiButton onClick={submit} disabled={isFormDisabled}>
+        <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
           Withdraw
         </UiButton>
       </div>

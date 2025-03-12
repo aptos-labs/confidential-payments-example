@@ -1,6 +1,5 @@
 import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
-import { motion } from 'motion/react'
 import { HTMLAttributes, useCallback } from 'react'
 import { Control, Controller, useFieldArray } from 'react-hook-form'
 
@@ -132,18 +131,11 @@ export default function TransferForm({
         />
       </div>
 
-      <AuditorsList
-        className='mt-3 flex-1 rounded-3xl bg-backgroundPure p-4 shadow-md'
-        control={control}
-      />
+      <AuditorsList className='mt-3 flex-1' control={control} />
 
       <div className='mt-auto pt-4'>
         <UiSeparator className='mb-4' />
-        <UiButton
-          className='transition-all duration-200'
-          onClick={submit}
-          disabled={isFormDisabled}
-        >
+        <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
           Send
         </UiButton>
       </div>
@@ -178,38 +170,38 @@ const AuditorsList = ({
 
   return (
     <div {...rest} className={cn('flex flex-col gap-2', rest.className)}>
-      <span className='uppercase text-textPrimary typography-caption2'>
-        Add auditors
-      </span>
+      <div className='flex items-center gap-2'>
+        <span className='uppercase text-textPrimary typography-caption2'>
+          Add auditors
+        </span>
+        <button
+          className='flex size-7 items-center justify-center rounded-[50%] bg-componentPrimary'
+          onClick={addAuditor}
+        >
+          <UiIcon name={'UserPlusIcon'} className={'size-4 text-textPrimary'} />
+        </button>
+      </div>
 
       <div className='flex flex-col gap-3'>
         {fields.map((field, index) => (
-          <div
-            key={field.id}
-            className='flex min-h-[60] flex-col items-center gap-2 bg-backgroundPure'
-          >
-            <Controller
-              control={control}
-              name={`auditorsEncryptionKeysHex.${index}`}
-              render={({ field }) => (
-                <UiInput {...field} placeholder={`Auditor ${index + 1}`} />
-              )}
-            />
-            <motion.div>
-              <div className='flex h-full flex-row items-center'>
-                <button
-                  className='flex min-w-[60] flex-col items-center justify-center self-stretch bg-errorMain'
-                  onClick={() => removeAuditor(index)}
-                >
-                  <UiIcon name={'Trash'} size={24} className='text-baseWhite' />
-                </button>
-              </div>
-            </motion.div>
+          <div key={field.id} className='flex items-center gap-2'>
+            <div className='flex-1'>
+              <Controller
+                control={control}
+                name={`auditorsEncryptionKeysHex.${index}`}
+                render={({ field }) => (
+                  <UiInput {...field} placeholder={`Auditor ${index + 1}`} />
+                )}
+              />
+            </div>
+            <button
+              className='text-textPrimary'
+              onClick={() => removeAuditor(index)}
+            >
+              <UiIcon name={'Trash2'} className={'size-5 text-errorMain'} />
+            </button>
           </div>
         ))}
-        <UiButton onClick={addAuditor} className='mt-3'>
-          Add Auditor
-        </UiButton>
       </div>
     </div>
   )

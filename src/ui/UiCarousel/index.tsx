@@ -132,7 +132,7 @@ export default function UiCarousel({
       }}
     >
       <motion.div
-        className='mx-auto flex'
+        className='mx-auto flex items-center'
         drag='x'
         {...dragProps}
         style={{

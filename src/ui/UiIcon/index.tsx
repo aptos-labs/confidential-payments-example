@@ -12,6 +12,7 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronsUpDownIcon,
+  CircleUserIcon,
   CommandIcon,
   CopyIcon,
   CreditCardIcon,
@@ -41,6 +42,7 @@ import {
   TrashIcon,
   TriangleAlertIcon,
   UnlockIcon,
+  UserPlusIcon,
 } from 'lucide-react'
 import { HTMLAttributes, RefAttributes } from 'react'
 
@@ -111,6 +113,8 @@ const LIB_ICONS = {
   Trash: TrashIcon,
   Trash2: Trash2Icon,
   ChevronDown: ChevronDownIcon,
+  CircleUserIcon: CircleUserIcon,
+  UserPlusIcon: UserPlusIcon,
 }
 
 type LibIconProps = {

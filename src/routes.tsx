@@ -1,3 +1,5 @@
+'use client'
+
 import { lazy, Suspense } from 'react'
 import {
   createBrowserRouter,
@@ -7,18 +9,18 @@ import {
   redirect,
 } from 'react-router-dom'
 
+import { ConfidentialCoinContextProvider } from '@/app/Dashboard/context'
 import { RoutePaths } from '@/enums'
 import { MainLayout } from '@/layouts'
-import { ConfidentialCoinContextProvider } from '@/pages/Dashboard/context'
 import { authStore } from '@/store/auth'
 
 export const createRouter = () => {
-  const Homepage = lazy(() => import('@/pages/Homepage'))
-  const Login = lazy(() => import('@/pages/Login'))
-  const Dashboard = lazy(() => import('@/pages/Dashboard'))
+  const Homepage = lazy(() => import('@/app/Homepage'))
+  const Login = lazy(() => import('@/app/Login'))
+  const Dashboard = lazy(() => import('@/app/Dashboard'))
 
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const authProtectedGuard = ({ request }: LoaderFunctionArgs) => {
+  // eslint-disable-next-line no-empty-pattern
+  const authProtectedGuard = ({}: LoaderFunctionArgs) => {
     if (!authStore.useAuthStore.getState().accessToken) {
       return redirect(RoutePaths.Login)
     }

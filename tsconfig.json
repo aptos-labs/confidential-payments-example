@@ -23,7 +23,11 @@
     },
     "lib": ["ESNext", "DOM", "DOM.Iterable", "ScriptHost"],
     "isolatedModules": true,
-    "noEmit": true
+    "noEmit": true,
+    "plugins": [{ "name": "next" }],
+    "allowJs": true,
+    "forceConsistentCasingInFileNames": true,
+    "incremental": true
   },
   "include": [
     "src/**/*.ts",
@@ -33,6 +37,11 @@
     "tests/**/*.tsx",
     "index.d.ts",
     "package.json",
-    "src/**/*.json"
+    "src/**/*.json",
+    "./dist/types/**/*.ts",
+    "./next-env.d.ts"
+  ],
+  "exclude": [
+    "./node_modules"
   ]
 }

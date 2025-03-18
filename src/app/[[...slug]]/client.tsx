@@ -1,4 +1,5 @@
-import { config } from '@config'
+'use client'
+
 import { useCallback, useState } from 'react'
 import { RouterProvider } from 'react-router-dom'
 import { useEffectOnce } from 'react-use'
@@ -11,16 +12,14 @@ import { UiSpinner } from '@/ui'
 
 const router = createRouter()
 
-export function App() {
+export function Client() {
   const [isAppInitialized, setIsAppInitialized] = useState(false)
 
   useViewportSizes()
 
   const init = useCallback(async () => {
     try {
-      if (config.APP_NAME) {
-        document.title = config.APP_NAME
-      }
+      /* empty */
     } catch (error) {
       ErrorHandler.processWithoutFeedback(error)
     }

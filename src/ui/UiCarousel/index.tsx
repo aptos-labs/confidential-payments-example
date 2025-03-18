@@ -155,14 +155,15 @@ export default function UiCarousel({
           return (
             <CarouselItem
               key={index}
-              children={item}
               index={index}
               trackItemOffset={trackItemOffset}
               round={round}
               effectiveTransition={effectiveTransition}
               itemWidth={itemWidth}
               xMotionValue={x}
-            />
+            >
+              {item}
+            </CarouselItem>
           )
         })}
       </motion.div>

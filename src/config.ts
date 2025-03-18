@@ -1,14 +1,4 @@
-import { LogLevelDesc } from 'loglevel'
-
-import packageJson from '../package.json'
-
 type Config = {
-  API_URL: string
-  APP_NAME: string
-  LOG_LEVEL: LogLevelDesc
-  BUILD_VERSION: string
-
-  erc20Token: `0x${string}`
   DEFAULT_TOKEN: {
     address: string
     name: string
@@ -19,13 +9,6 @@ type Config = {
 }
 
 export const config: Config = {
-  API_URL: import.meta.env.VITE_API_URL,
-  APP_NAME: import.meta.env.VITE_APP_NAME,
-  LOG_LEVEL: 'trace' as LogLevelDesc,
-  BUILD_VERSION: packageJson.version || import.meta.env.VITE_APP_BUILD_VERSION,
-
-  erc20Token: '0x08BE00b659713E615795954B778dbacD1F14efEb',
-
   DEFAULT_TOKEN: {
     address:
       '0x2a0c0d0d3d213a120a0bac6aecf2bf4a59c4d5e5be0721ca2b3566f0013e7e3d',

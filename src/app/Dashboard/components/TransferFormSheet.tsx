@@ -12,9 +12,9 @@ import {
 import { Control, Controller, useFieldArray } from 'react-hook-form'
 
 import { validateEncryptionKeyHex } from '@/api/modules/aptos'
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
@@ -209,6 +209,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     )
   },
 )
+
+TransferFormSheet.displayName = 'TransferFormSheet'
 
 const AuditorsList = ({
   control,

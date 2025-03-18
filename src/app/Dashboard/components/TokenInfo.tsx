@@ -1,4 +1,5 @@
 import Avatar from 'boring-avatars'
+import Image from 'next/image'
 import { HTMLAttributes } from 'react'
 
 import { TokenBaseInfo } from '@/store/wallet'
@@ -10,7 +11,7 @@ export default function TokenInfo({
   return (
     <div className='mt-3 flex flex-col gap-3'>
       {token.iconUri ? (
-        <img
+        <Image
           src={token.iconUri}
           alt={token.name}
           className='size-[75] rounded-full'

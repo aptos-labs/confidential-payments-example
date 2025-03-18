@@ -2,9 +2,9 @@ import Avatar from 'boring-avatars'
 import { Check, Copy } from 'lucide-react'
 import { HTMLAttributes } from 'react'
 
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { formatBalance } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 

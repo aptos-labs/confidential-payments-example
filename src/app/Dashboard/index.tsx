@@ -29,15 +29,15 @@ import {
 import { useSearchParams } from 'react-router-dom'
 import { useTimeoutFn } from 'react-use'
 
+import AddTokenForm from '@/app/Dashboard/components/AddTokenForm'
+import ConfidentialAssetCard from '@/app/Dashboard/components/ConfidentialAssetCard'
+import DashboardHeader from '@/app/Dashboard/components/DashboardHeader'
+import { DashboardSidebar } from '@/app/Dashboard/components/DashboardSidebar'
+import TokenInfo from '@/app/Dashboard/components/TokenInfo'
+import WithdrawForm from '@/app/Dashboard/components/WithdrawForm'
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { ErrorHandler, formatDateDMYT } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
-import AddTokenForm from '@/pages/Dashboard/components/AddTokenForm'
-import ConfidentialAssetCard from '@/pages/Dashboard/components/ConfidentialAssetCard'
-import DashboardHeader from '@/pages/Dashboard/components/DashboardHeader'
-import { DashboardSidebar } from '@/pages/Dashboard/components/DashboardSidebar'
-import TokenInfo from '@/pages/Dashboard/components/TokenInfo'
-import WithdrawForm from '@/pages/Dashboard/components/WithdrawForm'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TxHistoryItem } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
@@ -249,7 +249,10 @@ export default function Dashboard() {
                       />
                     )
                   }),
-                  <div className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'>
+                  <div
+                    key={idx}
+                    className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
+                  >
                     <button
                       className='flex flex-col items-center gap-2 uppercase'
                       onClick={() => {

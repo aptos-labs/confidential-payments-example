@@ -1,8 +1,8 @@
 import QRCode from 'react-qr-code'
 
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { RoutePaths } from '@/enums'
 import { useCopyToClipboard } from '@/hooks'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { UiIcon } from '@/ui'
 
 export default function Deposit() {

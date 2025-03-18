@@ -1,4 +1,25 @@
 {
+  "metadata": {
+    "title": "Confidential Asset",
+    "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+
+    "openGraph": {
+      "title": "Confidential Asset",
+      "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+      "type": "website",
+      "url": "https://example.com/",
+      "siteName": "Confidential Asset",
+      "images": "https://example.com/images/og-img.png"
+    },
+
+    "twitter": {
+      "title": "Confidential Asset",
+      "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+      "card": "summary_large_image",
+      "images": "https://example.com/images/og-img.png",
+      "site": "example.com"
+    }
+  },
   "validations": {
     "field-error_required": "Please fill out this field",
     "field-error_minLength": "This field must contain minimum {{minLength}} symbols",

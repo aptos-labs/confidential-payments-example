@@ -10,6 +10,9 @@ test/unit/coverage
 selenium-debug.log
 .eslintcache
 package-lock.json
+.next
+next-env.d.ts
+dist
 
 deprecated
 

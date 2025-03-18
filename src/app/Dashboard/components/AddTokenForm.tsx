@@ -1,3 +1,4 @@
+import Image from 'next/image'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
 import { useDebounce } from 'react-use'
@@ -6,9 +7,9 @@ import {
   getFungibleAssetMetadata,
   validateEncryptionKeyHex,
 } from '@/api/modules/aptos'
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TokenBaseInfo } from '@/store/wallet'
 import { UiButton } from '@/ui/UiButton'
 import { UiInput } from '@/ui/UiInput'
@@ -118,7 +119,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       {formState.tokenInfo && (
         <div className='mt-3 flex gap-3'>
           {formState.tokenInfo.iconUri && (
-            <img
+            <Image
               src={formState.tokenInfo.iconUri}
               alt={formState.tokenInfo.name}
               className='size-[75] rounded-full'

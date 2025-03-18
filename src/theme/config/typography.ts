@@ -1,13 +1,12 @@
-import type { ThemeConfig } from 'tailwindcss/types/config'
+import defaultTheme from 'tailwindcss/defaultTheme'
+import type { CSSRuleObject, ThemeConfig } from 'tailwindcss/types/config'
 
-// TODO: implement real fonts
+export const PRIMARY_FONT_VARIABLE = '--font-primary' as const
 export const fontFamily: ThemeConfig['fontFamily'] = {
-  primary: 'Roboto Mono',
-  secondary: 'Oxygen Mono',
-  tertiary: 'Roboto Slab',
+  primary: `var(${PRIMARY_FONT_VARIABLE}, ${defaultTheme.fontFamily.sans})`,
 }
 
-export const typography = {
+export const typography: CSSRuleObject = {
   '.typography-h1': {
     fontSize: '96px',
     lineHeight: '96px',

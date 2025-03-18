@@ -20,9 +20,9 @@ import {
   sendApt,
   validatePrivateKeyHex,
 } from '@/api/modules/aptos'
+import { useConfidentialCoinContext } from '@/app/Dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard, useForm } from '@/hooks'
-import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { cn } from '@/theme/utils'
 import { UiButton } from '@/ui/UiButton'
 import {

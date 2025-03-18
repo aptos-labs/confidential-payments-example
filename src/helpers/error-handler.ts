@@ -1,7 +1,6 @@
 import log from 'loglevel'
 
 import { bus, BusEvents } from '@/helpers'
-import i18n from '@/localization'
 
 export class ErrorHandler {
   static process(error: Error | unknown, errorMessage = ''): void {
@@ -27,7 +26,7 @@ export class ErrorHandler {
     if (error instanceof Error) {
       switch (error.constructor) {
         default: {
-          errorMessage = i18n.t('errors.default')
+          errorMessage = ''
           msgType = 'error'
         }
       }

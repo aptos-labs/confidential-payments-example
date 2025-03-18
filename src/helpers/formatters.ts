@@ -4,17 +4,11 @@ import type {
   BnLike,
 } from '@distributedlab/tools'
 import { BN, Time, time, type TimeDate } from '@distributedlab/tools'
-import arDayjsLocal from 'dayjs/locale/ar'
 import enDayjsLocal from 'dayjs/locale/en'
-import ukDayjsLocal from 'dayjs/locale/uk'
 
-import type { Language } from '@/localization/resources'
-
-export const setDayjsLocale = (locale: Language) => {
+export const setDayjsLocale = (locale: 'en') => {
   const nextLocale = {
-    uk: ukDayjsLocal,
     en: enDayjsLocal,
-    ar: arDayjsLocal,
   }[locale]
 
   Time.locale(nextLocale)

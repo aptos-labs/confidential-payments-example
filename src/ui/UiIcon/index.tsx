@@ -135,7 +135,7 @@ export default function UiIcon<T extends IconNames | keyof typeof LIB_ICONS>({
   name,
   ...rest
 }: Props<T>) {
-  if (name in IconNames) {
+  if (Object.values(IconNames).includes(name as unknown as IconNames)) {
     return (
       <CustomIcon
         {...(rest as unknown as CustomIconProps)}

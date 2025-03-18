@@ -4,6 +4,7 @@ import { HTMLAttributes } from 'react'
 
 import { formatBalance } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
+import { useConfidentialCoinContext } from '@/pages/Dashboard/context'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 
@@ -12,11 +13,11 @@ export default function ConfidentialAssetCard({
   // encryptionKey,
   actualAmount,
 
-  // isNormalized,
-  // isFrozen,
-  // isRegistered,
-  //
-  // onRollover,
+  isNormalized,
+  isFrozen,
+  isRegistered,
+
+  onRollover,
 
   className,
 
@@ -34,12 +35,12 @@ export default function ConfidentialAssetCard({
 
   onRollover: () => void
 } & HTMLAttributes<HTMLDivElement>) {
-  // const {
-  // rolloverAccount,
-  // addTxHistoryItem,
-  // reloadAptBalance,
-  // loadSelectedDecryptionKeyState,
-  // } = useConfidentialCoinContext()
+  const {
+    rolloverAccount,
+    addTxHistoryItem,
+    reloadAptBalance,
+    loadSelectedDecryptionKeyState,
+  } = useConfidentialCoinContext()
 
   // const VBStatusContent = useMemo(() => {
   //   const commonClasses =

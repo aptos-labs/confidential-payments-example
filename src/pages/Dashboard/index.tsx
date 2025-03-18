@@ -224,7 +224,7 @@ export default function Dashboard() {
         </header>
         <UiSeparator />
         <div className='flex size-full flex-1 flex-col'>
-          <div ref={carouselWrpRef} className='w-full self-center'>
+          <div ref={carouselWrpRef} className='w-full self-center py-6'>
             {carouselWrpRef.current && (
               <UiCarousel
                 baseWidth={carouselWrpRef.current?.clientWidth}
@@ -277,6 +277,7 @@ export default function Dashboard() {
               onClick={() => {
                 setIsDepositSheetOpen(true)
               }}
+              disabled={isActionsDisabled}
             />
 
             <CircleButton
@@ -308,7 +309,7 @@ export default function Dashboard() {
               onClick={() => {
                 transferFormSheet.open()
               }}
-              // disabled={isActionsDisabled}
+              disabled={isActionsDisabled}
             />
           </div>
 
@@ -579,7 +580,10 @@ function CircleButton({
   return (
     <button
       {...rest}
-      className={cn('flex flex-col items-center gap-2 text-center', className)}
+      className={cn(
+        'flex flex-col items-center gap-2 text-center disabled:opacity-50',
+        className,
+      )}
     >
       <span className='flex size-10 items-center justify-center rounded-[50%] bg-componentPrimary'>
         <UiIcon

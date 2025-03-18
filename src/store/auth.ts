@@ -1,8 +1,7 @@
 import { create } from 'zustand'
 import { combine, persist } from 'zustand/middleware'
 
-import { authorize, refresh } from '@/api/modules/aptos'
-import { sleep } from '@/helpers'
+import { authClient } from '@/lib/auth-client'
 import { walletStore } from '@/store/wallet'
 
 const useAuthStore = create(
@@ -11,7 +10,6 @@ const useAuthStore = create(
       {
         accessToken: '',
         refreshToken: '',
-        isRefreshing: false,
 
         _hasHydrated: false,
       },
@@ -28,22 +26,8 @@ const useAuthStore = create(
         ): Promise<void> => {
           set({ accessToken: accessToken, refreshToken: refreshToken })
         },
-        logout: () => {
+        clear: () => {
           set({ accessToken: '', refreshToken: '' })
-        },
-        refresh: async (): Promise<string> => {
-          set({ isRefreshing: true })
-          await sleep(1000)
-
-          const { data } = await refresh()
-
-          const newAccessToken = data.access_token
-          const newRefreshToken = data.refresh_token
-
-          set({ accessToken: newAccessToken, refreshToken: newRefreshToken })
-          set({ isRefreshing: false })
-
-          return newAccessToken
         },
       }),
     ),
@@ -69,26 +53,85 @@ const useIsAuthorized = () => {
   return !!accessToken
 }
 
-const useLogin = () => {
-  const setTokens = useAuthStore(state => state.setTokens)
-
-  return async (privateKey: string) => {
-    // FIXME: implement
-    await authorize()
-
-    setTokens(privateKey, 'authTokens.refresh_token.token')
+const useLogin = (opts?: {
+  onRequest?: () => void
+  onSuccess?: () => void
+  onError?: () => void
+}) => {
+  return async (args: { email: string; password: string }) => {
+    const { data, error } = await authClient.signIn.email(
+      {
+        email: args.email,
+        password: args.password,
+      },
+      {
+        onRequest: () => {
+          opts?.onRequest?.()
+        },
+        onSuccess: () => {
+          opts?.onSuccess?.()
+        },
+        onError: () => {
+          opts?.onError?.()
+        },
+      },
+    )
   }
 }
 
-const useLogout = () => {
-  const logout = useAuthStore(state => state.logout)
+const useRegister = (opts?: {
+  onRequest?: () => void
+  onSuccess?: () => void
+  onError?: () => void
+}) => {
+  return async (args: { email: string; password: string; name: string }) => {
+    authClient.signUp.email(
+      {
+        email: args.email,
+        password: args.password,
+        name: args.name,
+      },
+      {
+        onRequest: () => {
+          opts?.onRequest?.()
+        },
+        onSuccess: () => {
+          opts?.onSuccess?.()
+        },
+        onError: () => {
+          opts?.onError?.()
+        },
+      },
+    )
+  }
+}
+
+const useLogout = (opts?: {
+  onRequest?: () => void
+  onSuccess?: () => void
+  onError?: () => void
+}) => {
+  const clear = useAuthStore(state => state.clear)
 
   const clearStoredKeys = walletStore.useWalletStore(
     state => state.clearStoredKeys,
   )
 
   return async () => {
-    logout()
+    await authClient.signOut({
+      fetchOptions: {
+        onSuccess: () => {
+          opts?.onSuccess?.()
+        },
+        onError: () => {
+          opts?.onError?.()
+        },
+        onRequest: () => {
+          opts?.onRequest?.()
+        },
+      },
+    })
+    clear()
     await Promise.all([clearStoredKeys()])
   }
 }
@@ -97,6 +140,7 @@ export const authStore = {
   useAuthStore: useAuthStore,
 
   useLogin: useLogin,
+  useRegister: useRegister,
   useIsAuthorized: useIsAuthorized,
   useLogout: useLogout,
 }

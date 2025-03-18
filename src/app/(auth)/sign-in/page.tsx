@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import LoginForm from '@/app/login/components/LoginForm'
+import LoginForm from '@/app/(auth)/sign-in/components/LoginForm'
 import { cn } from '@/theme/utils'
 import { UiCard, UiCardContent } from '@/ui/UiCard'
 

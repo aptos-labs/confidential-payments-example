@@ -39,7 +39,8 @@
     "package.json",
     "src/**/*.json",
     "./dist/types/**/*.ts",
-    "./next-env.d.ts"
+    "./next-env.d.ts",
+    "envConfig.ts"
   ],
   "exclude": [
     "./node_modules",

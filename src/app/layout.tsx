@@ -1,4 +1,5 @@
 import '@/theme/styles.scss'
+import '../../envConfig'
 
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'

@@ -1,28 +1,29 @@
 'use client'
 
-import { useCallback, useEffect } from 'react'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
+import { useCallback } from 'react'
 
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
 import { authStore } from '@/store/auth'
-import { walletStore } from '@/store/wallet'
 import { UiButton } from '@/ui/UiButton'
-import { UiInput } from '@/ui/UiInput'
-import { UiLabel } from '@/ui/UiLabel'
+import { ControlledUiInput } from '@/ui/UiInput'
 
 export default function LoginForm() {
-  const addAndSetPrivateKey = walletStore.useWalletStore(
-    state => state.addAndSetPrivateKey,
-  )
+  const router = useRouter()
+
   const login = authStore.useLogin()
 
-  const { handleSubmit, disableForm, enableForm, setValue } = useForm(
+  const { control, handleSubmit, disableForm, enableForm } = useForm(
     {
-      privateKey: '',
+      email: '',
+      password: '',
     },
     yup =>
       yup.object().shape({
-        privateKey: yup.string().required(),
+        email: yup.string().email().required(),
+        password: yup.string().required(),
       }),
   )
 
@@ -31,23 +32,19 @@ export default function LoginForm() {
       handleSubmit(async formData => {
         disableForm()
         try {
-          addAndSetPrivateKey(formData.privateKey)
-          await login(formData.privateKey)
+          await login({
+            email: formData.email,
+            password: formData.password,
+          })
+
+          router.push('/dashboard')
         } catch (error) {
           ErrorHandler.process(error)
         }
         enableForm()
       })(),
-    [addAndSetPrivateKey, disableForm, enableForm, handleSubmit, login],
+    [disableForm, enableForm, handleSubmit, login, router],
   )
-
-  useEffect(() => {
-    const privateKey = walletStore.generatePrivateKeyHex()
-
-    setValue('privateKey', privateKey)
-
-    /* eslint-disable-next-line react-hooks/exhaustive-deps */
-  }, [])
 
   return (
     <form className='p-6 md:p-8' onSubmit={handleSubmit(submit)}>
@@ -58,27 +55,23 @@ export default function LoginForm() {
             Login to your Acme Inc account
           </p>
         </div>
-        <div className='grid gap-2'>
-          <UiLabel htmlFor='email'>Email</UiLabel>
-          <UiInput
-            id='email'
-            type='email'
-            placeholder='m@example.com'
-            required
-          />
-        </div>
-        <div className='grid gap-2'>
-          <div className='flex items-center'>
-            <UiLabel htmlFor='password'>Password</UiLabel>
-            <a
-              href='#'
-              className='ml-auto text-sm underline-offset-2 hover:underline'
-            >
-              Forgot your password?
-            </a>
-          </div>
-          <UiInput id='password' type='password' required />
-        </div>
+
+        <ControlledUiInput
+          control={control}
+          label='Email'
+          name='email'
+          placeholder='m@example.com'
+          type='email'
+        />
+
+        <ControlledUiInput
+          control={control}
+          label='Password'
+          name='password'
+          placeholder='password'
+          type='password'
+        />
+
         <UiButton type='submit' className='w-full'>
           Login
         </UiButton>
@@ -118,9 +111,9 @@ export default function LoginForm() {
         </div>
         <div className='text-center text-sm'>
           Don&apos;t have an account?{' '}
-          <a href='#' className='underline underline-offset-4'>
+          <Link href='/sign-up' className='underline underline-offset-4'>
             Sign up
-          </a>
+          </Link>
         </div>
       </div>
     </form>

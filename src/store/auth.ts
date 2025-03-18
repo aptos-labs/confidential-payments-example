@@ -85,24 +85,28 @@ const useRegister = (opts?: {
   onError?: () => void
 }) => {
   return async (args: { email: string; password: string; name: string }) => {
-    authClient.signUp.email(
-      {
-        email: args.email,
-        password: args.password,
-        name: args.name,
-      },
-      {
-        onRequest: () => {
-          opts?.onRequest?.()
+    return new Promise<void>((resolve, reject) => {
+      authClient.signUp.email(
+        {
+          email: args.email,
+          password: args.password,
+          name: args.name,
         },
-        onSuccess: () => {
-          opts?.onSuccess?.()
+        {
+          onRequest: () => {
+            opts?.onRequest?.()
+          },
+          onSuccess: () => {
+            opts?.onSuccess?.()
+            resolve()
+          },
+          onError: () => {
+            opts?.onError?.()
+            reject()
+          },
         },
-        onError: () => {
-          opts?.onError?.()
-        },
-      },
-    )
+      )
+    })
   }
 }
 

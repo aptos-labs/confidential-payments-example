@@ -7,6 +7,7 @@ import { useCallback } from 'react'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
 import { authStore } from '@/store/auth'
+import { cn } from '@/theme/utils'
 import { UiButton } from '@/ui/UiButton'
 import { ControlledUiInput } from '@/ui/UiInput'
 
@@ -15,24 +16,25 @@ export default function RegisterForm() {
 
   const register = authStore.useRegister()
 
-  const { control, handleSubmit, disableForm, enableForm } = useForm(
-    {
-      name: '',
-      email: '',
-      password: '',
-      repeatPassword: '',
-    },
-    yup =>
-      yup.object().shape({
-        name: yup.string().required(),
-        email: yup.string().email().required(),
-        password: yup.string().required(),
-        repeatPassword: yup
-          .string()
-          .required()
-          .oneOf([yup.ref('password')], 'Passwords must match'),
-      }),
-  )
+  const { control, handleSubmit, disableForm, enableForm, isFormDisabled } =
+    useForm(
+      {
+        name: '',
+        email: '',
+        password: '',
+        repeatPassword: '',
+      },
+      yup =>
+        yup.object().shape({
+          name: yup.string().required(),
+          email: yup.string().email().required(),
+          password: yup.string().required(),
+          repeatPassword: yup
+            .string()
+            .required()
+            .oneOf([yup.ref('password')], 'Passwords must match'),
+        }),
+    )
 
   const submit = useCallback(
     () =>
@@ -68,6 +70,7 @@ export default function RegisterForm() {
           name='name'
           label='Name'
           placeholder='name'
+          disabled={isFormDisabled}
         />
 
         <ControlledUiInput
@@ -76,6 +79,7 @@ export default function RegisterForm() {
           label='Email'
           placeholder='m@example.com'
           type='email'
+          disabled={isFormDisabled}
         />
 
         <ControlledUiInput
@@ -84,6 +88,7 @@ export default function RegisterForm() {
           label='Password'
           placeholder='password'
           type='password'
+          disabled={isFormDisabled}
         />
 
         <ControlledUiInput
@@ -92,15 +97,22 @@ export default function RegisterForm() {
           label='Repeat Password'
           placeholder='password'
           type='password'
+          disabled={isFormDisabled}
         />
 
-        <UiButton type='submit' className='w-full'>
+        <UiButton type='submit' className='w-full' disabled={isFormDisabled}>
           Register
         </UiButton>
 
         <div className='text-center text-sm'>
           Already have an account?{' '}
-          <Link href='/sign-in' className='underline underline-offset-4'>
+          <Link
+            href='/sign-in'
+            className={cn(
+              'underline underline-offset-4',
+              isFormDisabled && 'pointer-events-none text-muted-foreground',
+            )}
+          >
             Sign in
           </Link>
         </div>

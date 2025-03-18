@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -15,6 +15,8 @@ export default function LoginForm() {
   const router = useRouter()
 
   const login = authStore.useLogin()
+
+  const [authError, setAuthError] = useState<Error>()
 
   const { control, handleSubmit, disableForm, enableForm, isFormDisabled } =
     useForm(
@@ -41,9 +43,10 @@ export default function LoginForm() {
 
           router.push('/dashboard')
         } catch (error) {
+          setAuthError(error)
           ErrorHandler.process(error)
-          enableForm()
         }
+        enableForm()
       })(),
     [disableForm, enableForm, handleSubmit, login, router],
   )
@@ -64,6 +67,9 @@ export default function LoginForm() {
           name='email'
           placeholder='m@example.com'
           type='email'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
 
@@ -73,8 +79,17 @@ export default function LoginForm() {
           name='password'
           placeholder='password'
           type='password'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
+
+        {authError && (
+          <p className='self-center text-balance text-errorMain typography-caption3'>
+            {authError?.message}
+          </p>
+        )}
 
         <UiButton type='submit' className='w-full' disabled={isFormDisabled}>
           Login

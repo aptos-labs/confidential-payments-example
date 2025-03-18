@@ -59,23 +59,27 @@ const useLogin = (opts?: {
   onError?: () => void
 }) => {
   return async (args: { email: string; password: string }) => {
-    const { data, error } = await authClient.signIn.email(
-      {
-        email: args.email,
-        password: args.password,
-      },
-      {
-        onRequest: () => {
-          opts?.onRequest?.()
+    return new Promise((resolve, reject) => {
+      authClient.signIn.email(
+        {
+          email: args.email,
+          password: args.password,
         },
-        onSuccess: () => {
-          opts?.onSuccess?.()
+        {
+          onRequest: () => {
+            opts?.onRequest?.()
+          },
+          onSuccess: ctx => {
+            opts?.onSuccess?.()
+            resolve(ctx.data)
+          },
+          onError: ctx => {
+            opts?.onError?.()
+            reject(ctx.error)
+          },
         },
-        onError: () => {
-          opts?.onError?.()
-        },
-      },
-    )
+      )
+    })
   }
 }
 

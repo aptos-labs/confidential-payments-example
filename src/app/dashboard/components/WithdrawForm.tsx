@@ -1,9 +1,11 @@
+'use client'
+
 import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
 import { useCallback } from 'react'
 import { Controller } from 'react-hook-form'
 
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'

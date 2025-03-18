@@ -1,8 +1,10 @@
+'use client'
+
 import Avatar from 'boring-avatars'
 import { Check, Copy } from 'lucide-react'
 import { HTMLAttributes } from 'react'
 
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { formatBalance } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'

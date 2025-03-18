@@ -1,3 +1,5 @@
+'use client'
+
 import Image from 'next/image'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
@@ -7,7 +9,7 @@ import {
   getFungibleAssetMetadata,
   validateEncryptionKeyHex,
 } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'

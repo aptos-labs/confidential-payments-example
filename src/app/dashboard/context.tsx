@@ -1,3 +1,6 @@
+'use client'
+
+import { config } from '@config'
 import type {
   CommittedTransactionResponse,
   ConfidentialAmount,
@@ -23,7 +26,6 @@ import {
   transferConfidentialCoin,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
-import { config } from '@/config'
 import { useLoading } from '@/hooks'
 import {
   type TokenBaseInfo,

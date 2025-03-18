@@ -1,6 +1,8 @@
+'use client'
+
 import QRCode from 'react-qr-code'
 
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { RoutePaths } from '@/enums'
 import { useCopyToClipboard } from '@/hooks'
 import { UiIcon } from '@/ui'

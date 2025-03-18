@@ -1,3 +1,5 @@
+'use client'
+
 import { time } from '@distributedlab/tools'
 import {
   ArrowDownIcon,
@@ -17,6 +19,7 @@ import {
   TriangleAlertIcon,
   UnlockIcon,
 } from 'lucide-react'
+import { useSearchParams } from 'next/navigation'
 import {
   ButtonHTMLAttributes,
   ComponentProps,
@@ -26,16 +29,15 @@ import {
   useRef,
   useState,
 } from 'react'
-import { useSearchParams } from 'react-router-dom'
 import { useTimeoutFn } from 'react-use'
 
-import AddTokenForm from '@/app/Dashboard/components/AddTokenForm'
-import ConfidentialAssetCard from '@/app/Dashboard/components/ConfidentialAssetCard'
-import DashboardHeader from '@/app/Dashboard/components/DashboardHeader'
-import { DashboardSidebar } from '@/app/Dashboard/components/DashboardSidebar'
-import TokenInfo from '@/app/Dashboard/components/TokenInfo'
-import WithdrawForm from '@/app/Dashboard/components/WithdrawForm'
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import AddTokenForm from '@/app/dashboard/components/AddTokenForm'
+import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard'
+import DashboardHeader from '@/app/dashboard/components/DashboardHeader'
+import { DashboardSidebar } from '@/app/dashboard/components/DashboardSidebar'
+import TokenInfo from '@/app/dashboard/components/TokenInfo'
+import WithdrawForm from '@/app/dashboard/components/WithdrawForm'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatDateDMYT } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TxHistoryItem } from '@/store/wallet'
@@ -61,7 +63,7 @@ import {
   useTransferFormSheet,
 } from './components/TransferFormSheet'
 
-export default function Dashboard() {
+export default function DashboardClient() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false)
   const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false)
@@ -191,7 +193,7 @@ export default function Dashboard() {
 
   const carouselWrpRef = useRef<HTMLDivElement>(null)
 
-  const [searchParams] = useSearchParams()
+  const searchParams = useSearchParams()
 
   // TODO: enchance to more fabric orchestration
   useTimeoutFn(async () => {
@@ -249,10 +251,7 @@ export default function Dashboard() {
                       />
                     )
                   }),
-                  <div
-                    key={idx}
-                    className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
-                  >
+                  <div className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'>
                     <button
                       className='flex flex-col items-center gap-2 uppercase'
                       onClick={() => {

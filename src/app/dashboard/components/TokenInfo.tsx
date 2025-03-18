@@ -1,3 +1,5 @@
+'use client'
+
 import Avatar from 'boring-avatars'
 import Image from 'next/image'
 import { HTMLAttributes } from 'react'

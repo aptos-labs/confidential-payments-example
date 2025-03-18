@@ -1,3 +1,5 @@
+'use client'
+
 import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
 import {
@@ -12,7 +14,7 @@ import {
 import { Control, Controller, useFieldArray } from 'react-hook-form'
 
 import { validateEncryptionKeyHex } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'

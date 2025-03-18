@@ -1,3 +1,5 @@
+import '@/theme/styles.scss'
+
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
 import { getTranslations } from 'next-intl/server'
@@ -66,7 +68,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
 
       <body>
         <NextIntlClientProvider>
-          <ThemeProvider>
+          <ThemeProvider attribute='class'>
             <div id='root'>{children}</div>
           </ThemeProvider>
         </NextIntlClientProvider>

@@ -6,6 +6,7 @@ import { colors, cssVars, fontFamily, typography } from './src/theme/config'
 import twAnimatePlugin from 'tailwindcss-animate'
 
 const config: Config = {
+  darkMode: 'selector',
   content: ['./src/**/*.{js,ts,jsx,tsx,mdx}'],
   theme: {
     extend: {

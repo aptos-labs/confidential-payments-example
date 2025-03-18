@@ -1,3 +1,5 @@
+'use client'
+
 import { Color, Mesh, Program, Renderer, Triangle } from 'ogl'
 import React, { useEffect, useRef } from 'react'
 

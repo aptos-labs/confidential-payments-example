@@ -1,3 +1,5 @@
+'use client'
+
 import { BN, time } from '@distributedlab/tools'
 import Avatar from 'boring-avatars'
 import {
@@ -20,7 +22,7 @@ import {
   sendApt,
   validatePrivateKeyHex,
 } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/Dashboard/context'
+import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard, useForm } from '@/hooks'
 import { cn } from '@/theme/utils'

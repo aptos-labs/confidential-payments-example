@@ -13050,6 +13050,7 @@ __metadata:
     globals: "npm:^15.14.0"
     i18next: "npm:^24.2.2"
     jsona: "npm:^1.12.1"
+    jwt-decode: "npm:^4.0.0"
     lodash: "npm:^4.17.21"
     loglevel: "npm:^1.9.2"
     lucide-react: "npm:^0.479.0"

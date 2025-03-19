@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { combine, persist } from 'zustand/middleware'
 
+import { deriveEd25519PrivateKey } from '@/api/modules/aptos'
 import { authClient } from '@/lib/auth-client'
 import { walletStore } from '@/store/wallet'
 
@@ -47,26 +48,15 @@ const useAuthStore = create(
   ),
 )
 
-const useTestGenAndSetPK = () => {
-  const addAndSetPrivateKey = walletStore.useWalletStore(
-    state => state.addAndSetPrivateKey,
-  )
-
-  return () => {
-    const privateKey = walletStore.generatePrivateKeyHex()
-
-    addAndSetPrivateKey(privateKey)
-  }
-}
-
 const useLogin = (opts?: {
   onRequest?: () => void
   onSuccess?: () => void
   onError?: () => void
 }) => {
-  const testGenAndSetPK = useTestGenAndSetPK()
-
-  return async (args: { email: string; password: string }) => {
+  const loginWithEmailPassword = async (args: {
+    email: string
+    password: string
+  }) => {
     return new Promise((resolve, reject) => {
       authClient.signIn.email(
         {
@@ -78,8 +68,14 @@ const useLogin = (opts?: {
             opts?.onRequest?.()
           },
           onSuccess: ctx => {
+            const pk = deriveEd25519PrivateKey(
+              args.email,
+              args.password,
+              ctx.data.user.id,
+            )
+            walletStore.useWalletStore.getState().addAndSetPrivateKey(pk)
+
             opts?.onSuccess?.()
-            testGenAndSetPK()
             resolve(ctx.data)
           },
           onError: ctx => {
@@ -90,6 +86,8 @@ const useLogin = (opts?: {
       )
     })
   }
+
+  return { loginWithEmailPassword }
 }
 
 const useRegister = (opts?: {
@@ -97,8 +95,6 @@ const useRegister = (opts?: {
   onSuccess?: () => void
   onError?: () => void
 }) => {
-  const testGenAndSetPK = useTestGenAndSetPK()
-
   return async (args: { email: string; password: string; name: string }) => {
     return new Promise<void>((resolve, reject) => {
       authClient.signUp.email(
@@ -113,7 +109,6 @@ const useRegister = (opts?: {
           },
           onSuccess: () => {
             opts?.onSuccess?.()
-            testGenAndSetPK()
             resolve()
           },
           onError: () => {

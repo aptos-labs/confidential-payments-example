@@ -14,7 +14,7 @@ import { ControlledUiInput } from '@/ui/UiInput'
 export default function LoginForm() {
   const router = useRouter()
 
-  const login = authStore.useLogin()
+  const { loginWithEmailPassword } = authStore.useLogin()
 
   const [authError, setAuthError] = useState<Error>()
 
@@ -36,7 +36,7 @@ export default function LoginForm() {
       handleSubmit(async formData => {
         disableForm()
         try {
-          await login({
+          await loginWithEmailPassword({
             email: formData.email,
             password: formData.password,
           })
@@ -48,7 +48,7 @@ export default function LoginForm() {
         }
         enableForm()
       })(),
-    [disableForm, enableForm, handleSubmit, login, router],
+    [disableForm, enableForm, handleSubmit, loginWithEmailPassword, router],
   )
 
   return (

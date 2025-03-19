@@ -17,6 +17,7 @@ import {
   TwistedEd25519PublicKey,
   type TwistedElGamalCiphertext,
 } from '@lukachi/aptos-labs-ts-sdk'
+import { ethers } from 'ethers'
 
 import { apiClient } from '@/api/client'
 import {
@@ -39,6 +40,10 @@ const config = new AptosConfig({
 })
 export const aptos = new Aptos(config)
 
+ConfidentialCoin.setConfidentialCoinModuleAddress(
+  appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
+)
+
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
     ? privateKeyHex.slice(2)
@@ -47,6 +52,31 @@ export const accountFromPrivateKey = (privateKeyHex: string) => {
   return Account.fromPrivateKey({
     privateKey: new Ed25519PrivateKey(sanitizedPrivateKeyHex),
   })
+}
+
+export function deriveEd25519PrivateKey(
+  login: string,
+  password: string,
+  salt: string | null = null,
+) {
+  // Generate or use provided salt
+  const saltBytes = salt
+    ? ethers.hexlify(ethers.toUtf8Bytes(salt))
+    : ethers.randomBytes(32)
+
+  // Combine login and password
+  const combined = `${login}:${password}`
+
+  // Derive key using PBKDF2
+  const derivedKey = ethers.pbkdf2(
+    Buffer.from(combined),
+    saltBytes,
+    100000,
+    32,
+    'sha256',
+  )
+
+  return ethers.hexlify(derivedKey)
 }
 
 export const validatePrivateKeyHex = (privateKeyHex: string) => {

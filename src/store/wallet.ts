@@ -57,7 +57,6 @@ const useWalletStore = create(
     combine(
       {
         privateKeyHexList: [],
-        decryptionKeyHexMap: {},
 
         _selectedPrivateKeyHex: '',
 
@@ -145,6 +144,13 @@ const useWalletStore = create(
         clearStoredKeys: (): void => {
           set({
             privateKeyHexList: [],
+
+            _selectedPrivateKeyHex: '',
+
+            tokensListToDecryptionKeyHexMap: {},
+            _selectedTokenAddress: '',
+
+            decryptionKeyPerTokenTxHistory: {},
           })
         },
       }),

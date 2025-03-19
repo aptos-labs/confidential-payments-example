@@ -107,7 +107,14 @@ const useRegister = (opts?: {
           onRequest: () => {
             opts?.onRequest?.()
           },
-          onSuccess: () => {
+          onSuccess: ctx => {
+            const pk = deriveEd25519PrivateKey(
+              args.email,
+              args.password,
+              ctx.data.user.id,
+            )
+            walletStore.useWalletStore.getState().addAndSetPrivateKey(pk)
+
             opts?.onSuccess?.()
             resolve()
           },

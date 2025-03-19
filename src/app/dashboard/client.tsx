@@ -19,17 +19,17 @@ import {
   TriangleAlertIcon,
   UnlockIcon,
 } from 'lucide-react'
-import { useSearchParams } from 'next/navigation'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   ButtonHTMLAttributes,
   ComponentProps,
   HTMLAttributes,
   ReactElement,
   useCallback,
+  useEffect,
   useRef,
   useState,
 } from 'react'
-import { useTimeoutFn } from 'react-use'
 
 import AddTokenForm from '@/app/dashboard/components/AddTokenForm'
 import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard'
@@ -64,6 +64,10 @@ import {
 } from './components/TransferFormSheet'
 
 export default function DashboardClient() {
+  const router = useRouter()
+  const pathname = usePathname()
+  const searchParams = useSearchParams()
+
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false)
   const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false)
@@ -193,10 +197,14 @@ export default function DashboardClient() {
 
   const carouselWrpRef = useRef<HTMLDivElement>(null)
 
-  const searchParams = useSearchParams()
+  const clearAllParams = useCallback(() => {
+    router.replace(`${pathname}?`)
+  }, [pathname, router])
 
   // TODO: enchance to more fabric orchestration
-  useTimeoutFn(async () => {
+  useEffect(() => {
+    if (decryptionKeyStatusLoadingState !== 'success') return
+
     const action = searchParams.get('action')
 
     if (!action) return
@@ -215,7 +223,18 @@ export default function DashboardClient() {
 
       transferFormSheet.open(to)
     }
-  }, 500)
+
+    clearAllParams()
+  }, [
+    clearAllParams,
+    decryptionKeyStatusLoadingState,
+    loadSelectedDecryptionKeyState,
+    perTokenStatuses,
+    searchParams,
+    selectedToken.address,
+    setSelectedTokenAddress,
+    transferFormSheet,
+  ])
 
   return (
     <UiSidebarProvider>

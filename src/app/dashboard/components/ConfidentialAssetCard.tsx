@@ -85,43 +85,6 @@ export default function ConfidentialAssetCard({
 
   const { copy, isCopied } = useCopyToClipboard()
 
-  // const tryRollover = useCallback(async () => {
-  //   try {
-  //     const rolloverAccountTxReceipts = await rolloverAccount()
-  //
-  //     rolloverAccountTxReceipts.forEach(el => {
-  //       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  //       // @ts-ignore
-  //       if (el.payload.function.includes('rollover')) {
-  //         addTxHistoryItem({
-  //           txHash: el.hash,
-  //           txType: 'rollover',
-  //           createdAt: time().timestamp,
-  //         })
-  //
-  //         return
-  //       }
-  //
-  //       addTxHistoryItem({
-  //         txHash: el.hash,
-  //         txType: 'normalize',
-  //         createdAt: time().timestamp,
-  //       })
-  //
-  //       onRollover()
-  //     })
-  //     await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
-  //   } catch (error) {
-  //     ErrorHandler.process(error)
-  //   }
-  // }, [
-  //   addTxHistoryItem,
-  //   loadSelectedDecryptionKeyState,
-  //   onRollover,
-  //   reloadAptBalance,
-  //   rolloverAccount,
-  // ])
-
   return (
     <div {...rest} className={cn('relative overflow-hidden', className)}>
       <div className={cn('relative')}>

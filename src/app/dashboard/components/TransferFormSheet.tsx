@@ -78,13 +78,13 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       setValue,
     } = useForm(
       {
-        receiverEncryptionKey: '',
+        receiverAddressHex: '',
         amount: '',
         auditorsEncryptionKeysHex: [] as string[],
       },
       yup =>
         yup.object().shape({
-          receiverEncryptionKey: yup.string().required('Enter receiver'),
+          receiverAddressHex: yup.string().required('Enter receiver'),
           amount: yup.number().required('Enter amount'),
           auditorsEncryptionKeysHex: yup.array().of(
             yup.string().test('Invalid encryption key', v => {
@@ -97,7 +97,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     )
 
     const clearForm = useCallback(() => {
-      setValue('receiverEncryptionKey', '')
+      setValue('receiverAddressHex', '')
       setValue('amount', '')
     }, [setValue])
 
@@ -107,7 +107,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           disableForm()
           try {
             const txReceipt = await transfer(
-              formData.receiverEncryptionKey,
+              formData.receiverAddressHex,
               parseUnits(String(formData.amount), token.decimals).toString(),
               formData.auditorsEncryptionKeysHex,
             )
@@ -148,7 +148,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         setIsTransferSheetOpen(true)
 
         if (prefillAddr) {
-          setValue('receiverEncryptionKey', prefillAddr)
+          setValue('receiverAddressHex', prefillAddr)
         }
       },
       close: () => {
@@ -168,11 +168,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             <div className='flex flex-col gap-4'>
               <Controller
                 control={control}
-                name='receiverEncryptionKey'
+                name='receiverAddressHex'
                 render={({ field }) => (
                   <UiInput
                     {...field}
-                    placeholder='Enter encryption key'
+                    placeholder='Enter recipient address'
                     disabled={isFormDisabled}
                   />
                 )}
@@ -219,7 +219,7 @@ const AuditorsList = ({
   ...rest
 }: {
   control: Control<{
-    receiverEncryptionKey: string
+    receiverAddressHex: string
     amount: string
     auditorsEncryptionKeysHex: string[]
   }>

@@ -34,6 +34,7 @@ import {
   MoreHorizontalIcon,
   PieChartIcon,
   PlusIcon,
+  RefreshCwIcon,
   Settings2Icon,
   SnowflakeIcon,
   SparklesIcon,
@@ -112,6 +113,7 @@ const LIB_ICONS = {
   ChevronDownIcon: ChevronDownIcon,
   CircleUserIcon: CircleUserIcon,
   UserPlusIcon: UserPlusIcon,
+  RefreshCwIcon: RefreshCwIcon,
 }
 
 type LibIconProps = {

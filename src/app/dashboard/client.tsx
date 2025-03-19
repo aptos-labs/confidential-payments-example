@@ -86,6 +86,7 @@ export default function DashboardClient() {
     registerAccountEncryptionKey,
     unfreezeAccount,
     normalizeAccount,
+    rolloverAccount,
 
     loadSelectedDecryptionKeyState,
     decryptionKeyStatusLoadingState,
@@ -194,6 +195,39 @@ export default function DashboardClient() {
     }
     setIsSubmitting(false)
   }, [addTxHistoryItem, testMintTokens, tryRefresh])
+
+  const tryRollover = useCallback(async () => {
+    setIsSubmitting(true)
+    try {
+      const rolloverAccountTxReceipts = await rolloverAccount()
+
+      rolloverAccountTxReceipts.forEach(el => {
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        // @ts-ignore
+        if (el.payload.function.includes('rollover')) {
+          addTxHistoryItem({
+            txHash: el.hash,
+            txType: 'rollover',
+            createdAt: time().timestamp,
+          })
+
+          tryRefresh()
+          return
+        }
+
+        addTxHistoryItem({
+          txHash: el.hash,
+          txType: 'normalize',
+          createdAt: time().timestamp,
+        })
+
+        tryRefresh()
+      })
+    } catch (error) {
+      ErrorHandler.process(error)
+    }
+    setIsSubmitting(false)
+  }, [addTxHistoryItem, rolloverAccount, tryRefresh])
 
   const carouselWrpRef = useRef<HTMLDivElement>(null)
 
@@ -334,6 +368,19 @@ export default function DashboardClient() {
               }}
               disabled={isActionsDisabled}
             />
+
+            {Boolean(
+              +perTokenStatuses[selectedToken.address].pendingAmount,
+            ) && (
+              <CircleButton
+                caption={'Rollover'}
+                iconProps={{
+                  name: 'RefreshCwIcon',
+                }}
+                onClick={tryRollover}
+                disabled={isActionsDisabled}
+              />
+            )}
           </div>
 
           {decryptionKeyStatusLoadingState === 'success' && (

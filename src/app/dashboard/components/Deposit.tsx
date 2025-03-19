@@ -8,12 +8,9 @@ import { useCopyToClipboard } from '@/hooks'
 import { UiIcon } from '@/ui'
 
 export default function Deposit() {
-  const { selectedAccountDecryptionKey, selectedToken } =
-    useConfidentialCoinContext()
+  const { selectedAccount, selectedToken } = useConfidentialCoinContext()
 
-  const encryptionKey = selectedAccountDecryptionKey.publicKey().toString()
-
-  const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${encryptionKey}`
+  const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`
 
   const { copy, isCopied } = useCopyToClipboard()
 
@@ -34,9 +31,12 @@ export default function Deposit() {
         </span>
         <div className='flex w-full items-center gap-2 rounded-xl bg-componentPrimary p-4'>
           <div className='flex-1 overflow-hidden text-ellipsis'>
-            {encryptionKey}
+            {selectedAccount.accountAddress.toString()}
           </div>
-          <button className='flex' onClick={() => copy(encryptionKey)}>
+          <button
+            className='flex'
+            onClick={() => copy(selectedAccount.accountAddress.toString())}
+          >
             <UiIcon
               name={isCopied ? 'CheckIcon' : 'CopyIcon'}
               size={20}

@@ -1,6 +1,7 @@
 import { BN } from '@distributedlab/tools'
 import {
   Account,
+  AccountAddress,
   type AnyRawTransaction,
   Aptos,
   AptosConfig,
@@ -190,12 +191,18 @@ export const transferConfidentialCoin = async (
   decryptionKeyHex: string,
   encryptedActualBalance: TwistedElGamalCiphertext[],
   amountToTransfer: bigint,
-  recipientEncryptionKeyHex: string,
+  recipientAddressHex: string,
   auditorsEncryptionKeyHexList: string[],
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
   const account = accountFromPrivateKey(privateKeyHex)
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
+
+  const recipientEncryptionKeyHex =
+    await aptos.confidentialCoin.getEncryptionByAddr({
+      accountAddress: AccountAddress.from(recipientAddressHex),
+      tokenAddress,
+    })
 
   const transferTx = await aptos.confidentialCoin.transferCoin({
     senderDecryptionKey: decryptionKey,
@@ -206,7 +213,7 @@ export const transferConfidentialCoin = async (
     amountToTransfer,
     sender: account.accountAddress,
     tokenAddress,
-    recipientAddress: account.accountAddress,
+    recipientAddress: recipientAddressHex,
     auditorEncryptionKeys: auditorsEncryptionKeyHexList.map(
       hex => new TwistedEd25519PublicKey(hex),
     ),

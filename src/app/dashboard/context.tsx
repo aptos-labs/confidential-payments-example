@@ -667,7 +667,7 @@ export const ConfidentialCoinContextProvider = ({
 
   const transfer = useCallback(
     async (
-      receiverEncryptionKey: string,
+      receiverAddressHex: string,
       amount: string,
       auditorsEncryptionKeyHexList?: string[],
     ) => {
@@ -679,7 +679,7 @@ export const ConfidentialCoinContextProvider = ({
         selectedAccountDecryptionKey.toString(),
         selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted,
         BigInt(amount),
-        receiverEncryptionKey,
+        receiverAddressHex,
         auditorsEncryptionKeyHexList ?? [], // TODO: add auditors
         selectedToken.address,
       )

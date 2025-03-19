@@ -183,8 +183,8 @@ const useSelectedTokenAddress = () => {
 export const walletStore = {
   useWalletStore,
 
-  generatePrivateKeyHex,
-  useSelectedPrivateKeyHex,
-  useSelectedTokenAddress,
-  decryptionKeyFromPrivateKey,
+  generatePrivateKeyHex: generatePrivateKeyHex,
+  useSelectedPrivateKeyHex: useSelectedPrivateKeyHex,
+  useSelectedTokenAddress: useSelectedTokenAddress,
+  decryptionKeyFromPrivateKey: decryptionKeyFromPrivateKey,
 }

@@ -47,10 +47,16 @@ const useAuthStore = create(
   ),
 )
 
-const useIsAuthorized = () => {
-  const accessToken = useAuthStore(state => state.accessToken)
+const useTestGenAndSetPK = () => {
+  const addAndSetPrivateKey = walletStore.useWalletStore(
+    state => state.addAndSetPrivateKey,
+  )
 
-  return !!accessToken
+  return () => {
+    const privateKey = walletStore.generatePrivateKeyHex()
+
+    addAndSetPrivateKey(privateKey)
+  }
 }
 
 const useLogin = (opts?: {
@@ -58,6 +64,8 @@ const useLogin = (opts?: {
   onSuccess?: () => void
   onError?: () => void
 }) => {
+  const testGenAndSetPK = useTestGenAndSetPK()
+
   return async (args: { email: string; password: string }) => {
     return new Promise((resolve, reject) => {
       authClient.signIn.email(
@@ -71,6 +79,7 @@ const useLogin = (opts?: {
           },
           onSuccess: ctx => {
             opts?.onSuccess?.()
+            testGenAndSetPK()
             resolve(ctx.data)
           },
           onError: ctx => {
@@ -88,6 +97,8 @@ const useRegister = (opts?: {
   onSuccess?: () => void
   onError?: () => void
 }) => {
+  const testGenAndSetPK = useTestGenAndSetPK()
+
   return async (args: { email: string; password: string; name: string }) => {
     return new Promise<void>((resolve, reject) => {
       authClient.signUp.email(
@@ -102,6 +113,7 @@ const useRegister = (opts?: {
           },
           onSuccess: () => {
             opts?.onSuccess?.()
+            testGenAndSetPK()
             resolve()
           },
           onError: () => {
@@ -149,6 +161,5 @@ export const authStore = {
 
   useLogin: useLogin,
   useRegister: useRegister,
-  useIsAuthorized: useIsAuthorized,
   useLogout: useLogout,
 }

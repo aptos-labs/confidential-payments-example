@@ -43,7 +43,7 @@ export default function LoginForm() {
 
           router.push('/dashboard')
         } catch (error) {
-          setAuthError(error)
+          setAuthError(error as Error)
           ErrorHandler.process(error)
         }
         enableForm()

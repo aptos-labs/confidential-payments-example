@@ -54,7 +54,7 @@ export default function WithdrawForm({
         disableForm()
         try {
           const txReceipt = await withdraw(
-            parseUnits(formData.amount, token.decimals).toString(),
+            parseUnits(String(formData.amount), token.decimals).toString(),
           )
           addTxHistoryItem({
             txHash: txReceipt.hash,

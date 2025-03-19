@@ -732,8 +732,10 @@ export const ConfidentialCoinContextProvider = ({
     )
     const depositTxReceipt = await deposit(10)
 
-    return [mintTxReceipt, depositTxReceipt]
-  }, [deposit, selectedAccount.privateKey])
+    const rolloverTxReceipt = await rolloverAccount()
+
+    return [mintTxReceipt, depositTxReceipt, ...rolloverTxReceipt]
+  }, [deposit, rolloverAccount, selectedAccount.privateKey])
 
   return (
     <confidentialCoinContext.Provider

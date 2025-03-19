@@ -69,8 +69,12 @@ export const preloadTablesForBalances = async () => {
         TwistedElGamal.calculateCiphertextMG(el, privateKey),
       )
 
-      const olderChunks = mGs.slice(0, 4).map(el => el.toRawBytes())
-      const yongerChunks = mGs.slice(-4).map(el => el.toRawBytes())
+      const olderChunks = mGs
+        .slice(0, encrypted.length / 2)
+        .map(el => el.toRawBytes())
+      const yongerChunks = mGs
+        .slice(-(encrypted.length / 2))
+        .map(el => el.toRawBytes())
 
       return Promise.all([
         ...(await olderChunks.map(el => decryptChunk(el, kangaroo16))),

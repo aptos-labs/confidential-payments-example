@@ -84,7 +84,7 @@ export default function DashboardClient() {
     normalizeAccount,
 
     loadSelectedDecryptionKeyState,
-    // decryptionKeyStatusLoadingState,
+    decryptionKeyStatusLoadingState,
 
     txHistory,
     addTxHistoryItem,
@@ -317,69 +317,71 @@ export default function DashboardClient() {
             />
           </div>
 
-          <div className='flex flex-col gap-4 p-4'>
-            {!selectedAccountDecryptionKeyStatus.isRegistered ? (
-              <ActionCard
-                title='Register Balance'
-                desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                leadingContent={
-                  <UiIcon
-                    name={'IdCardIcon'}
-                    className='size-8 text-textPrimary'
-                  />
-                }
-                onClick={tryRegister}
-                disabled={isSubmitting}
-              />
-            ) : (
-              <>
-                {selectedAccountDecryptionKeyStatus.isFrozen && (
-                  <ActionCard
-                    title='Unfreeze Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <Snowflake
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryUnfreeze}
-                    disabled={isSubmitting}
-                  />
-                )}
-
-                {!selectedAccountDecryptionKeyStatus.isNormalized && (
-                  <ActionCard
-                    title='Normalize Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <TriangleAlertIcon
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryNormalize}
-                    disabled={isSubmitting}
-                  />
-                )}
-
+          {decryptionKeyStatusLoadingState === 'success' && (
+            <div className='flex flex-col gap-4 p-4'>
+              {!selectedAccountDecryptionKeyStatus.isRegistered ? (
                 <ActionCard
-                  title='Test Mint'
-                  desc='Mint 10 test tokens'
+                  title='Register Balance'
+                  desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
                   leadingContent={
-                    <HandCoinsIcon
-                      size={32}
-                      className='self-center text-textPrimary'
+                    <UiIcon
+                      name={'IdCardIcon'}
+                      className='size-8 text-textPrimary'
                     />
                   }
-                  onClick={tryTestMint}
+                  onClick={tryRegister}
                   disabled={isSubmitting}
                 />
-              </>
-            )}
-          </div>
+              ) : (
+                <>
+                  {selectedAccountDecryptionKeyStatus.isFrozen && (
+                    <ActionCard
+                      title='Unfreeze Balance'
+                      desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                      leadingContent={
+                        <Snowflake
+                          size={32}
+                          className='self-center text-textPrimary'
+                        />
+                      }
+                      onClick={tryUnfreeze}
+                      disabled={isSubmitting}
+                    />
+                  )}
 
-          <div className='flex w-full flex-1 flex-col overflow-hidden rounded-t-[24px] bg-componentPrimary'>
+                  {!selectedAccountDecryptionKeyStatus.isNormalized && (
+                    <ActionCard
+                      title='Normalize Balance'
+                      desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                      leadingContent={
+                        <TriangleAlertIcon
+                          size={32}
+                          className='self-center text-textPrimary'
+                        />
+                      }
+                      onClick={tryNormalize}
+                      disabled={isSubmitting}
+                    />
+                  )}
+
+                  <ActionCard
+                    title='Test Mint'
+                    desc='Mint 10 test tokens'
+                    leadingContent={
+                      <HandCoinsIcon
+                        size={32}
+                        className='self-center text-textPrimary'
+                      />
+                    }
+                    onClick={tryTestMint}
+                    disabled={isSubmitting}
+                  />
+                </>
+              )}
+            </div>
+          )}
+
+          <div className='flex w-full flex-1 flex-col overflow-hidden rounded-t-[24px] bg-componentPrimary p-4'>
             <div className='flex w-full flex-1 flex-col'>
               {txHistory.length ? (
                 <div className='flex flex-col gap-6'>

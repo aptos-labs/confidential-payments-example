@@ -40,10 +40,6 @@ const config = new AptosConfig({
 })
 export const aptos = new Aptos(config)
 
-ConfidentialCoin.setConfidentialCoinModuleAddress(
-  appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-)
-
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
     ? privateKeyHex.slice(2)
@@ -154,17 +150,14 @@ export const sendAndWaitBatchTxs = async (
   )
 }
 
-export const mintTokens = async (
-  privateKeyHex: string,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
-) => {
+export const mintTokens = async (privateKeyHex: string) => {
   const account = accountFromPrivateKey(privateKeyHex)
 
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
       function: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::mint_to`,
-      functionArguments: [tokenAddress],
+      functionArguments: [10],
     },
   })
 
@@ -384,7 +377,9 @@ export const getConfidentialBalances = async (
   try {
     const [confidentialAmountPending, confidentialAmountActual] =
       await Promise.all([
-        ConfidentialAmount.fromEncrypted(pending, decryptionKey),
+        ConfidentialAmount.fromEncrypted(pending, decryptionKey, {
+          chunksCount: 4,
+        }),
         ConfidentialAmount.fromEncrypted(actual, decryptionKey),
       ])
 

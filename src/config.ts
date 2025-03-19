@@ -28,7 +28,7 @@ export const config: Config = {
   CONFIDENTIAL_ASSET_MODULE_ADDR: process.env.CONFIDENTIAL_ASSET_MODULE_ADDR!,
   DEFAULT_TOKEN: {
     address:
-      '0x2a0c0d0d3d213a120a0bac6aecf2bf4a59c4d5e5be0721ca2b3566f0013e7e3d',
+      '0x8b4dd7ebf8150f349675dde8bd2e9daa66461107b181a67e764de85d82bbac21',
     name: 'Mocked token',
     symbol: 'MTK',
     decimals: 0,

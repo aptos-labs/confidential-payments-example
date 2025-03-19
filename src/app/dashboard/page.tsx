@@ -1,10 +1,5 @@
-import DashboardClient from '@/app/dashboard/client'
-import { ConfidentialCoinContextProvider } from '@/app/dashboard/context'
+import DashboardPageContent from '@/app/dashboard/content'
 
 export default function DashboardPage() {
-  return (
-    <ConfidentialCoinContextProvider>
-      <DashboardClient />
-    </ConfidentialCoinContextProvider>
-  )
+  return <DashboardPageContent />
 }

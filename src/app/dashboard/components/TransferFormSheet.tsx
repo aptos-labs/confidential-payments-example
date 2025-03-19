@@ -108,7 +108,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           try {
             const txReceipt = await transfer(
               formData.receiverEncryptionKey,
-              parseUnits(formData.amount, token.decimals).toString(),
+              parseUnits(String(formData.amount), token.decimals).toString(),
               formData.auditorsEncryptionKeysHex,
             )
             addTxHistoryItem({

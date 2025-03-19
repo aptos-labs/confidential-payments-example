@@ -9,6 +9,7 @@ import { PropsWithChildren } from 'react'
 
 import { appFontClassName } from '@/theme/fonts'
 import { cn } from '@/theme/utils'
+import { UiToaster } from '@/ui/UiToaster'
 
 export async function generateMetadata({
   params,
@@ -71,6 +72,7 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         <NextIntlClientProvider>
           <ThemeProvider attribute='class'>
             <div id='root'>{children}</div>
+            <UiToaster />
           </ThemeProvider>
         </NextIntlClientProvider>
       </body>

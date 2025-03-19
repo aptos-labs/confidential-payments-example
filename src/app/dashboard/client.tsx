@@ -207,6 +207,8 @@ export default function DashboardClient() {
 
       if (!asset || !to) return
 
+      if (!perTokenStatuses[asset].isRegistered) return
+
       if (selectedToken.address.toLowerCase() !== asset.toLowerCase()) {
         setSelectedTokenAddress(asset)
       }

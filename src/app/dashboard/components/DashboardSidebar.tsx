@@ -2,14 +2,11 @@
 
 import {
   AudioWaveform,
-  BadgeCheck,
-  Bell,
   BookOpen,
   Bot,
   ChevronRight,
   ChevronsUpDown,
   Command,
-  CreditCard,
   Folder,
   Forward,
   Frame,
@@ -17,16 +14,22 @@ import {
   LogOut,
   type LucideIcon,
   Map,
+  MoonIcon,
   MoreHorizontal,
   PieChart,
   Plus,
   Settings2,
-  Sparkles,
   SquareTerminal,
+  SunIcon,
   Trash2,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
+import { useTheme } from 'next-themes'
 import * as React from 'react'
+import { useCallback } from 'react'
 
+import { ErrorHandler } from '@/helpers'
+import { authStore } from '@/store/auth'
 import { UiAvatar, UiAvatarFallback, UiAvatarImage } from '@/ui/UiAvatar'
 import {
   UiCollapsible,
@@ -60,6 +63,7 @@ import {
   UiSidebarRail,
   useUiSidebar,
 } from '@/ui/UiSidebar'
+import { UiSwitch } from '@/ui/UiSwitch'
 
 // This is sample data.
 const data = {
@@ -200,14 +204,35 @@ export function DashboardSidebar({
         <TeamSwitcher teams={data.teams} />
       </UiSidebarHeader>
       <UiSidebarContent>
-        <NavMain items={data.navMain} />
-        <NavProjects projects={data.projects} />
+        {/*<NavMain items={data.navMain} />*/}
+        {/*<NavProjects projects={data.projects} />*/}
       </UiSidebarContent>
       <UiSidebarFooter>
         <NavUser user={data.user} />
       </UiSidebarFooter>
       <UiSidebarRail />
     </UiSidebar>
+  )
+}
+
+const ThemeSwitcher = () => {
+  const { theme, setTheme, systemTheme } = useTheme()
+
+  const currentTheme = theme === 'system' ? systemTheme : theme
+
+  const toggleTheme = useCallback(() => {
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
+  }, [currentTheme, setTheme])
+
+  return (
+    <div className='mr-auto flex items-center gap-2'>
+      <SunIcon className='size-4' />
+      <UiSwitch
+        checked={currentTheme === 'dark'}
+        onCheckedChange={() => toggleTheme()}
+      />
+      <MoonIcon className='size-4' />
+    </div>
   )
 }
 
@@ -410,7 +435,19 @@ export function NavUser({
     avatar: string
   }
 }) {
+  const router = useRouter()
+
   const { isMobile } = useUiSidebar()
+  const logout = authStore.useLogout()
+
+  const tryLogout = async () => {
+    try {
+      await logout()
+      router.push('/sign-in')
+    } catch (error) {
+      ErrorHandler.process(error)
+    }
+  }
 
   return (
     <UiSidebarMenu>
@@ -453,27 +490,11 @@ export function NavUser({
             <UiDropdownMenuSeparator />
             <UiDropdownMenuGroup>
               <UiDropdownMenuItem>
-                <Sparkles />
-                Upgrade to Pro
+                <ThemeSwitcher />
               </UiDropdownMenuItem>
             </UiDropdownMenuGroup>
             <UiDropdownMenuSeparator />
-            <UiDropdownMenuGroup>
-              <UiDropdownMenuItem>
-                <BadgeCheck />
-                Account
-              </UiDropdownMenuItem>
-              <UiDropdownMenuItem>
-                <CreditCard />
-                Billing
-              </UiDropdownMenuItem>
-              <UiDropdownMenuItem>
-                <Bell />
-                Notifications
-              </UiDropdownMenuItem>
-            </UiDropdownMenuGroup>
-            <UiDropdownMenuSeparator />
-            <UiDropdownMenuItem>
+            <UiDropdownMenuItem onClick={tryLogout}>
               <LogOut />
               Log out
             </UiDropdownMenuItem>

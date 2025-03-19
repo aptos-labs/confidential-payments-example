@@ -168,9 +168,16 @@ const useWalletStore = create(
   ),
 )
 
+/**
+ * generate dummy pk if `selectedPrivateKeyHex` not exists (for app build purposes).
+ * This should never be the actual case, cause page where it's in use should be under app guard
+ */
 const useSelectedPrivateKeyHex = () => {
   return useWalletStore(
-    state => state._selectedPrivateKeyHex || state.privateKeyHexList[0],
+    state =>
+      state._selectedPrivateKeyHex ||
+      state.privateKeyHexList[0] ||
+      generatePrivateKeyHex(),
   )
 }
 

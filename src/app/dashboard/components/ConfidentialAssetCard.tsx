@@ -15,6 +15,7 @@ export default function ConfidentialAssetCard({
   // encryptionKey,
   actualAmount,
 
+  /* eslint-disable unused-imports/no-unused-vars */
   isNormalized,
   isFrozen,
   isRegistered,
@@ -37,11 +38,9 @@ export default function ConfidentialAssetCard({
 
   onRollover: () => void
 } & HTMLAttributes<HTMLDivElement>) {
+  // eslint-disable-next-line no-empty-pattern
   const {
-    rolloverAccount,
-    addTxHistoryItem,
-    reloadAptBalance,
-    loadSelectedDecryptionKeyState,
+    /* empty */
   } = useConfidentialCoinContext()
 
   // const VBStatusContent = useMemo(() => {

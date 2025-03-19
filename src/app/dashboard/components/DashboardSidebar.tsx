@@ -236,6 +236,7 @@ const ThemeSwitcher = () => {
   )
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function NavMain({
   items,
 }: {

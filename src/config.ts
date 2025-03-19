@@ -33,17 +33,3 @@ export const config: Config = {
     iconUri: '',
   },
 }
-
-/**
- * Enable if u want to use env.js to pass env variables in runtime
- */
-// Object.assign(config, _mapEnvCfg(window.document.ENV))
-
-// function _mapEnvCfg(env: ImportMetaEnv | typeof window.document.ENV): {
-//   [k: string]: string | boolean | undefined
-// } {
-//   return mapKeys(
-//     pickBy(env, (v, k) => k.startsWith('VITE_APP_')),
-//     (v, k) => k.replace(/^VITE_APP_/, ''),
-//   )
-// }

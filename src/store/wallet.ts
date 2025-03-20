@@ -6,6 +6,7 @@ import { combine, persist } from 'zustand/middleware'
 
 import {
   accountFromPrivateKey,
+  decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
   generatePrivateKeyHex,
 } from '@/api/modules/aptos'
@@ -216,4 +217,5 @@ export const walletStore = {
   useSelectedWalletAccount: useSelectedWalletAccount,
   useSelectedTokenAddress: useSelectedTokenAddress,
   decryptionKeyFromPrivateKey: decryptionKeyFromPrivateKey,
+  decryptionKeyFromPepper: decryptionKeyFromPepper,
 }

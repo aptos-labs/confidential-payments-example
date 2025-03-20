@@ -110,6 +110,10 @@ export const decryptionKeyFromPrivateKey = (account: Account) => {
   return TwistedEd25519PrivateKey.fromSignature(signature)
 }
 
+export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
+  return new TwistedEd25519PrivateKey(ethers.zeroPadBytes(pepper, 32))
+}
+
 export const sendAndWaitTx = async (
   transaction: AnyRawTransaction,
   signer: Account,

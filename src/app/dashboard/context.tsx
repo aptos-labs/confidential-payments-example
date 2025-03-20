@@ -206,7 +206,7 @@ const useAccounts = () => {
         rawKeylessAccounts.map(async el => {
           const derivedKeylessAccountData = await authStore.useAuthStore
             .getState()
-            .deriveKeylessAccount(el.idToken.raw)
+            .deriveKeylessAccount(el.idToken.raw) // TODO: tokens addresses?
 
           const derivedAccount = derivedKeylessAccountData.derivedAccount
 
@@ -342,6 +342,7 @@ const useAccounts = () => {
 }
 
 const useSelectedAccountDecryptionKey = () => {
+  const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
   const activeKeylessAccount = authStore.useAuthStore(
     state => state.activeAccount,
   )
@@ -353,8 +354,19 @@ const useSelectedAccountDecryptionKey = () => {
   )
 
   const selectedAccountDecryptionKey = useMemo(() => {
+    if (
+      selectedAccount.accountAddress.toString().toLowerCase() ===
+      activeKeylessAccount?.accountAddress.toString().toLowerCase()
+    ) {
+      return walletStore.decryptionKeyFromPepper(rawKeylessAccounts[0].pepper)
+    }
+
     return walletStore.decryptionKeyFromPrivateKey(selectedAccount)
-  }, [selectedAccount])
+  }, [
+    activeKeylessAccount?.accountAddress,
+    rawKeylessAccounts,
+    selectedAccount,
+  ])
 
   const registerAccountEncryptionKey = async (tokenAddress: string) => {
     return registerConfidentialBalance(

@@ -8,6 +8,11 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
   },
-  socialProviders: {},
+  socialProviders: {
+    google: {
+      clientId: config.GOOGLE_CLIENT_ID as string,
+      clientSecret: config.GOOGLE_CLIENT_SECRET as string,
+    },
+  },
   plugins: [nextCookies()],
 })

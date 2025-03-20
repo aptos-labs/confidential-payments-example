@@ -47,13 +47,13 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aptos-labs/aptos-client@npm:^1.0.0":
-  version: 1.0.0
-  resolution: "@aptos-labs/aptos-client@npm:1.0.0"
+"@aptos-labs/aptos-client@npm:^1.1.0":
+  version: 1.1.0
+  resolution: "@aptos-labs/aptos-client@npm:1.1.0"
   peerDependencies:
-    axios: ^1.7.7
+    axios: ^1.8.0
     got: ^11.8.6
-  checksum: 411d0411d51279557530f771672dd98f4f76fb12035fd03c0fd189a857551cb3f126dba6a076567e80c5ad74161b967eda81d1e89411eff571390b299abd8533
+  checksum: c884d052ef4bb3ff7a45905edc42d8de382accbfc6edfdd2a1f3e87086f53402913f866c81a308e59081452d295537df174ed4ac8591ea0f36b289f59dfbf605
   languageName: node
   linkType: hard
 
@@ -1239,7 +1239,7 @@ __metadata:
   resolution: "@lukachi/aptos-labs-ts-sdk@portal:/Users/lukachisama/Documents/APTOS/aptos-ts-sdk::locator=react-tw-template%40workspace%3A."
   dependencies:
     "@aptos-labs/aptos-cli": "npm:^1.0.2"
-    "@aptos-labs/aptos-client": "npm:^1.0.0"
+    "@aptos-labs/aptos-client": "npm:^1.1.0"
     "@aptos-labs/script-composer-pack": "npm:^0.0.9"
     "@distributedlab/aptos-wasm-bindings": "npm:^0.3.16"
     "@noble/curves": "npm:^1.4.0"
@@ -13096,6 +13096,7 @@ __metadata:
     wagmi: "npm:^2.14.9"
     yorkie: "npm:^2.0.0"
     yup: "npm:^1.6.1"
+    zod: "npm:^3.24.2"
     zustand: "npm:^5.0.3"
   languageName: unknown
   linkType: soft
@@ -16606,7 +16607,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"zod@npm:^3.24.1":
+"zod@npm:^3.24.1, zod@npm:^3.24.2":
   version: 3.24.2
   resolution: "zod@npm:3.24.2"
   checksum: c638c7220150847f13ad90635b3e7d0321b36cce36f3fc6050ed960689594c949c326dfe2c6fa87c14b126ee5d370ccdebd6efb304f41ef5557a4aaca2824565

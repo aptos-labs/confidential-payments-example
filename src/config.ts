@@ -11,6 +11,9 @@ type Config = {
     decimals: number
     iconUri: string
   }
+
+  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_SECRET: string
 }
 
 export const config: Config = {
@@ -34,4 +37,7 @@ export const config: Config = {
     decimals: 0,
     iconUri: '',
   },
+
+  GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
+  GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
 }

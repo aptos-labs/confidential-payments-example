@@ -9,7 +9,9 @@ import {
   ConfidentialAmount,
   ConfidentialCoin,
   Ed25519PrivateKey,
+  EphemeralKeyPair,
   type InputGenerateTransactionPayloadData,
+  KeylessAccount,
   Network,
   NetworkToNetworkName,
   RangeProofExecutor,
@@ -19,6 +21,8 @@ import {
   type TwistedElGamalCiphertext,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { ethers } from 'ethers'
+import { jwtDecode } from 'jwt-decode'
+import { z } from 'zod'
 
 import { apiClient } from '@/api/client'
 import {
@@ -96,13 +100,13 @@ export const validateEncryptionKeyHex = (encryptionKeyHex: string) => {
   }
 }
 
-export const decryptionKeyFromPrivateKey = (privateKeyHex: string) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
+export const decryptionKeyFromPrivateKey = (account: Account) => {
   const signature = account.sign(
     TwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
   )
 
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-expect-error
   return TwistedEd25519PrivateKey.fromSignature(signature)
 }
 
@@ -151,9 +155,7 @@ export const sendAndWaitBatchTxs = async (
   )
 }
 
-export const mintTokens = async (privateKeyHex: string) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
+export const mintTokens = async (account: Account) => {
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
@@ -166,13 +168,12 @@ export const mintTokens = async (privateKeyHex: string) => {
 }
 
 export const withdrawConfidentialBalance = async (
-  privateKeyHex: string,
+  account: Account,
   decryptionKeyHex: string,
   withdrawAmount: bigint,
   encryptedActualBalance: TwistedElGamalCiphertext[],
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
   const withdrawTx = await aptos.confidentialCoin.withdraw({
@@ -187,7 +188,7 @@ export const withdrawConfidentialBalance = async (
 }
 
 export const transferConfidentialCoin = async (
-  privateKeyHex: string,
+  account: Account,
   decryptionKeyHex: string,
   encryptedActualBalance: TwistedElGamalCiphertext[],
   amountToTransfer: bigint,
@@ -195,7 +196,6 @@ export const transferConfidentialCoin = async (
   auditorsEncryptionKeyHexList: string[],
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
   const recipientEncryptionKeyHex =
@@ -223,14 +223,12 @@ export const transferConfidentialCoin = async (
 }
 
 export const safelyRotateConfidentialBalance = async (
-  privateKeyHex: string,
+  account: Account,
   decryptionKeyHex: string,
   currEncryptedBalance: TwistedElGamalCiphertext[],
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
   const newDecryptionKey = TwistedEd25519PrivateKey.generate()
-
-  const account = accountFromPrivateKey(privateKeyHex)
 
   return ConfidentialCoin.safeRotateCBKey(aptos, account, {
     sender: account.accountAddress,
@@ -246,12 +244,10 @@ export const safelyRotateConfidentialBalance = async (
 }
 
 export const safelyRolloverConfidentialBalance = async (
-  privateKeyHex: string,
+  account: Account,
   decryptionKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
   const rolloverTxPayloads = await aptos.confidentialCoin.safeRolloverPendingCB(
     {
       sender: account.accountAddress,
@@ -265,12 +261,10 @@ export const safelyRolloverConfidentialBalance = async (
 }
 
 export const registerConfidentialBalance = async (
-  privateKeyHex: string,
+  account: Account,
   publicKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
   const registerVBTxBody = await aptos.confidentialCoin.registerBalance({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
@@ -281,14 +275,12 @@ export const registerConfidentialBalance = async (
 }
 
 export const normalizeConfidentialBalance = async (
-  privateKey: string,
+  account: Account,
   decryptionKeyHex: string,
   encryptedPendingBalance: TwistedElGamalCiphertext[],
   amount: bigint,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKey)
-
   const normalizeTx = await aptos.confidentialCoin.normalizeUserBalance({
     tokenAddress,
     decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
@@ -302,12 +294,10 @@ export const normalizeConfidentialBalance = async (
 }
 
 export const depositConfidentialBalance = async (
-  privateKey: string,
+  account: Account,
   amount: number,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKey)
-
   const depositTx = await aptos.confidentialCoin.deposit({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
@@ -317,11 +307,9 @@ export const depositConfidentialBalance = async (
 }
 
 export const getIsAccountRegisteredWithToken = async (
-  privateKeyHex: string,
+  account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
   const isRegistered = await aptos.confidentialCoin.hasUserRegistered({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
@@ -331,11 +319,9 @@ export const getIsAccountRegisteredWithToken = async (
 }
 
 export const getIsBalanceNormalized = async (
-  privateKey: string,
+  account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKey)
-
   const isNormalized = await aptos.confidentialCoin.isUserBalanceNormalized({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
@@ -345,11 +331,9 @@ export const getIsBalanceNormalized = async (
 }
 
 export const getIsBalanceFrozen = async (
-  privateKeyHex: string,
+  account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
   const isFrozen = await aptos.confidentialCoin.isBalanceFrozen({
     accountAddress: account.accountAddress,
     tokenAddress,
@@ -358,9 +342,7 @@ export const getIsBalanceFrozen = async (
   return isFrozen
 }
 
-export const getAptBalance = async (privateKeyHex: string) => {
-  const account = accountFromPrivateKey(privateKeyHex)
-
+export const getAptBalance = async (account: Account) => {
   const aptBalance = await aptos.getAccountAPTAmount({
     accountAddress: account.accountAddress,
   })
@@ -369,11 +351,10 @@ export const getAptBalance = async (privateKeyHex: string) => {
 }
 
 export const getConfidentialBalances = async (
-  privateKeyHex: string,
+  account: Account,
   decryptionKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
-  const account = accountFromPrivateKey(privateKeyHex)
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
   const { pending, actual } = await aptos.confidentialCoin.getBalance({
@@ -437,13 +418,11 @@ export const getFungibleAssetMetadata = async (
 }
 
 export const sendApt = async (
-  privateKeyHex: string,
+  account: Account,
   receiverAccountAddressHex: string,
   humanAmount: string,
 ) => {
   const amount = BN.fromRaw(humanAmount, 8).value
-
-  const account = accountFromPrivateKey(privateKeyHex)
 
   const sendAptTransaction = await aptos.coin.transferCoinTransaction({
     sender: account.accountAddress,
@@ -453,3 +432,136 @@ export const sendApt = async (
 
   return sendAndWaitTx(sendAptTransaction, account)
 }
+
+// =========================================================================
+// Keyless helpers
+// =========================================================================
+
+export const EphemeralKeyPairEncoding = {
+  /* eslint-disable-next-line */
+  decode: (e: any) => EphemeralKeyPair.fromBytes(e.data),
+  encode: (e: EphemeralKeyPair) => ({
+    __type: 'EphemeralKeyPair',
+    data: e.bcsToBytes(),
+  }),
+}
+
+export const validateEphemeralKeyPair = (
+  keyPair: EphemeralKeyPair,
+): EphemeralKeyPair | undefined =>
+  isValidEphemeralKeyPair(keyPair) ? keyPair : undefined
+
+export const isValidEphemeralKeyPair = (keyPair: EphemeralKeyPair): boolean => {
+  if (keyPair.isExpired()) return false
+  return true
+}
+
+/**
+ * Create a new ephemeral key pair with a random private key and nonce.
+ *
+ * @param params Additional parameters for the ephemeral key pair
+ */
+export const createEphemeralKeyPair = ({
+  expiryDateSecs = Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+  privateKey = Ed25519PrivateKey.generate(),
+  ...options
+}: Partial<ConstructorParameters<typeof EphemeralKeyPair>[0]> = {}) =>
+  new EphemeralKeyPair({ expiryDateSecs, privateKey, ...options })
+
+export const idTokenSchema = z.object({
+  aud: z.string(),
+  exp: z.number(),
+  iat: z.number(),
+  iss: z.string(),
+  sub: z.string(),
+})
+
+export const nonceEncryptedIdTokenSchema = idTokenSchema.extend({
+  nonce: z.string(),
+})
+
+export const profileScopedPayloadSchema = nonceEncryptedIdTokenSchema.extend({
+  family_name: z.string().optional(),
+  given_name: z.string().optional(),
+  locale: z.string().optional(),
+  name: z.string(),
+  picture: z.string().optional(),
+})
+
+export const emailScopedPayloadSchema = nonceEncryptedIdTokenSchema.extend({
+  email: z.string().optional(),
+  email_verified: z.boolean(),
+})
+
+export const scopedPayloadSchema = profileScopedPayloadSchema.merge(
+  emailScopedPayloadSchema,
+)
+
+export type IDToken = z.infer<typeof idTokenSchema>
+
+export type NonceEncryptedIdToken = z.infer<typeof nonceEncryptedIdTokenSchema>
+
+export type ProfileScopedPayloadSchema = z.infer<
+  typeof profileScopedPayloadSchema
+>
+
+export type EmailScopedPayloadSchema = z.infer<typeof emailScopedPayloadSchema>
+
+export type EncryptedScopedIdToken = z.infer<typeof scopedPayloadSchema>
+
+export const decodeIdToken = (jwt: string): EncryptedScopedIdToken =>
+  scopedPayloadSchema.parse(jwtDecode(jwt))
+
+export const isValidIdToken = (
+  jwt: string | EncryptedScopedIdToken,
+): boolean => {
+  if (typeof jwt === 'string') return isValidIdToken(decodeIdToken(jwt))
+
+  // Check whether the token has an expiration, nonce, and is not expired
+  if (!jwt.nonce) return false
+
+  return true
+}
+
+export const validateIdToken = (
+  jwt: string | EncryptedScopedIdToken,
+): EncryptedScopedIdToken | null => {
+  if (typeof jwt === 'string') return validateIdToken(decodeIdToken(jwt))
+  return isValidIdToken(jwt) ? jwt : null
+}
+
+/**
+ * Encoding for the KeylessAccount class to be stored in localStorage
+ */
+export const KeylessAccountEncoding = {
+  /* eslint-disable-next-line */
+  decode: (e: any) => KeylessAccount.fromBytes(e.data),
+  // If the account has a proof, it can be persisted, otherwise,
+  // it should not be stored.
+  encode: (e: KeylessAccount) =>
+    e.proof
+      ? {
+          __type: 'KeylessAccount',
+          data: e.bcsToBytes(),
+        }
+      : undefined,
+}
+
+/**
+ * If the account has an invalid Ephemeral key pair or idToken, the account needs to be refreshed with either
+ * a new nonce or idToken. If the account is valid, it is returned.
+ *
+ * @param account - The account to validate.
+ * @returns The account if it is valid, otherwise undefined.
+ */
+export const validateKeylessAccount = (
+  account: KeylessAccount,
+): KeylessAccount | undefined =>
+  // Check the Ephemeral key pair expiration
+  isValidEphemeralKeyPair(account.ephemeralKeyPair) &&
+  // Check the idToken for nonce
+  isValidIdToken(account.jwt) &&
+  // If the EphemeralAccount nonce algorithm changes, this will need to be updated
+  decodeIdToken(account.jwt).nonce === account.ephemeralKeyPair.nonce
+    ? account
+    : undefined

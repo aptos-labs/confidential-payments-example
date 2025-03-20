@@ -1,9 +1,11 @@
 import { config } from '@config'
 import type { TimeDate } from '@distributedlab/tools'
+import { useMemo } from 'react'
 import { create } from 'zustand'
 import { combine, persist } from 'zustand/middleware'
 
 import {
+  accountFromPrivateKey,
   decryptionKeyFromPrivateKey,
   generatePrivateKeyHex,
 } from '@/api/modules/aptos'
@@ -35,8 +37,7 @@ export type TxHistoryItem = {
 
 type StoreState = {
   privateKeyHexList: string[]
-
-  _selectedPrivateKeyHex: string
+  selectedAccountAddr: string
 
   tokensListToDecryptionKeyHexMap: Record<string, TokenBaseInfo[]>
   _selectedTokenAddress: string
@@ -57,8 +58,7 @@ const useWalletStore = create(
     combine(
       {
         privateKeyHexList: [],
-
-        _selectedPrivateKeyHex: '',
+        selectedAccountAddr: '',
 
         tokensListToDecryptionKeyHexMap: {},
         _selectedTokenAddress: '',
@@ -75,21 +75,28 @@ const useWalletStore = create(
         },
 
         addAndSetPrivateKey: (privateKeyHex: string): void => {
+          const account = accountFromPrivateKey(privateKeyHex)
+
           set(state => ({
             privateKeyHexList: [...state.privateKeyHexList, privateKeyHex],
-            _selectedPrivateKeyHex: privateKeyHex,
+            selectedAccountAddr: account.accountAddress.toString(),
           }))
         },
-        setSelectedPrivateKeyHex: (privateKeyHex: string): void => {
+        setSelectedAccountAddr: (accountAddr: string): void => {
           set({
-            _selectedPrivateKeyHex: privateKeyHex,
+            selectedAccountAddr: accountAddr,
           })
         },
-        removePrivateKey: (privateKeyHex: string): void => {
+        removeWalletAccount: (accountAddr: string): void => {
           set(state => ({
-            privateKeyHexList: state.privateKeyHexList.filter(
-              hex => hex !== privateKeyHex,
-            ),
+            privateKeyHexList: state.privateKeyHexList.filter(hex => {
+              const account = accountFromPrivateKey(hex)
+
+              return (
+                account.accountAddress.toString().toLowerCase() !==
+                accountAddr.toLowerCase()
+              )
+            }),
           }))
         },
 
@@ -145,8 +152,6 @@ const useWalletStore = create(
           set({
             privateKeyHexList: [],
 
-            _selectedPrivateKeyHex: '',
-
             tokensListToDecryptionKeyHexMap: {},
             _selectedTokenAddress: '',
 
@@ -165,7 +170,6 @@ const useWalletStore = create(
 
       partialize: state => ({
         privateKeyHexList: state.privateKeyHexList,
-        _selectedPrivateKeyHex: state._selectedPrivateKeyHex,
         tokensListToDecryptionKeyHexMap: state.tokensListToDecryptionKeyHexMap,
         selectedTokenAddress: state._selectedTokenAddress,
         decryptionKeyPerTokenTxHistory: state.decryptionKeyPerTokenTxHistory,
@@ -174,30 +178,42 @@ const useWalletStore = create(
   ),
 )
 
-/**
- * generate dummy pk if `selectedPrivateKeyHex` not exists (for app build purposes).
- * This should never be the actual case, cause page where it's in use should be under app guard
- */
-const useSelectedPrivateKeyHex = () => {
-  return useWalletStore(
-    state =>
-      state._selectedPrivateKeyHex ||
-      state.privateKeyHexList[0] ||
-      generatePrivateKeyHex(),
-  )
-}
-
 const useSelectedTokenAddress = () => {
   return useWalletStore(
     state => state._selectedTokenAddress || config.DEFAULT_TOKEN.address,
   )
 }
 
+const useWalletAccounts = () => {
+  const privateKeyHexList = useWalletStore(state => state.privateKeyHexList)
+
+  return useMemo(
+    () => privateKeyHexList.map(el => accountFromPrivateKey(el)),
+    [privateKeyHexList],
+  )
+}
+
+const useSelectedWalletAccount = () => {
+  const walletAccounts = useWalletAccounts()
+  const selectedAccountAddr = useWalletStore(state => state.selectedAccountAddr)
+
+  return useMemo(() => {
+    return (
+      walletAccounts.find(
+        el =>
+          el.accountAddress.toString().toLowerCase() ===
+          selectedAccountAddr.toLowerCase(),
+      ) || walletAccounts[0]
+    )
+  }, [selectedAccountAddr, walletAccounts])
+}
+
 export const walletStore = {
   useWalletStore,
 
+  useWalletAccounts: useWalletAccounts,
   generatePrivateKeyHex: generatePrivateKeyHex,
-  useSelectedPrivateKeyHex: useSelectedPrivateKeyHex,
+  useSelectedWalletAccount: useSelectedWalletAccount,
   useSelectedTokenAddress: useSelectedTokenAddress,
   decryptionKeyFromPrivateKey: decryptionKeyFromPrivateKey,
 }

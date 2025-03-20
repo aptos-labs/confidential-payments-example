@@ -122,7 +122,7 @@ export default function DashboardHeader({
               {accountsList.map(el => (
                 <AccountListItem
                   key={el.accountAddress.toString()}
-                  privateKeyHex={el.privateKey.toString()}
+                  // privateKeyHex={el.privateKey.toString()}
                   accountAddress={el.accountAddress.toString()}
                   isActive={
                     selectedAccount.accountAddress.toString().toLowerCase() ===
@@ -130,8 +130,8 @@ export default function DashboardHeader({
                   }
                   isRemovable={accountsList.length > 1}
                   onRemove={() => removeAccount(el.accountAddress.toString())}
-                  onSelect={() => {
-                    setSelectedAccount(el.accountAddress.toString())
+                  onSelect={async () => {
+                    await setSelectedAccount(el.accountAddress.toString())
                     setIsAccountsBottomSheet(false)
                   }}
                 />
@@ -168,7 +168,6 @@ export default function DashboardHeader({
 }
 
 type AccountListItemProps = {
-  privateKeyHex: string
   accountAddress: string
   isActive: boolean
   isRemovable: boolean
@@ -177,7 +176,6 @@ type AccountListItemProps = {
 } & HTMLAttributes<HTMLDivElement>
 
 function AccountListItem({
-  privateKeyHex,
   accountAddress,
   className,
   isActive,
@@ -225,7 +223,7 @@ function AccountListItem({
               Copy public
             </UiDropdownMenuItem>
             <UiDropdownMenuItem
-              onClick={() => pkCopyManager.copy(privateKeyHex)}
+            // onClick={() => pkCopyManager.copy(privateKeyHex)}
             >
               {pkCopyManager.isCopied ? (
                 <CheckIcon className={'size-4'} />
@@ -385,7 +383,7 @@ function TransferNativeBottomSheet({
         disableForm()
         try {
           const txReceipt = await sendApt(
-            selectedAccount.privateKey.toString(),
+            selectedAccount,
             formData.receiverAccountAddress,
             formData.amount,
           )
@@ -410,7 +408,7 @@ function TransferNativeBottomSheet({
       handleSubmit,
       onSubmit,
       reloadAptBalance,
-      selectedAccount.privateKey,
+      selectedAccount,
     ],
   )
 

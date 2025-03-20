@@ -2,9 +2,9 @@
 
 import { config } from '@config'
 import type {
+  Account,
   CommittedTransactionResponse,
   ConfidentialAmount,
-  Ed25519Account,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
 import type { PropsWithChildren } from 'react'
@@ -12,7 +12,6 @@ import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
 
 import {
-  accountFromPrivateKey,
   depositConfidentialBalance,
   getAptBalance,
   getConfidentialBalances,
@@ -27,6 +26,7 @@ import {
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
 import { useLoading } from '@/hooks'
+import { authStore } from '@/store/auth'
 import {
   type TokenBaseInfo,
   type TxHistoryItem,
@@ -69,13 +69,13 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
 type DecryptionKeyStatusLoadingState = 'idle' | 'loading' | 'success' | 'error'
 
 type ConfidentialCoinContextType = {
-  accountsList: Ed25519Account[]
+  accountsList: Account[]
 
-  selectedAccount: Ed25519Account
+  selectedAccount: Account
 
   addNewAccount: (privateKeyHex?: string) => void
   removeAccount: (accountAddress: string) => void
-  setSelectedAccount: (accountAddressHex: string) => void
+  setSelectedAccount: (accountAddressHex: string) => Promise<void>
 
   aptBalance: number
   reloadAptBalance: () => Promise<void>
@@ -117,11 +117,11 @@ type ConfidentialCoinContextType = {
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   accountsList: [],
-  selectedAccount: {} as Ed25519Account,
+  selectedAccount: {} as Account,
 
   addNewAccount: () => {},
   removeAccount: () => {},
-  setSelectedAccount: () => {},
+  setSelectedAccount: async () => {},
 
   aptBalance: 0,
   reloadAptBalance: async () => {},
@@ -165,42 +165,85 @@ export const useConfidentialCoinContext = () => {
 }
 
 const useAccounts = () => {
-  const privateKeyHexList = walletStore.useWalletStore(
-    state => state.privateKeyHexList,
+  const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
+  const walletAccounts = walletStore.useWalletAccounts()
+  const switchActiveKeylessAccount = authStore.useAuthStore(
+    state => state.switchKeylessAccount,
   )
+
+  const activeKeylessAccount = authStore.useAuthStore(
+    state => state.activeAccount,
+  )
+  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
+
   const addAndSetPrivateKey = walletStore.useWalletStore(
     state => state.addAndSetPrivateKey,
   )
-  const removePrivateKey = walletStore.useWalletStore(
-    state => state.removePrivateKey,
+  const removeWalletAccount = walletStore.useWalletStore(
+    state => state.removeWalletAccount,
   )
-  const setSelectedPrivateKeyHex = walletStore.useWalletStore(
-    state => state.setSelectedPrivateKeyHex,
+  const setSelectedAccountAddr = walletStore.useWalletStore(
+    state => state.setSelectedAccountAddr,
   )
 
-  const selectedPrivateKeyHex = walletStore.useSelectedPrivateKeyHex()
+  const selectedAccount = useMemo(
+    () => activeKeylessAccount || selectedWalletAccount,
+    [activeKeylessAccount, selectedWalletAccount],
+  )
+
+  const {
+    data: { accountsList, keylessAccAddrToIdTokens },
+  } = useLoading<{
+    accountsList: Account[]
+    keylessAccAddrToIdTokens: Record<string, string>
+  }>(
+    {
+      accountsList: [],
+      keylessAccAddrToIdTokens: {},
+    },
+    async () => {
+      const keylessAccountsData = await Promise.all(
+        rawKeylessAccounts.map(async el => {
+          const derivedKeylessAccountData = await authStore.useAuthStore
+            .getState()
+            .deriveKeylessAccount(el.idToken.raw)
+
+          const derivedAccount = derivedKeylessAccountData.derivedAccount
+
+          return {
+            derivedAccount,
+            idToken: el.idToken.raw,
+          }
+        }),
+      )
+
+      return {
+        accountsList: [
+          ...walletAccounts,
+          ...keylessAccountsData.map(el => el.derivedAccount),
+        ],
+        keylessAccAddrToIdTokens: keylessAccountsData.reduce(
+          (acc, curr) => {
+            acc[curr.derivedAccount.accountAddress.toString()] = curr.idToken
+
+            return acc
+          },
+          {} as Record<string, string>,
+        ),
+      }
+    },
+    { loadArgs: [] },
+  )
 
   const { data: aptBalance, reload } = useLoading(
     0,
     () => {
-      return getAptBalance(selectedPrivateKeyHex)
+      return getAptBalance(selectedAccount)
     },
-    { loadArgs: [selectedPrivateKeyHex] },
+    { loadArgs: [selectedAccount] },
   )
 
-  const accountsList = useMemo(
-    () =>
-      privateKeyHexList.map(hex => {
-        return accountFromPrivateKey(hex)
-      }),
-    [privateKeyHexList],
-  )
-
-  const selectedAccount = useMemo(
-    () => accountFromPrivateKey(selectedPrivateKeyHex),
-    [selectedPrivateKeyHex],
-  )
-
+  // TODO: implement adding keyless account for new tokens
   const addNewAccount = useCallback(
     (privateKeyHex?: string) => {
       const newPrivateKeyHex =
@@ -212,20 +255,46 @@ const useAccounts = () => {
   )
 
   const setSelectedAccount = useCallback(
-    (accountAddressHex: string) => {
+    async (accountAddressHex: string) => {
       const accountToSet = accountsList.find(
         el =>
           el.accountAddress.toString().toLowerCase() ===
           accountAddressHex.toLowerCase(),
       )
 
-      if (accountToSet?.privateKey) {
-        setSelectedPrivateKeyHex(accountToSet?.privateKey.toString())
+      if (!accountToSet?.accountAddress)
+        throw new TypeError('Account not found')
+
+      if (
+        walletAccounts.find(
+          el =>
+            el.accountAddress.toString().toLowerCase() ===
+            accountToSet.accountAddress.toString().toLowerCase(),
+        )
+      ) {
+        setSelectedAccountAddr(accountToSet?.accountAddress.toString())
+
+        return
       }
+
+      const idToken =
+        keylessAccAddrToIdTokens[accountToSet.accountAddress.toString()]
+
+      if (!idToken) throw new TypeError('Account not found')
+
+      setSelectedAccountAddr('')
+      await switchActiveKeylessAccount(idToken)
     },
-    [accountsList, setSelectedPrivateKeyHex],
+    [
+      accountsList,
+      keylessAccAddrToIdTokens,
+      setSelectedAccountAddr,
+      switchActiveKeylessAccount,
+      walletAccounts,
+    ],
   )
 
+  // TODO: implement removing keyless accounts
   const removeAccount = useCallback(
     (accountAddressHex: string) => {
       const currentAccountsListLength = accountsList.length
@@ -246,24 +315,24 @@ const useAccounts = () => {
             accountAddressHex.toLowerCase(),
         )
 
-        if (accountToRemove?.privateKey) {
-          removePrivateKey(accountToRemove.privateKey.toString())
-          setSelectedPrivateKeyHex(
-            filteredAccountsList[0].privateKey.toString(),
-          )
-        }
+        if (!accountToRemove?.accountAddress)
+          throw new TypeError('Account not found')
+
+        removeWalletAccount(accountToRemove.accountAddress.toString())
+        setSelectedAccountAddr(
+          filteredAccountsList[0].accountAddress.toString(),
+        )
       }
     },
-    [accountsList, removePrivateKey, setSelectedPrivateKeyHex],
+    [accountsList, removeWalletAccount, setSelectedAccountAddr],
   )
 
   return {
     accountsList,
 
-    selectedPrivateKeyHex,
     selectedAccount,
 
-    setSelectedAccount,
+    setSelectedAccount: setSelectedAccount,
     addNewAccount,
     removeAccount,
 
@@ -273,15 +342,23 @@ const useAccounts = () => {
 }
 
 const useSelectedAccountDecryptionKey = () => {
-  const selectedPrivateKeyHex = walletStore.useSelectedPrivateKeyHex()
+  const activeKeylessAccount = authStore.useAuthStore(
+    state => state.activeAccount,
+  )
+  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
+
+  const selectedAccount = useMemo(
+    () => activeKeylessAccount || selectedWalletAccount,
+    [activeKeylessAccount, selectedWalletAccount],
+  )
 
   const selectedAccountDecryptionKey = useMemo(() => {
-    return walletStore.decryptionKeyFromPrivateKey(selectedPrivateKeyHex)
-  }, [selectedPrivateKeyHex])
+    return walletStore.decryptionKeyFromPrivateKey(selectedAccount)
+  }, [selectedAccount])
 
   const registerAccountEncryptionKey = async (tokenAddress: string) => {
     return registerConfidentialBalance(
-      selectedPrivateKeyHex,
+      selectedAccount,
       selectedAccountDecryptionKey.publicKey().toString(),
       tokenAddress,
     )
@@ -388,7 +465,16 @@ const useSelectedAccountDecryptionKeyStatus = (
   decryptionKeyHex: string | undefined,
   tokenAddress: string | undefined,
 ) => {
-  const selectedPrivateKeyHex = walletStore.useSelectedPrivateKeyHex()
+  const activeKeylessAccount = authStore.useAuthStore(
+    state => state.activeAccount,
+  )
+  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
+
+  const selectedAccount = useMemo(
+    () => activeKeylessAccount || selectedWalletAccount,
+    [activeKeylessAccount, selectedWalletAccount],
+  )
+
   const tokensListToDecryptionKeyHexMap = walletStore.useWalletStore(
     state => state.tokensListToDecryptionKeyHexMap,
   )
@@ -441,7 +527,7 @@ const useSelectedAccountDecryptionKeyStatus = (
         currentTokensList.map(async el => {
           try {
             const isRegistered = await getIsAccountRegisteredWithToken(
-              selectedPrivateKeyHex,
+              selectedAccount,
               el.address,
             )
 
@@ -449,12 +535,12 @@ const useSelectedAccountDecryptionKeyStatus = (
               const [{ pending, actual }, isNormalized, isFrozen] =
                 await Promise.all([
                   getConfidentialBalances(
-                    selectedPrivateKeyHex,
+                    selectedAccount,
                     decryptionKeyHex,
                     el.address,
                   ),
-                  getIsBalanceNormalized(selectedPrivateKeyHex, el.address),
-                  getIsBalanceFrozen(selectedPrivateKeyHex, el.address),
+                  getIsBalanceNormalized(selectedAccount, el.address),
+                  getIsBalanceFrozen(selectedAccount, el.address),
                 ])
 
               return {
@@ -491,7 +577,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       return perTokenDetails
     },
     {
-      loadArgs: [selectedPrivateKeyHex, currentTokensList],
+      loadArgs: [selectedAccount, currentTokensList],
     },
   )
 
@@ -577,18 +663,13 @@ const useSelectedAccountDecryptionKeyStatus = (
       throw new TypeError('Pending amount is not loaded')
 
     return normalizeConfidentialBalance(
-      selectedPrivateKeyHex,
+      selectedAccount,
       decryptionKeyHex,
       actualBalance.amountEncrypted,
       actualBalance.amount,
       tokenAddress,
     )
-  }, [
-    decryptionKeyHex,
-    perTokenStatusesRaw,
-    selectedPrivateKeyHex,
-    tokenAddress,
-  ])
+  }, [decryptionKeyHex, perTokenStatusesRaw, selectedAccount, tokenAddress])
 
   // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -604,11 +685,11 @@ const useSelectedAccountDecryptionKeyStatus = (
     if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
 
     return safelyRolloverConfidentialBalance(
-      selectedPrivateKeyHex,
+      selectedAccount,
       decryptionKeyHex,
       tokenAddress,
     )
-  }, [decryptionKeyHex, selectedPrivateKeyHex, tokenAddress])
+  }, [decryptionKeyHex, selectedAccount, tokenAddress])
 
   return {
     perTokenStatusesRaw,
@@ -675,7 +756,7 @@ export const ConfidentialCoinContextProvider = ({
         throw new TypeError('actual amount not loaded')
 
       return transferConfidentialCoin(
-        selectedAccount.privateKey.toString(),
+        selectedAccount,
         selectedAccountDecryptionKey.toString(),
         selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted,
         BigInt(amount),
@@ -685,7 +766,7 @@ export const ConfidentialCoinContextProvider = ({
       )
     },
     [
-      selectedAccount.privateKey,
+      selectedAccount,
       selectedAccountDecryptionKey,
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
       selectedToken.address,
@@ -698,7 +779,7 @@ export const ConfidentialCoinContextProvider = ({
         throw new TypeError('actual amount not loaded')
 
       return withdrawConfidentialBalance(
-        selectedAccount.privateKey.toString(),
+        selectedAccount,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
         selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted,
@@ -707,7 +788,7 @@ export const ConfidentialCoinContextProvider = ({
     },
     [
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
-      selectedAccount.privateKey,
+      selectedAccount,
       selectedAccountDecryptionKey,
       selectedToken.address,
     ],
@@ -716,26 +797,24 @@ export const ConfidentialCoinContextProvider = ({
   const deposit = useCallback(
     async (amount: number) => {
       return depositConfidentialBalance(
-        selectedAccount.privateKey.toString(),
+        selectedAccount,
         amount,
         selectedToken.address,
       )
     },
-    [selectedAccount.privateKey, selectedToken.address],
+    [selectedAccount, selectedToken.address],
   )
 
   const testMintTokens = useCallback(async (): Promise<
     CommittedTransactionResponse[]
   > => {
-    const mintTxReceipt = await mintTokens(
-      selectedAccount.privateKey.toString(),
-    )
+    const mintTxReceipt = await mintTokens(selectedAccount)
     const depositTxReceipt = await deposit(10)
 
     const rolloverTxReceipt = await rolloverAccount()
 
     return [mintTxReceipt, depositTxReceipt, ...rolloverTxReceipt]
-  }, [deposit, rolloverAccount, selectedAccount.privateKey])
+  }, [deposit, rolloverAccount, selectedAccount])
 
   return (
     <confidentialCoinContext.Provider

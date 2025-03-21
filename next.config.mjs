@@ -10,6 +10,7 @@ const nextConfig = {
   images: {
     domains: ['plus.unsplash.com'],
   },
+  transpilePackages: ['@lukachi/aptos-labs-ts-sdk'],
 }
 
 const withNextIntl = createNextIntlPlugin('./src/localization/request.ts')

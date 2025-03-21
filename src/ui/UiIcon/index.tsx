@@ -44,6 +44,7 @@ import {
   TriangleAlertIcon,
   UnlockIcon,
   UserPlusIcon,
+  WandSparklesIcon,
 } from 'lucide-react'
 import { HTMLAttributes, RefAttributes } from 'react'
 
@@ -114,6 +115,7 @@ const LIB_ICONS = {
   CircleUserIcon: CircleUserIcon,
   UserPlusIcon: UserPlusIcon,
   RefreshCwIcon: RefreshCwIcon,
+  WandSparklesIcon: WandSparklesIcon,
 }
 
 type LibIconProps = {

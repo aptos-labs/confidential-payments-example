@@ -111,7 +111,7 @@ export default function DashboardHeader({
         open={isAccountsBottomSheet}
         onOpenChange={setIsAccountsBottomSheet}
       >
-        <UiSheetContent>
+        <UiSheetContent side='bottom'>
           <UiSheetHeader>
             <UiSheetTitle>Accounts</UiSheetTitle>
           </UiSheetHeader>
@@ -295,7 +295,7 @@ function AddNewAccountBottomSheet({
 
   return (
     <UiSheet {...rest}>
-      <UiSheetContent>
+      <UiSheetContent side='bottom'>
         <UiSheetHeader>
           <UiSheetTitle>Add Account</UiSheetTitle>
         </UiSheetHeader>
@@ -414,7 +414,7 @@ function TransferNativeBottomSheet({
 
   return (
     <UiSheet {...rest}>
-      <UiSheetContent>
+      <UiSheetContent side='bottom'>
         <UiSheetHeader>
           <UiSheetTitle>Send APT</UiSheetTitle>
         </UiSheetHeader>

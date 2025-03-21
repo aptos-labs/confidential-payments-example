@@ -159,7 +159,10 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
-        <UiSheetContent>
+        <UiSheetContent
+          side='bottom'
+          className='max-h-[70dvh] overflow-y-scroll'
+        >
           <UiSheetHeader>
             <UiSheetTitle>Transfer</UiSheetTitle>
           </UiSheetHeader>

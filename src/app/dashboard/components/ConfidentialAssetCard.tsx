@@ -20,23 +20,17 @@ export default function ConfidentialAssetCard({
   isFrozen,
   isRegistered,
 
-  onRollover,
-
   className,
 
   ...rest
 }: {
   token: TokenBaseInfo
-  encryptionKey: string
 
-  pendingAmount: string
   actualAmount: string
 
   isNormalized: boolean
   isFrozen: boolean
   isRegistered: boolean
-
-  onRollover: () => void
 } & HTMLAttributes<HTMLDivElement>) {
   // eslint-disable-next-line no-empty-pattern
   const {

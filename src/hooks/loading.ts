@@ -1,3 +1,5 @@
+'use client'
+
 import _isEmpty from 'lodash/isEmpty'
 import { useEffect, useMemo, useState } from 'react'
 

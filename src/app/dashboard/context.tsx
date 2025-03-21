@@ -7,7 +7,8 @@ import type {
   ConfidentialAmount,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
-import type { PropsWithChildren } from 'react'
+import { useQuery } from '@tanstack/react-query'
+import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
 
@@ -66,12 +67,14 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
   actualAmount: '0',
 }
 
-type DecryptionKeyStatusLoadingState = 'idle' | 'loading' | 'success' | 'error'
+type LoadingState = 'idle' | 'loading' | 'success' | 'error'
 
 type ConfidentialCoinContextType = {
   accountsList: Account[]
 
   selectedAccount: Account
+
+  accountsLoadingState: LoadingState
 
   addNewAccount: (privateKeyHex?: string) => void
   removeAccount: (accountAddress: string) => void
@@ -109,7 +112,7 @@ type ConfidentialCoinContextType = {
   deposit: (amount: number) => Promise<CommittedTransactionResponse>
   // TODO: rotate keys
 
-  decryptionKeyStatusLoadingState: DecryptionKeyStatusLoadingState
+  decryptionKeyStatusLoadingState: LoadingState
   loadSelectedDecryptionKeyState: () => Promise<void>
 
   testMintTokens: () => Promise<CommittedTransactionResponse[]>
@@ -118,6 +121,7 @@ type ConfidentialCoinContextType = {
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   accountsList: [],
   selectedAccount: {} as Account,
+  accountsLoadingState: 'idle',
 
   addNewAccount: () => {},
   removeAccount: () => {},
@@ -197,6 +201,9 @@ const useAccounts = () => {
 
   const {
     data: { accountsList, keylessAccAddrToIdTokens },
+    isLoading: isAccountsLoading,
+    isLoadingError: isAccountsLoadingError,
+    isEmpty: isAccountsEmpty,
   } = useLoading<{
     accountsList: Account[]
     keylessAccAddrToIdTokens: Record<string, string>
@@ -239,13 +246,36 @@ const useAccounts = () => {
     { loadArgs: [] },
   )
 
-  const { data: aptBalance, reload } = useLoading(
+  const {
+    data: aptBalance,
+    isLoading: isBalanceLoading,
+    isLoadingError: isBalanceLoadingError,
+    isEmpty: isBalanceEmpty,
+    reload,
+  } = useLoading(
     0,
     () => {
       return getAptBalance(selectedAccount)
     },
     { loadArgs: [selectedAccount] },
   )
+
+  const accountsLoadingState = useMemo((): LoadingState => {
+    if (isAccountsLoading || isBalanceLoading) return 'loading'
+
+    if (isAccountsLoadingError || isBalanceLoadingError) return 'error'
+
+    if (isAccountsEmpty || isBalanceEmpty) return 'idle'
+
+    return 'success'
+  }, [
+    isAccountsEmpty,
+    isAccountsLoading,
+    isAccountsLoadingError,
+    isBalanceEmpty,
+    isBalanceLoading,
+    isBalanceLoadingError,
+  ])
 
   // TODO: implement adding keyless account for new tokens
   const addNewAccount = useCallback(
@@ -341,6 +371,8 @@ const useAccounts = () => {
     removeAccount,
 
     aptBalance,
+
+    accountsLoadingState,
     reloadAptBalance: reload,
   }
 }
@@ -520,7 +552,12 @@ const useSelectedAccountDecryptionKeyStatus = (
     return [config.DEFAULT_TOKEN, ...savedTokensPerDK]
   }, [selectedAccount.accountAddress, accountAddrHexToTokenAddrMap])
 
-  const { data, isLoading, isLoadingError, isEmpty, reload } = useLoading<
+  const {
+    data: loadedTokens,
+    isLoading,
+    isLoadingError,
+    refetch: reload,
+  } = useQuery<
     {
       tokenAddress: string
       pending: ConfidentialAmount | undefined
@@ -529,30 +566,24 @@ const useSelectedAccountDecryptionKeyStatus = (
       isNormalized: boolean
       isFrozen: boolean
     }[]
-  >(
-    [
+  >({
+    initialData: [
       {
         tokenAddress: config.DEFAULT_TOKEN.address,
         ...AccountDecryptionKeyStatusRawDefault,
       },
     ],
-    async () => {
-      if (!selectedAccount.accountAddress || !currentTokensList.length)
+    queryFn: async () => {
+      if (!selectedAccount.accountAddress || !currentTokensList.length) {
         return [
           {
             tokenAddress: config.DEFAULT_TOKEN.address,
             ...AccountDecryptionKeyStatusRawDefault,
           },
         ]
+      }
 
-      const perTokenDetails: {
-        tokenAddress: string
-        pending: ConfidentialAmount | undefined
-        actual: ConfidentialAmount | undefined
-        isRegistered: boolean
-        isNormalized: boolean
-        isFrozen: boolean
-      }[] = await Promise.all(
+      return Promise.all(
         currentTokensList.map(async el => {
           try {
             const isRegistered = await getIsAccountRegisteredWithToken(
@@ -602,20 +633,25 @@ const useSelectedAccountDecryptionKeyStatus = (
           }
         }),
       )
-
-      return perTokenDetails
     },
-    {
-      loadArgs: [
-        selectedAccount,
-        currentTokensList,
-        selectedAccountDecryptionKey,
-      ],
-    },
-  )
+    queryKey: [
+      'loadedTokens',
+      selectedAccount,
+      currentTokensList,
+      selectedAccountDecryptionKey,
+    ],
+  })
 
   const perTokenStatusesRaw = useMemo(() => {
-    return data.reduce(
+    const tokens =
+      loadedTokens.length !== currentTokensList.length
+        ? currentTokensList.map(el => ({
+            ...AccountDecryptionKeyStatusRawDefault,
+            tokenAddress: el.address,
+          }))
+        : loadedTokens
+
+    return tokens.reduce(
       (acc, { tokenAddress: tokenAddr, ...rest }) => {
         acc[tokenAddr] = rest
 
@@ -629,7 +665,7 @@ const useSelectedAccountDecryptionKeyStatus = (
         } & Omit<AccountDecryptionKeyStatus, 'pendingAmount' | 'actualAmount'>
       >,
     )
-  }, [data])
+  }, [currentTokensList, loadedTokens])
 
   const perTokenStatuses = useMemo(() => {
     return Object.entries(perTokenStatusesRaw)
@@ -673,16 +709,13 @@ const useSelectedAccountDecryptionKeyStatus = (
     return perTokenStatuses[tokenAddress]
   }, [perTokenStatuses, tokenAddress])
 
-  const decryptionKeyStatusLoadingState =
-    useMemo((): DecryptionKeyStatusLoadingState => {
-      if (isLoading) return 'loading'
+  const decryptionKeyStatusLoadingState = useMemo((): LoadingState => {
+    if (isLoading) return 'loading'
 
-      if (isLoadingError) return 'error'
+    if (isLoadingError) return 'error'
 
-      if (isEmpty) return 'idle'
-
-      return 'success'
-    }, [isEmpty, isLoading, isLoadingError])
+    return 'success'
+  }, [isLoading, isLoadingError])
 
   const normalizeAccount = useCallback(async () => {
     if (!selectedAccountDecryptionKey || !tokenAddress)
@@ -738,7 +771,9 @@ const useSelectedAccountDecryptionKeyStatus = (
     selectedAccountDecryptionKeyStatus,
 
     decryptionKeyStatusLoadingState,
-    loadSelectedDecryptionKeyState: reload,
+    loadSelectedDecryptionKeyState: async () => {
+      await reload()
+    },
 
     normalizeAccount,
     unfreezeAccount,
@@ -756,6 +791,7 @@ export const ConfidentialCoinContextProvider = ({
     addNewAccount,
     removeAccount,
     aptBalance,
+    accountsLoadingState,
     reloadAptBalance,
   } = useAccounts()
 
@@ -870,6 +906,7 @@ export const ConfidentialCoinContextProvider = ({
         setSelectedAccount,
         addNewAccount,
         removeAccount,
+        accountsLoadingState,
 
         aptBalance,
         reloadAptBalance,

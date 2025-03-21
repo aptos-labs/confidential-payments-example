@@ -71,13 +71,14 @@ export default function DashboardClient() {
   const transferFormSheet = useTransferFormSheet()
 
   const {
+    accountsLoadingState,
+
     selectedToken,
     setSelectedTokenAddress,
 
     // selectedAccountDecryptionKey,
     selectedAccountDecryptionKeyStatus,
 
-    registerAccountEncryptionKey,
     unfreezeAccount,
     normalizeAccount,
     rolloverAccount,
@@ -93,7 +94,6 @@ export default function DashboardClient() {
     reloadAptBalance,
 
     perTokenStatuses,
-    selectedAccountDecryptionKey,
     tokens,
   } = useConfidentialCoinContext()
 
@@ -129,29 +129,6 @@ export default function DashboardClient() {
     }
     setIsSubmitting(false)
   }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
-
-  const tryRegister = useCallback(async () => {
-    setIsSubmitting(true)
-    try {
-      const txReceipt = await registerAccountEncryptionKey(
-        selectedToken.address,
-      )
-      addTxHistoryItem({
-        txHash: txReceipt.hash,
-        txType: 'register',
-        createdAt: time().timestamp,
-      })
-      await tryRefresh()
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-    setIsSubmitting(false)
-  }, [
-    addTxHistoryItem,
-    registerAccountEncryptionKey,
-    selectedToken.address,
-    tryRefresh,
-  ])
 
   const tryNormalize = useCallback(async () => {
     setIsSubmitting(true)
@@ -231,7 +208,12 @@ export default function DashboardClient() {
 
   // TODO: enchance to more fabric orchestration
   useEffect(() => {
-    if (decryptionKeyStatusLoadingState !== 'success') return
+    if (
+      [decryptionKeyStatusLoadingState, accountsLoadingState].every(
+        el => el === 'success',
+      )
+    )
+      return
 
     const action = searchParams.get('action')
 
@@ -254,6 +236,7 @@ export default function DashboardClient() {
 
     clearAllParams()
   }, [
+    accountsLoadingState,
     clearAllParams,
     decryptionKeyStatusLoadingState,
     loadSelectedDecryptionKeyState,
@@ -284,15 +267,10 @@ export default function DashboardClient() {
                       key={idx}
                       className='w-full'
                       token={token}
-                      encryptionKey={selectedAccountDecryptionKey
-                        .publicKey()
-                        .toString()}
-                      pendingAmount={currTokenStatuses.pendingAmount}
                       actualAmount={currTokenStatuses.actualAmount}
                       isNormalized={currTokenStatuses.isNormalized}
                       isFrozen={currTokenStatuses.isFrozen}
                       isRegistered={currTokenStatuses.isRegistered}
-                      onRollover={() => {}}
                     />
                   )
                 }),
@@ -371,67 +349,54 @@ export default function DashboardClient() {
           )}
         </div>
 
-        {decryptionKeyStatusLoadingState === 'success' && (
+        {[decryptionKeyStatusLoadingState, accountsLoadingState].every(
+          el => el === 'success',
+        ) && (
           <div className='flex flex-col gap-4 p-4'>
-            {!selectedAccountDecryptionKeyStatus.isRegistered ? (
-              <ActionCard
-                title='Register Balance'
-                desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                leadingContent={
-                  <UiIcon
-                    name={'IdCardIcon'}
-                    className='size-8 text-textPrimary'
-                  />
-                }
-                onClick={tryRegister}
-                disabled={isSubmitting}
-              />
-            ) : (
-              <>
-                {selectedAccountDecryptionKeyStatus.isFrozen && (
-                  <ActionCard
-                    title='Unfreeze Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <Snowflake
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryUnfreeze}
-                    disabled={isSubmitting}
-                  />
-                )}
-
-                {!selectedAccountDecryptionKeyStatus.isNormalized && (
-                  <ActionCard
-                    title='Normalize Balance'
-                    desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                    leadingContent={
-                      <TriangleAlertIcon
-                        size={32}
-                        className='self-center text-textPrimary'
-                      />
-                    }
-                    onClick={tryNormalize}
-                    disabled={isSubmitting}
-                  />
-                )}
-
+            <>
+              {selectedAccountDecryptionKeyStatus.isFrozen && (
                 <ActionCard
-                  title='Test Mint'
-                  desc='Mint 10 test tokens'
+                  title='Unfreeze Balance'
+                  desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
                   leadingContent={
-                    <HandCoinsIcon
+                    <Snowflake
                       size={32}
                       className='self-center text-textPrimary'
                     />
                   }
-                  onClick={tryTestMint}
+                  onClick={tryUnfreeze}
                   disabled={isSubmitting}
                 />
-              </>
-            )}
+              )}
+
+              {!selectedAccountDecryptionKeyStatus.isNormalized && (
+                <ActionCard
+                  title='Normalize Balance'
+                  desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
+                  leadingContent={
+                    <TriangleAlertIcon
+                      size={32}
+                      className='self-center text-textPrimary'
+                    />
+                  }
+                  onClick={tryNormalize}
+                  disabled={isSubmitting}
+                />
+              )}
+
+              <ActionCard
+                title='Test Mint'
+                desc='Mint 10 test tokens'
+                leadingContent={
+                  <HandCoinsIcon
+                    size={32}
+                    className='self-center text-textPrimary'
+                  />
+                }
+                onClick={tryTestMint}
+                disabled={isSubmitting}
+              />
+            </>
           </div>
         )}
 

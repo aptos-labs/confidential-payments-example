@@ -14,6 +14,8 @@ import {
   KeylessAccount,
   Network,
   NetworkToNetworkName,
+  PrivateKey,
+  PrivateKeyVariants,
   RangeProofExecutor,
   TransactionWorkerEventsEnum,
   TwistedEd25519PrivateKey,
@@ -24,7 +26,6 @@ import { ethers } from 'ethers'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
 
-import { apiClient } from '@/api/client'
 import {
   genBatchRangeZKP,
   generateRangeZKP,
@@ -51,7 +52,12 @@ export const accountFromPrivateKey = (privateKeyHex: string) => {
     : privateKeyHex
 
   return Account.fromPrivateKey({
-    privateKey: new Ed25519PrivateKey(sanitizedPrivateKeyHex),
+    privateKey: new Ed25519PrivateKey(
+      PrivateKey.formatPrivateKey(
+        sanitizedPrivateKeyHex,
+        PrivateKeyVariants.Ed25519,
+      ),
+    ),
   })
 }
 
@@ -398,26 +404,19 @@ export const authorize = async () => {
   await sleep(1_000)
 }
 
-export const refresh = async () => {
-  return apiClient.get<{
-    access_token: string
-    refresh_token: string
-  }>('/integrations/decentralized-auth-svc/v1/refresh')
-}
-
 export const getFungibleAssetMetadata = async (
   tokenAddressHex: string,
 ): Promise<TokenBaseInfo> => {
-  const fungibleAsset = await aptos.getFungibleAssetMetadataByAssetType({
-    assetType: '0x123::test_coin::TestCoin',
+  const fungibleAsset = await aptos.getFungibleAssetMetadataByCreatorAddress({
+    creatorAddress: tokenAddressHex,
   })
 
   return {
     address: tokenAddressHex,
-    name: fungibleAsset.name,
-    symbol: fungibleAsset.symbol,
-    decimals: fungibleAsset.decimals,
-    iconUri: fungibleAsset.icon_uri || '',
+    name: fungibleAsset[0].name,
+    symbol: fungibleAsset[0].symbol,
+    decimals: fungibleAsset[0].decimals,
+    iconUri: fungibleAsset[0].icon_uri || '',
   }
 }
 

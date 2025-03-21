@@ -1,5 +1,7 @@
 'use client'
 
+import { time } from '@distributedlab/tools'
+import Avatar from 'boring-avatars'
 import Image from 'next/image'
 import { useCallback, useState } from 'react'
 import { Controller } from 'react-hook-form'
@@ -17,7 +19,8 @@ import { UiButton } from '@/ui/UiButton'
 import { UiInput } from '@/ui/UiInput'
 
 export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
-  const { addToken } = useConfidentialCoinContext()
+  const { addToken, registerAccountEncryptionKey, addTxHistoryItem } =
+    useConfidentialCoinContext()
 
   const {
     formState,
@@ -58,6 +61,14 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       handleSubmit(async formData => {
         disableForm()
         try {
+          const txReceipt = await registerAccountEncryptionKey(
+            formData.tokenAddress,
+          )
+          addTxHistoryItem({
+            txHash: txReceipt.hash,
+            txType: 'register',
+            createdAt: time().timestamp,
+          })
           addToken(formData.tokenInfo!)
           onSubmit()
           clearForm()
@@ -66,7 +77,16 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
         }
         enableForm()
       })(),
-    [addToken, clearForm, disableForm, enableForm, handleSubmit, onSubmit],
+    [
+      addToken,
+      addTxHistoryItem,
+      clearForm,
+      disableForm,
+      enableForm,
+      handleSubmit,
+      onSubmit,
+      registerAccountEncryptionKey,
+    ],
   )
 
   const searchToken = useCallback(
@@ -119,12 +139,17 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       />
 
       {formState.tokenInfo && (
-        <div className='mt-3 flex gap-3'>
-          {formState.tokenInfo.iconUri && (
+        <div className='mt-3 flex flex-col gap-3'>
+          {formState.tokenInfo.iconUri ? (
             <Image
               src={formState.tokenInfo.iconUri}
               alt={formState.tokenInfo.name}
-              className='size-[75] rounded-full'
+              className='size-[75px] rounded-full'
+            />
+          ) : (
+            <Avatar
+              name={formState.tokenAddress}
+              className={'size-[75px] rounded-[50%]'}
             />
           )}
           {renderTokenInfoItem('Name', formState.tokenInfo.name)}

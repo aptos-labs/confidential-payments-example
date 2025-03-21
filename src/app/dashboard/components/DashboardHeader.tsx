@@ -41,7 +41,6 @@ import {
   UiSheetHeader,
   UiSheetTitle,
 } from '@/ui/UiSheet'
-import { UiSidebarMenuButton } from '@/ui/UiSidebar'
 
 export default function DashboardHeader({
   className,
@@ -111,7 +110,7 @@ export default function DashboardHeader({
         open={isAccountsBottomSheet}
         onOpenChange={setIsAccountsBottomSheet}
       >
-        <UiSheetContent side='bottom'>
+        <UiSheetContent side='top'>
           <UiSheetHeader>
             <UiSheetTitle>Accounts</UiSheetTitle>
           </UiSheetHeader>
@@ -207,9 +206,7 @@ function AccountListItem({
       <div className='ml-auto text-textPrimary'>
         <UiDropdownMenu>
           <UiDropdownMenuTrigger asChild>
-            <UiSidebarMenuButton>
-              <EllipsisIcon className='size-5' />
-            </UiSidebarMenuButton>
+            <EllipsisIcon className='size-5' />
           </UiDropdownMenuTrigger>
           <UiDropdownMenuContent>
             <UiDropdownMenuItem

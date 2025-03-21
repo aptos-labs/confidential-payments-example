@@ -164,17 +164,24 @@ export const useConfidentialCoinContext = () => {
   return useContext(confidentialCoinContext)
 }
 
+const useSelectedAccount = () => {
+  const activeKeylessAccount = authStore.useAuthStore(
+    state => state.activeAccount,
+  )
+  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
+
+  return useMemo(
+    () => selectedWalletAccount || activeKeylessAccount!,
+    [activeKeylessAccount, selectedWalletAccount],
+  )
+}
+
 const useAccounts = () => {
   const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
   const walletAccounts = walletStore.useWalletAccounts()
   const switchActiveKeylessAccount = authStore.useAuthStore(
     state => state.switchKeylessAccount,
   )
-
-  const activeKeylessAccount = authStore.useAuthStore(
-    state => state.activeAccount,
-  )
-  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
 
   const addAndSetPrivateKey = walletStore.useWalletStore(
     state => state.addAndSetPrivateKey,
@@ -186,10 +193,7 @@ const useAccounts = () => {
     state => state.setSelectedAccountAddr,
   )
 
-  const selectedAccount = useMemo(
-    () => activeKeylessAccount || selectedWalletAccount,
-    [activeKeylessAccount, selectedWalletAccount],
-  )
+  const selectedAccount = useSelectedAccount()
 
   const {
     data: { accountsList, keylessAccAddrToIdTokens },
@@ -282,8 +286,8 @@ const useAccounts = () => {
 
       if (!idToken) throw new TypeError('Account not found')
 
-      setSelectedAccountAddr('')
       await switchActiveKeylessAccount(idToken)
+      setSelectedAccountAddr('')
     },
     [
       accountsList,
@@ -346,12 +350,8 @@ const useSelectedAccountDecryptionKey = () => {
   const activeKeylessAccount = authStore.useAuthStore(
     state => state.activeAccount,
   )
-  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
 
-  const selectedAccount = useMemo(
-    () => activeKeylessAccount || selectedWalletAccount,
-    [activeKeylessAccount, selectedWalletAccount],
-  )
+  const selectedAccount = useSelectedAccount()
 
   const selectedAccountDecryptionKey = useMemo(() => {
     if (
@@ -485,12 +485,8 @@ const useSelectedAccountDecryptionKeyStatus = (
   const activeKeylessAccount = authStore.useAuthStore(
     state => state.activeAccount,
   )
-  const selectedWalletAccount = walletStore.useSelectedWalletAccount()
 
-  const selectedAccount = useMemo(
-    () => activeKeylessAccount || selectedWalletAccount,
-    [activeKeylessAccount, selectedWalletAccount],
-  )
+  const selectedAccount = useSelectedAccount()
 
   const selectedAccountDecryptionKey = useMemo(() => {
     if (
@@ -854,8 +850,15 @@ export const ConfidentialCoinContextProvider = ({
 
     const rolloverTxReceipt = await rolloverAccount()
 
-    return [mintTxReceipt, depositTxReceipt, ...rolloverTxReceipt]
-  }, [deposit, rolloverAccount, selectedAccount])
+    const normalizeTxReceipt = await normalizeAccount()
+
+    return [
+      mintTxReceipt,
+      depositTxReceipt,
+      ...rolloverTxReceipt,
+      normalizeTxReceipt,
+    ]
+  }, [deposit, normalizeAccount, rolloverAccount, selectedAccount])
 
   return (
     <confidentialCoinContext.Provider

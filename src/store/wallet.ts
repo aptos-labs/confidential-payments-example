@@ -151,6 +151,7 @@ const useWalletStore = create(
         clearStoredKeys: (): void => {
           set({
             privateKeyHexList: [],
+            selectedAccountAddr: '',
 
             accountAddrHexToTokenAddrMap: {},
             _selectedTokenAddress: '',
@@ -198,12 +199,10 @@ const useSelectedWalletAccount = () => {
   const selectedAccountAddr = useWalletStore(state => state.selectedAccountAddr)
 
   return useMemo(() => {
-    return (
-      walletAccounts.find(
-        el =>
-          el.accountAddress.toString().toLowerCase() ===
-          selectedAccountAddr.toLowerCase(),
-      ) || walletAccounts[0]
+    return walletAccounts.find(
+      el =>
+        el.accountAddress.toString().toLowerCase() ===
+        selectedAccountAddr.toLowerCase(),
     )
   }, [selectedAccountAddr, walletAccounts])
 }

@@ -383,12 +383,12 @@ const useSelectedAccountDecryptionKey = () => {
   }
 }
 
-const useTokens = (decryptionKeyHex: string | undefined) => {
-  const tokensListToDecryptionKeyHexMap = walletStore.useWalletStore(
-    state => state.tokensListToDecryptionKeyHexMap,
+const useTokens = (accountAddressHex: string | undefined) => {
+  const accountAddrHexToTokenAddrMap = walletStore.useWalletStore(
+    state => state.accountAddrHexToTokenAddrMap,
   )
-  const decryptionKeyPerTokenTxHistory = walletStore.useWalletStore(
-    state => state.decryptionKeyPerTokenTxHistory,
+  const accountAddrHexPerTokenTxHistory = walletStore.useWalletStore(
+    state => state.accountAddrHexPerTokenTxHistory,
   )
   const setSelectedTokenAddress = walletStore.useWalletStore(
     state => state.setSelectedTokenAddress,
@@ -401,65 +401,70 @@ const useTokens = (decryptionKeyHex: string | undefined) => {
 
   const selectedTokenAddress = walletStore.useSelectedTokenAddress()
 
-  const savedTokensPerDK = useMemo(
+  const savedTokensPerAccAddr = useMemo(
     () =>
-      decryptionKeyHex ? tokensListToDecryptionKeyHexMap[decryptionKeyHex] : [],
-    [decryptionKeyHex, tokensListToDecryptionKeyHexMap],
+      accountAddressHex ? accountAddrHexToTokenAddrMap[accountAddressHex] : [],
+    [accountAddressHex, accountAddrHexToTokenAddrMap],
   )
 
   const tokens = useMemo(() => {
-    if (!savedTokensPerDK?.length) {
+    if (!savedTokensPerAccAddr?.length) {
       return [config.DEFAULT_TOKEN]
     }
 
-    return [config.DEFAULT_TOKEN, ...savedTokensPerDK]
-  }, [savedTokensPerDK])
+    return [config.DEFAULT_TOKEN, ...savedTokensPerAccAddr]
+  }, [savedTokensPerAccAddr])
 
   const selectedToken = useMemo(() => {
-    if (!decryptionKeyHex || !tokens.length) return config.DEFAULT_TOKEN
+    if (!accountAddressHex || !tokens.length) return config.DEFAULT_TOKEN
 
     return (
       tokens.find(token => token.address === selectedTokenAddress) ||
       config.DEFAULT_TOKEN
     )
-  }, [decryptionKeyHex, tokens, selectedTokenAddress])
+  }, [accountAddressHex, tokens, selectedTokenAddress])
 
   const txHistory = useMemo(() => {
-    if (!decryptionKeyHex) return []
+    if (!accountAddressHex) return []
 
     if (!selectedToken) return []
 
     const mappedTxHistory =
-      decryptionKeyPerTokenTxHistory[decryptionKeyHex]?.[selectedToken.address]
+      accountAddrHexPerTokenTxHistory[accountAddressHex]?.[
+        selectedToken.address
+      ]
 
     return mappedTxHistory ?? []
-  }, [decryptionKeyHex, selectedToken, decryptionKeyPerTokenTxHistory])
+  }, [accountAddressHex, selectedToken, accountAddrHexPerTokenTxHistory])
 
   const addToken = useCallback(
     (token: TokenBaseInfo) => {
-      if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
+      if (!accountAddressHex)
+        throw new TypeError('accountAddressHex is not set')
 
-      _addToken(decryptionKeyHex, token)
+      _addToken(accountAddressHex, token)
     },
-    [_addToken, decryptionKeyHex],
+    [_addToken, accountAddressHex],
   )
 
   const removeToken = useCallback(
     (address: string) => {
-      if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
+      if (!accountAddressHex)
+        throw new TypeError('accountAddressHex is not set')
 
-      _removeToken(decryptionKeyHex, address)
+      _removeToken(accountAddressHex, address)
     },
-    [decryptionKeyHex, _removeToken],
+    [accountAddressHex, _removeToken],
   )
 
   const addTxHistoryItem = useCallback(
     (details: TxHistoryItem) => {
-      if (!decryptionKeyHex) throw new TypeError('decryptionKeyHex is not set')
+      if (!accountAddressHex)
+        throw new TypeError('accountAddressHex is not set')
 
-      _addTxHistoryItem(decryptionKeyHex, selectedToken.address, details)
+      _addTxHistoryItem(accountAddressHex, selectedToken.address, details)
     },
-    [decryptionKeyHex, selectedToken.address, _addTxHistoryItem],
+    [accountAddressHex, selectedToken.address, _addTxHistoryItem],
   )
 
   return {
@@ -474,9 +479,9 @@ const useTokens = (decryptionKeyHex: string | undefined) => {
 }
 
 const useSelectedAccountDecryptionKeyStatus = (
-  decryptionKeyHex: string | undefined,
   tokenAddress: string | undefined,
 ) => {
+  const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
   const activeKeylessAccount = authStore.useAuthStore(
     state => state.activeAccount,
   )
@@ -487,21 +492,37 @@ const useSelectedAccountDecryptionKeyStatus = (
     [activeKeylessAccount, selectedWalletAccount],
   )
 
-  const tokensListToDecryptionKeyHexMap = walletStore.useWalletStore(
-    state => state.tokensListToDecryptionKeyHexMap,
+  const selectedAccountDecryptionKey = useMemo(() => {
+    if (
+      selectedAccount.accountAddress.toString().toLowerCase() ===
+      activeKeylessAccount?.accountAddress.toString().toLowerCase()
+    ) {
+      return walletStore.decryptionKeyFromPepper(rawKeylessAccounts[0].pepper)
+    }
+
+    return walletStore.decryptionKeyFromPrivateKey(selectedAccount)
+  }, [
+    activeKeylessAccount?.accountAddress,
+    rawKeylessAccounts,
+    selectedAccount,
+  ])
+
+  const accountAddrHexToTokenAddrMap = walletStore.useWalletStore(
+    state => state.accountAddrHexToTokenAddrMap,
   )
 
   const currentTokensList = useMemo(() => {
-    if (!decryptionKeyHex) return []
+    if (!selectedAccount.accountAddress) return []
 
-    const savedTokensPerDK = tokensListToDecryptionKeyHexMap?.[decryptionKeyHex]
+    const savedTokensPerDK =
+      accountAddrHexToTokenAddrMap?.[selectedAccount.accountAddress.toString()]
 
     if (!savedTokensPerDK?.length) {
       return [config.DEFAULT_TOKEN]
     }
 
     return [config.DEFAULT_TOKEN, ...savedTokensPerDK]
-  }, [decryptionKeyHex, tokensListToDecryptionKeyHexMap])
+  }, [selectedAccount.accountAddress, accountAddrHexToTokenAddrMap])
 
   const { data, isLoading, isLoadingError, isEmpty, reload } = useLoading<
     {
@@ -520,7 +541,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       },
     ],
     async () => {
-      if (!decryptionKeyHex || !currentTokensList.length)
+      if (!selectedAccount.accountAddress || !currentTokensList.length)
         return [
           {
             tokenAddress: config.DEFAULT_TOKEN.address,
@@ -548,7 +569,7 @@ const useSelectedAccountDecryptionKeyStatus = (
                 await Promise.all([
                   getConfidentialBalances(
                     selectedAccount,
-                    decryptionKeyHex,
+                    selectedAccountDecryptionKey.toString(),
                     el.address,
                   ),
                   getIsBalanceNormalized(selectedAccount, el.address),
@@ -589,7 +610,11 @@ const useSelectedAccountDecryptionKeyStatus = (
       return perTokenDetails
     },
     {
-      loadArgs: [selectedAccount, currentTokensList],
+      loadArgs: [
+        selectedAccount,
+        currentTokensList,
+        selectedAccountDecryptionKey,
+      ],
     },
   )
 
@@ -664,7 +689,7 @@ const useSelectedAccountDecryptionKeyStatus = (
     }, [isEmpty, isLoading, isLoadingError])
 
   const normalizeAccount = useCallback(async () => {
-    if (!decryptionKeyHex || !tokenAddress)
+    if (!selectedAccountDecryptionKey || !tokenAddress)
       throw new TypeError('Decryption key is not set')
 
     const actualBalance = perTokenStatusesRaw[tokenAddress]?.actual
@@ -676,32 +701,39 @@ const useSelectedAccountDecryptionKeyStatus = (
 
     return normalizeConfidentialBalance(
       selectedAccount,
-      decryptionKeyHex,
+      selectedAccountDecryptionKey.toString(),
       actualBalance.amountEncrypted,
       actualBalance.amount,
       tokenAddress,
     )
-  }, [decryptionKeyHex, perTokenStatusesRaw, selectedAccount, tokenAddress])
+  }, [
+    perTokenStatusesRaw,
+    selectedAccount,
+    selectedAccountDecryptionKey,
+    tokenAddress,
+  ])
 
   // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
   const unfreezeAccount = useCallback(async () => {
-    if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
+    if (!selectedAccountDecryptionKey)
+      throw new TypeError('Decryption key is not set')
 
     // TODO: implement me
     // mb: rotate keys with unfreeze
-  }, [decryptionKeyHex])
+  }, [selectedAccountDecryptionKey])
 
   const rolloverAccount = useCallback(async () => {
-    if (!decryptionKeyHex) throw new TypeError('Decryption key is not set')
+    if (!selectedAccountDecryptionKey)
+      throw new TypeError('Decryption key is not set')
 
     return safelyRolloverConfidentialBalance(
       selectedAccount,
-      decryptionKeyHex,
+      selectedAccountDecryptionKey.toString(),
       tokenAddress,
     )
-  }, [decryptionKeyHex, selectedAccount, tokenAddress])
+  }, [selectedAccountDecryptionKey, selectedAccount, tokenAddress])
 
   return {
     perTokenStatusesRaw,
@@ -742,7 +774,7 @@ export const ConfidentialCoinContextProvider = ({
     removeToken,
     addTxHistoryItem,
     setSelectedTokenAddress,
-  } = useTokens(selectedAccountDecryptionKey.toString())
+  } = useTokens(selectedAccount?.accountAddress.toString())
 
   const {
     perTokenStatuses,
@@ -753,10 +785,7 @@ export const ConfidentialCoinContextProvider = ({
     normalizeAccount,
     unfreezeAccount,
     rolloverAccount,
-  } = useSelectedAccountDecryptionKeyStatus(
-    selectedAccountDecryptionKey.toString(),
-    selectedToken.address,
-  )
+  } = useSelectedAccountDecryptionKeyStatus(selectedToken.address)
 
   const transfer = useCallback(
     async (

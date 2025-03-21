@@ -40,11 +40,11 @@ type StoreState = {
   privateKeyHexList: string[]
   selectedAccountAddr: string
 
-  tokensListToDecryptionKeyHexMap: Record<string, TokenBaseInfo[]>
+  accountAddrHexToTokenAddrMap: Record<string, TokenBaseInfo[]>
   _selectedTokenAddress: string
 
-  decryptionKeyPerTokenTxHistory: Record<
-    string, // decryptionKeyHex - owner
+  accountAddrHexPerTokenTxHistory: Record<
+    string,
     Record<
       string, // token
       TxHistoryItem[] // tx history
@@ -61,10 +61,10 @@ const useWalletStore = create(
         privateKeyHexList: [],
         selectedAccountAddr: '',
 
-        tokensListToDecryptionKeyHexMap: {},
+        accountAddrHexToTokenAddrMap: {},
         _selectedTokenAddress: '',
 
-        decryptionKeyPerTokenTxHistory: {},
+        accountAddrHexPerTokenTxHistory: {},
 
         _hasHydrated: false,
       } as StoreState,
@@ -106,40 +106,39 @@ const useWalletStore = create(
             _selectedTokenAddress: tokenAddress,
           })
         },
-        addToken: (decryptionKeyHex: string, token: TokenBaseInfo): void => {
+        addToken: (accAddr: string, token: TokenBaseInfo): void => {
           set(state => ({
-            tokensListToDecryptionKeyHexMap: {
-              ...state.tokensListToDecryptionKeyHexMap,
-              [decryptionKeyHex]: [
-                ...(state.tokensListToDecryptionKeyHexMap[decryptionKeyHex] ||
-                  []),
+            accountAddrHexToTokenAddrMap: {
+              ...state.accountAddrHexToTokenAddrMap,
+              [accAddr]: [
+                ...(state.accountAddrHexToTokenAddrMap[accAddr] || []),
                 token,
               ],
             },
           }))
         },
-        removeToken: (decryptionKeyHex: string, tokenAddress: string): void => {
+        removeToken: (accAddr: string, tokenAddress: string): void => {
           set(state => ({
-            tokensListToDecryptionKeyHexMap: {
-              ...state.tokensListToDecryptionKeyHexMap,
-              [decryptionKeyHex]: (
-                state.tokensListToDecryptionKeyHexMap[decryptionKeyHex] || []
+            accountAddrHexToTokenAddrMap: {
+              ...state.accountAddrHexToTokenAddrMap,
+              [accAddr]: (
+                state.accountAddrHexToTokenAddrMap[accAddr] || []
               ).filter(token => token.address !== tokenAddress),
             },
           }))
         },
         addTxHistoryItem: (
-          decryptionKeyHex: string,
+          accAddr: string,
           tokenAddress: string,
           details: TxHistoryItem,
         ): void => {
           set(state => ({
-            decryptionKeyPerTokenTxHistory: {
-              ...state.decryptionKeyPerTokenTxHistory,
-              [decryptionKeyHex]: {
-                ...state.decryptionKeyPerTokenTxHistory[decryptionKeyHex],
+            accountAddrHexPerTokenTxHistory: {
+              ...state.accountAddrHexPerTokenTxHistory,
+              [accAddr]: {
+                ...state.accountAddrHexPerTokenTxHistory[accAddr],
                 [tokenAddress]: [
-                  ...(state.decryptionKeyPerTokenTxHistory[decryptionKeyHex]?.[
+                  ...(state.accountAddrHexPerTokenTxHistory[accAddr]?.[
                     tokenAddress
                   ] || []),
                   details,
@@ -153,10 +152,10 @@ const useWalletStore = create(
           set({
             privateKeyHexList: [],
 
-            tokensListToDecryptionKeyHexMap: {},
+            accountAddrHexToTokenAddrMap: {},
             _selectedTokenAddress: '',
 
-            decryptionKeyPerTokenTxHistory: {},
+            accountAddrHexPerTokenTxHistory: {},
           })
         },
       }),
@@ -171,9 +170,9 @@ const useWalletStore = create(
 
       partialize: state => ({
         privateKeyHexList: state.privateKeyHexList,
-        tokensListToDecryptionKeyHexMap: state.tokensListToDecryptionKeyHexMap,
-        selectedTokenAddress: state._selectedTokenAddress,
-        decryptionKeyPerTokenTxHistory: state.decryptionKeyPerTokenTxHistory,
+        accountAddrHexToTokenAddrMap: state.accountAddrHexToTokenAddrMap,
+        _selectedTokenAddress: state._selectedTokenAddress,
+        accountAddrHexPerTokenTxHistory: state.accountAddrHexPerTokenTxHistory,
       }),
     },
   ),

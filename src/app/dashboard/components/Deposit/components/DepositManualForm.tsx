@@ -2,7 +2,7 @@
 
 import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
@@ -10,6 +10,8 @@ import { useForm } from '@/hooks'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import { ControlledUiInput } from '@/ui/UiInput'
+import { UiLabel } from '@/ui/UiLabel'
+import { UiSwitch } from '@/ui/UiSwitch'
 import {
   UiTooltip,
   UiTooltipContent,
@@ -31,9 +33,16 @@ export default function DepositManualForm({
     perTokenStatuses,
   } = useConfidentialCoinContext()
 
+  const [isOtherRecipient, setIsOtherRecipient] = useState(false)
+
   const { control, disableForm, enableForm, isFormDisabled, handleSubmit } =
-    useForm({ amount: '' }, yup =>
-      yup.object().shape({ amount: yup.number().required() }),
+    useForm({ recipient: '', amount: '' }, yup =>
+      yup.object().shape({
+        amount: yup.number().required(),
+        ...(isOtherRecipient && {
+          recipient: yup.string().required(),
+        }),
+      }),
     )
 
   const submit = useCallback(
@@ -96,25 +105,40 @@ export default function DepositManualForm({
 
   return (
     <form className='flex flex-col gap-3' onSubmit={handleSubmit(submit)}>
+      {isOtherRecipient && (
+        <ControlledUiInput
+          control={control}
+          name='recipient'
+          label='Recipient'
+          placeholder='recipient'
+        />
+      )}
       <ControlledUiInput
         control={control}
         name='amount'
         placeholder='amount'
         label={
-          <UiTooltipProvider delayDuration={0}>
-            <UiTooltip>
-              <UiTooltipTrigger>
-                <div className='flex items-center gap-2 text-textPrimary typography-caption2'>
-                  Amount
-                  <UiIcon name='InfoIcon' className='size-4 text-textPrimary' />
-                </div>
-              </UiTooltipTrigger>
-              <UiTooltipContent className='max-w-[75vw]'>
-                Manual deposit from you Fungible Asset balance to Confidential
-                balance
-              </UiTooltipContent>
-            </UiTooltip>
-          </UiTooltipProvider>
+          isOtherRecipient ? (
+            'Amount'
+          ) : (
+            <UiTooltipProvider delayDuration={0}>
+              <UiTooltip>
+                <UiTooltipTrigger>
+                  <div className='flex items-center gap-2 text-textPrimary typography-caption2'>
+                    Amount
+                    <UiIcon
+                      name='InfoIcon'
+                      className='size-4 text-textPrimary'
+                    />
+                  </div>
+                </UiTooltipTrigger>
+                <UiTooltipContent className='max-w-[75vw]'>
+                  Manual deposit from you Fungible Asset balance to Confidential
+                  balance
+                </UiTooltipContent>
+              </UiTooltip>
+            </UiTooltipProvider>
+          )
         }
       />
       <div className='flex w-full justify-end'>
@@ -132,7 +156,21 @@ export default function DepositManualForm({
         </span>
       </div>
 
-      <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
+      <div className='flex items-center justify-between'>
+        <div className='flex items-center justify-end gap-3'>
+          <UiLabel htmlFor='deposit-check'>Other recipient</UiLabel>
+          <UiSwitch
+            checked={isOtherRecipient}
+            onCheckedChange={v => setIsOtherRecipient(v)}
+          />
+        </div>
+      </div>
+
+      <UiButton
+        className='mt-4 w-full'
+        onClick={submit}
+        disabled={isFormDisabled}
+      >
         Deposit
       </UiButton>
     </form>

@@ -22,7 +22,7 @@ import {
   TwistedEd25519PublicKey,
   type TwistedElGamalCiphertext,
 } from '@lukachi/aptos-labs-ts-sdk'
-import { ethers } from 'ethers'
+import { ethers, isHexString } from 'ethers'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
 
@@ -399,27 +399,36 @@ export const generatePrivateKeyHex = () => {
 }
 
 export const getFungibleAssetMetadata = async (
-  tokenAddressHex: string,
-): Promise<TokenBaseInfo> => {
-  const fungibleAssets = await aptos.getFungibleAssetMetadataByAssetType({
-    assetType: tokenAddressHex,
+  tokenNameOrSymbolOrAddressHex: string,
+): Promise<TokenBaseInfo[]> => {
+  const fungibleAssets = await aptos.getFungibleAssetMetadata({
+    options: {
+      where: {
+        ...(isHexString(tokenNameOrSymbolOrAddressHex) && {
+          asset_type: {
+            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+          },
+        }),
+        name: {
+          _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+        },
+        symbol: {
+          _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+        },
+        token_standard: {
+          _eq: 'v2',
+        },
+      },
+    },
   })
 
-  return {
-    // ...fungibleAssets,
-    address: tokenAddressHex,
-    name: fungibleAssets.name,
-    symbol: fungibleAssets.symbol,
-    decimals: fungibleAssets.decimals,
-    iconUri: fungibleAssets.icon_uri ?? '',
-  }
-  // return fungibleAssets.map(el => ({
-  //   address: tokenAddressHex,
-  //   name: el.name,
-  //   symbol: el.symbol,
-  //   decimals: el.decimals,
-  //   iconUri: el.icon_uri || '',
-  // }))
+  return fungibleAssets.map(el => ({
+    address: el.asset_type,
+    name: el.name,
+    symbol: el.symbol,
+    decimals: el.decimals,
+    iconUri: el.icon_uri || '',
+  }))
 }
 
 export const getFABalance = async (tokenAddressHex: string) => {

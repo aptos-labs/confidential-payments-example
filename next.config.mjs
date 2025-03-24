@@ -8,7 +8,13 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
   images: {
-    domains: ['plus.unsplash.com'],
+    remotePatterns: [
+      {
+        hostname: '**',
+        port: '',
+        pathname: '/**',
+      },
+    ],
   },
   transpilePackages: ['@lukachi/aptos-labs-ts-sdk'],
 }

@@ -17,6 +17,7 @@ import {
   depositConfidentialBalance,
   getAptBalance,
   getConfidentialBalances,
+  getFABalance,
   getIsAccountRegisteredWithToken,
   getIsBalanceFrozen,
   getIsBalanceNormalized,
@@ -42,6 +43,7 @@ type AccountDecryptionKeyStatus = {
 
   pendingAmount: string
   actualAmount: string
+  fungibleAssetBalance: string
 }
 
 const AccountDecryptionKeyStatusRawDefault: Omit<
@@ -57,6 +59,7 @@ const AccountDecryptionKeyStatusRawDefault: Omit<
 
   pending: undefined,
   actual: undefined,
+  fungibleAssetBalance: '',
 }
 
 const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
@@ -66,6 +69,7 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
 
   pendingAmount: '0',
   actualAmount: '0',
+  fungibleAssetBalance: '0',
 }
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error'
@@ -148,6 +152,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
     isRegistered: true,
     pendingAmount: '0',
     actualAmount: '0',
+    fungibleAssetBalance: '0',
   },
 
   registerAccountEncryptionKey: async () =>
@@ -563,6 +568,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       tokenAddress: string
       pending: ConfidentialAmount | undefined
       actual: ConfidentialAmount | undefined
+      fungibleAssetBalance: string
       isRegistered: boolean
       isNormalized: boolean
       isFrozen: boolean
@@ -592,6 +598,8 @@ const useSelectedAccountDecryptionKeyStatus = (
               el.address,
             )
 
+            const fungibleAssetBalance = await getFABalance(el.address)
+
             if (isRegistered) {
               const [{ pending, actual }, isNormalized, isFrozen] =
                 await Promise.all([
@@ -611,6 +619,7 @@ const useSelectedAccountDecryptionKeyStatus = (
                 isRegistered,
                 isNormalized,
                 isFrozen,
+                fungibleAssetBalance: fungibleAssetBalance[0].amount,
               }
             }
 
@@ -621,6 +630,7 @@ const useSelectedAccountDecryptionKeyStatus = (
               isRegistered,
               isNormalized: false,
               isFrozen: false,
+              fungibleAssetBalance: fungibleAssetBalance[0].amount,
             }
           } catch (error) {
             return {
@@ -630,6 +640,7 @@ const useSelectedAccountDecryptionKeyStatus = (
               isRegistered: false,
               isNormalized: false,
               isFrozen: false,
+              fungibleAssetBalance: '',
             }
           }
         }),

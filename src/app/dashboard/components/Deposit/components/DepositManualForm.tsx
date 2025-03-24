@@ -4,14 +4,12 @@ import { time } from '@distributedlab/tools'
 import { parseUnits } from 'ethers'
 import { useCallback } from 'react'
 
-import { getFABalance } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
-import { useForm, useLoading } from '@/hooks'
+import { useForm } from '@/hooks'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import { ControlledUiInput } from '@/ui/UiInput'
-import { UiSkeleton } from '@/ui/UiSkeleton'
 import {
   UiTooltip,
   UiTooltipContent,
@@ -30,19 +28,8 @@ export default function DepositManualForm({
     rolloverAccount,
     normalizeAccount,
     addTxHistoryItem,
+    perTokenStatuses,
   } = useConfidentialCoinContext()
-
-  const { data: assetBalance, isLoading } = useLoading(
-    0,
-    async () => {
-      const resp = await getFABalance(selectedToken.address)
-
-      return resp[0].amount
-    },
-    {
-      loadArgs: [selectedToken.address],
-    },
-  )
 
   const { control, disableForm, enableForm, isFormDisabled, handleSubmit } =
     useForm({ amount: '' }, yup =>
@@ -131,19 +118,18 @@ export default function DepositManualForm({
         }
       />
       <div className='flex w-full justify-end'>
-        {isLoading ? (
-          <UiSkeleton className='h-3 w-1/3' />
-        ) : (
-          <span className='text-textPrimary typography-caption3'>
-            Current balance:
-            <span className='ml-2 text-textPrimary typography-caption1'>
-              {formatBalance(assetBalance, selectedToken.decimals)}
-            </span>
-            <span className='ml-2 uppercase text-textPrimary typography-caption1'>
-              {selectedToken.symbol}
-            </span>
+        <span className='text-textPrimary typography-caption3'>
+          Current FA balance:
+          <span className='ml-2 text-textPrimary typography-caption1'>
+            {formatBalance(
+              perTokenStatuses[selectedToken.address].fungibleAssetBalance,
+              selectedToken.decimals,
+            )}
           </span>
-        )}
+          <span className='ml-2 uppercase text-textPrimary typography-caption1'>
+            {selectedToken.symbol}
+          </span>
+        </span>
       </div>
 
       <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>

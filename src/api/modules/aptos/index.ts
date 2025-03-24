@@ -33,7 +33,6 @@ import {
   verifyRangeZKP,
 } from '@/api/modules/aptos/wasmRangeProof'
 import { config as appConfig } from '@/config'
-import { sleep } from '@/helpers'
 import { type TokenBaseInfo } from '@/store/wallet'
 
 RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP)
@@ -397,11 +396,6 @@ export const generatePrivateKeyHex = () => {
   const account = Account.generate()
 
   return account.privateKey.toString()
-}
-
-// TODO: mb implement aptos pepper register here
-export const authorize = async () => {
-  await sleep(1_000)
 }
 
 export const getFungibleAssetMetadata = async (

@@ -15,13 +15,14 @@ import { Control, Controller, useFieldArray } from 'react-hook-form'
 
 import { validateEncryptionKeyHex } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, formatBalance } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import { UiInput } from '@/ui/UiInput'
+import { UiLabel } from '@/ui/UiLabel'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
   UiSheet,
@@ -29,6 +30,7 @@ import {
   UiSheetHeader,
   UiSheetTitle,
 } from '@/ui/UiSheet'
+import { UiSwitch } from '@/ui/UiSwitch'
 
 type TransferFormSheetRef = {
   open: (prefillAddr?: string) => void
@@ -65,7 +67,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       loadSelectedDecryptionKeyState,
       addTxHistoryItem,
       reloadAptBalance,
+      selectedToken,
+      perTokenStatuses,
     } = useConfidentialCoinContext()
+
+    const [isDeposit, setIsDeposit] = useState(false)
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
 
@@ -164,7 +170,9 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           className='max-h-[70dvh] overflow-y-scroll'
         >
           <UiSheetHeader>
-            <UiSheetTitle>Transfer</UiSheetTitle>
+            <UiSheetTitle>
+              {isDeposit ? 'Deposit for' : 'Transfer'}
+            </UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
           <div className='flex flex-col'>
@@ -194,9 +202,37 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                   />
                 )}
               />
+
+              <div className='flex items-center justify-between'>
+                <div className='flex items-center justify-end gap-3'>
+                  <UiLabel htmlFor='deposit-check'>Deposit</UiLabel>
+                  <UiSwitch
+                    checked={isDeposit}
+                    onCheckedChange={v => setIsDeposit(v)}
+                  />
+                </div>
+
+                {isDeposit && (
+                  <span className='text-textPrimary typography-caption3'>
+                    Current FA balance:
+                    <span className='ml-2 text-textPrimary typography-caption1'>
+                      {formatBalance(
+                        perTokenStatuses[selectedToken.address]
+                          .fungibleAssetBalance,
+                        selectedToken.decimals,
+                      )}
+                    </span>
+                    <span className='ml-2 uppercase text-textPrimary typography-caption1'>
+                      {selectedToken.symbol}
+                    </span>
+                  </span>
+                )}
+              </div>
             </div>
 
-            <AuditorsList className='mt-3 flex-1' control={control} />
+            {!isDeposit && (
+              <AuditorsList className='mt-3 flex-1' control={control} />
+            )}
 
             <div className='mt-auto pt-4'>
               <UiSeparator className='mb-4' />

@@ -523,6 +523,7 @@ const useSelectedAccountDecryptionKeyStatus = (
   const activeKeylessAccount = authStore.useAuthStore(
     state => state.activeAccount,
   )
+  const selectedTokenAddress = walletStore.useSelectedTokenAddress()
 
   const selectedAccount = useSelectedAccount()
 
@@ -598,28 +599,43 @@ const useSelectedAccountDecryptionKeyStatus = (
               el.address,
             )
 
-            const fungibleAssetBalance = await getFABalance(el.address)
+            const fungibleAssetBalance = await getFABalance(
+              selectedAccount,
+              el.address,
+            )
 
             if (isRegistered) {
-              const [{ pending, actual }, isNormalized, isFrozen] =
-                await Promise.all([
-                  getConfidentialBalances(
-                    selectedAccount,
-                    selectedAccountDecryptionKey.toString(),
-                    el.address,
-                  ),
-                  getIsBalanceNormalized(selectedAccount, el.address),
-                  getIsBalanceFrozen(selectedAccount, el.address),
-                ])
+              try {
+                const [{ pending, actual }, isNormalized, isFrozen] =
+                  await Promise.all([
+                    getConfidentialBalances(
+                      selectedAccount,
+                      selectedAccountDecryptionKey.toString(),
+                      el.address,
+                    ),
+                    getIsBalanceNormalized(selectedAccount, el.address),
+                    getIsBalanceFrozen(selectedAccount, el.address),
+                  ])
 
-              return {
-                tokenAddress: el.address,
-                pending,
-                actual,
-                isRegistered,
-                isNormalized,
-                isFrozen,
-                fungibleAssetBalance: fungibleAssetBalance[0].amount,
+                return {
+                  tokenAddress: el.address,
+                  pending,
+                  actual,
+                  isRegistered,
+                  isNormalized,
+                  isFrozen,
+                  fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
+                }
+              } catch (error) {
+                return {
+                  tokenAddress: el.address,
+                  pending: undefined,
+                  actual: undefined,
+                  isRegistered,
+                  isNormalized: false,
+                  isFrozen: false,
+                  fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
+                }
               }
             }
 
@@ -648,7 +664,8 @@ const useSelectedAccountDecryptionKeyStatus = (
     },
     queryKey: [
       'loadedTokens',
-      selectedAccount,
+      selectedTokenAddress,
+      selectedAccount.accountAddress.toString(),
       currentTokensList,
       selectedAccountDecryptionKey,
     ],

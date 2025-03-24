@@ -431,10 +431,16 @@ export const getFungibleAssetMetadata = async (
   }))
 }
 
-export const getFABalance = async (tokenAddressHex: string) => {
+export const getFABalance = async (
+  account: Account,
+  tokenAddressHex: string,
+) => {
   return aptos.fungibleAsset.getCurrentFungibleAssetBalances({
     options: {
       where: {
+        owner_address: {
+          _eq: account.accountAddress.toString(),
+        },
         asset_type: {
           _eq: tokenAddressHex,
         },

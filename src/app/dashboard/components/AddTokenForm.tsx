@@ -4,13 +4,10 @@ import { time } from '@distributedlab/tools'
 import Avatar from 'boring-avatars'
 import Image from 'next/image'
 import { useCallback, useState } from 'react'
-import { Controller } from 'react-hook-form'
+import { Controller, SubmitHandler } from 'react-hook-form'
 import { useDebounce } from 'react-use'
 
-import {
-  getFungibleAssetMetadata,
-  validateEncryptionKeyHex,
-} from '@/api/modules/aptos'
+import { getFungibleAssetMetadata } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -52,16 +49,12 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     setValue,
   } = useForm(
     {
-      tokenAddress: '',
+      tokenAddressOrNameOrSymbol: '',
       tokenInfo: undefined as TokenBaseInfo | undefined,
     },
     yup =>
       yup.object().shape({
-        tokenAddress: yup.string().test('Invalid token address', v => {
-          if (!v) return false
-
-          return validateEncryptionKeyHex(v)
-        }),
+        tokenAddressOrNameOrSymbol: yup.string().required(),
         tokenInfo: yup.object().shape({
           address: yup.string().required(),
         }),
@@ -76,44 +69,42 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   const isDisabled = isSearching || isFormDisabled
 
   const clearForm = useCallback(() => {
-    setValue('tokenAddress', '')
+    setValue('tokenAddressOrNameOrSymbol', '')
     setValue('tokenInfo', undefined)
     setFoundedTokens([])
   }, [setValue])
 
-  const submit = useCallback(
-    () =>
-      handleSubmit(async formData => {
-        disableForm()
+  const submit = useCallback<SubmitHandler<typeof formState>>(
+    async formData => {
+      disableForm()
+      try {
         try {
-          try {
-            const txReceipt = await registerAccountEncryptionKey(
-              formData.tokenAddress,
-            )
-            addTxHistoryItem({
-              txHash: txReceipt.hash,
-              txType: 'register',
-              createdAt: time().timestamp,
-            })
-          } catch (error) {
-            /* empty */
-          }
-          addToken(formData.tokenInfo!)
-          setSelectedTokenAddress(formData.tokenInfo!.address)
-          onSubmit()
-          clearForm()
+          const txReceipt = await registerAccountEncryptionKey(
+            formData.tokenAddressOrNameOrSymbol,
+          )
+          addTxHistoryItem({
+            txHash: txReceipt.hash,
+            txType: 'register',
+            createdAt: time().timestamp,
+          })
         } catch (error) {
-          ErrorHandler.process(error)
+          /* empty */
         }
-        enableForm()
-      })(),
+        addToken(formData.tokenInfo!)
+        setSelectedTokenAddress(formData.tokenInfo!.address)
+        onSubmit()
+        clearForm()
+      } catch (error) {
+        ErrorHandler.process(error)
+      }
+      enableForm()
+    },
     [
       addToken,
       addTxHistoryItem,
       clearForm,
       disableForm,
       enableForm,
-      handleSubmit,
       onSubmit,
       registerAccountEncryptionKey,
       setSelectedTokenAddress,
@@ -135,19 +126,19 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
 
   useDebounce(
     async () => {
-      if (!formState.tokenAddress) return
+      if (!formState.tokenAddressOrNameOrSymbol) return
 
-      await searchToken(formState.tokenAddress)
+      await searchToken(formState.tokenAddressOrNameOrSymbol)
     },
     500,
-    [formState.tokenAddress],
+    [formState.tokenAddressOrNameOrSymbol],
   )
 
   return (
     <div className='flex-1'>
       <Controller
         control={control}
-        name={'tokenAddress'}
+        name={'tokenAddressOrNameOrSymbol'}
         render={({ field }) => (
           <UiInput {...field} placeholder='Enter token address' />
         )}
@@ -211,6 +202,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
 
             <UiButton
               className='ml-auto hidden min-w-[200px] md:flex'
+              type='button'
               disabled={isDisabled}
               onClick={() => {
                 setValue('tokenInfo', el)
@@ -222,6 +214,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
 
             <button
               className='absolute inset-0 z-20'
+              type='button'
               onClick={() => {
                 setValue('tokenInfo', el)
                 setIsConfirmationDialogOpen(true)
@@ -277,7 +270,10 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
             {/*</UiDialogDescription>*/}
           </UiDialogHeader>
           <UiDialogFooter>
-            <div className='flex w-full items-center gap-2'>
+            <form
+              onSubmit={handleSubmit(submit)}
+              className='flex w-full items-center gap-2'
+            >
               <UiButton
                 className='flex-1'
                 variant={'outline'}
@@ -285,19 +281,14 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                   setValue('tokenInfo', undefined)
                   setIsConfirmationDialogOpen(false)
                 }}
+                type='button'
               >
                 Cancel
               </UiButton>
-              <UiButton
-                className='flex-1'
-                onClick={() => {
-                  handleSubmit(submit)
-                  setIsConfirmationDialogOpen(false)
-                }}
-              >
+              <UiButton className='flex-1' type={'submit'}>
                 Add
               </UiButton>
-            </div>
+            </form>
           </UiDialogFooter>
         </UiDialogContent>
       </UiDialog>

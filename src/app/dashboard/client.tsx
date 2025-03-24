@@ -431,7 +431,10 @@ export default function DashboardClient() {
       </div>
 
       <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
-        <UiSheetContent side='bottom'>
+        <UiSheetContent
+          side='bottom'
+          className={'max-h-[80dvh] overflow-y-scroll'}
+        >
           <UiSheetHeader>
             <UiSheetTitle>Deposit {selectedToken.name}</UiSheetTitle>
           </UiSheetHeader>

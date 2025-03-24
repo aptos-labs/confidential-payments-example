@@ -6,8 +6,18 @@ import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { RoutePaths } from '@/enums'
 import { useCopyToClipboard } from '@/hooks'
 import { UiIcon } from '@/ui'
+import {
+  UiAccordion,
+  UiAccordionContent,
+  UiAccordionItem,
+  UiAccordionTrigger,
+} from '@/ui/UiAccordion'
+import { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger } from '@/ui/UiTabs'
 
-export default function Deposit() {
+import DepositManualForm from './components/DepositManualForm'
+import DepositMint from './components/DepositMint'
+
+export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
   const { selectedAccount, selectedToken } = useConfidentialCoinContext()
 
   const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`
@@ -45,6 +55,34 @@ export default function Deposit() {
           </button>
         </div>
       </div>
+
+      <UiAccordion type={'single'} collapsible className='w-full'>
+        <UiAccordionItem value='item-1'>
+          <UiAccordionTrigger>
+            <div className='flex items-center gap-2'>
+              <span className='text-textPrimary typography-caption3'>
+                Advanced
+              </span>
+            </div>
+          </UiAccordionTrigger>
+          <UiAccordionContent>
+            <UiTabs defaultValue='faucet' className='w-full'>
+              <UiTabsList>
+                <UiTabsTrigger value='faucet'>
+                  Buy {selectedToken.symbol}
+                </UiTabsTrigger>
+                <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
+              </UiTabsList>
+              <UiTabsContent value='faucet'>
+                <DepositMint onSubmit={onSubmit} />
+              </UiTabsContent>
+              <UiTabsContent value='manual'>
+                <DepositManualForm onSubmit={onSubmit} />
+              </UiTabsContent>
+            </UiTabs>
+          </UiAccordionContent>
+        </UiAccordionItem>
+      </UiAccordion>
     </div>
   )
 }

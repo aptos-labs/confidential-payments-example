@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useMemo } from 'react'
+import { ReactNode, useMemo } from 'react'
 import { FieldValues, useController, UseControllerProps } from 'react-hook-form'
 import { v4 } from 'uuid'
 
@@ -28,7 +28,7 @@ const UiInput = React.forwardRef<HTMLInputElement, Props>(
 UiInput.displayName = 'UiInput'
 
 export type ControlledInputProps<T extends FieldValues> = Props & {
-  label?: string
+  label?: ReactNode
 } & UseControllerProps<T>
 
 function ControlledUiInput<T extends FieldValues>({
@@ -43,7 +43,10 @@ function ControlledUiInput<T extends FieldValues>({
 
   return (
     <div className='grid gap-2'>
-      {label && <UiLabel htmlFor={id}>{label}</UiLabel>}
+      {label &&
+        (() => {
+          return <UiLabel htmlFor={id}>{label}</UiLabel>
+        })()}
       <UiInput
         {...rest}
         id={id}

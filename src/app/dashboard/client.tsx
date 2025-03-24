@@ -289,6 +289,15 @@ export default function DashboardClient() {
                   </button>
                 </div>,
               ]}
+              onIndexChange={index => {
+                if (!tokens[index]?.address) return
+
+                setSelectedTokenAddress(tokens[index].address)
+              }}
+              startIndex={
+                tokens.findIndex(el => el.address === selectedToken.address) ??
+                0
+              }
             />
           )}
         </div>
@@ -424,10 +433,15 @@ export default function DashboardClient() {
       <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
         <UiSheetContent side='bottom'>
           <UiSheetHeader>
-            <UiSheetTitle>Deposit</UiSheetTitle>
+            <UiSheetTitle>Deposit {selectedToken.name}</UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
-          <Deposit />
+          <Deposit
+            onSubmit={() => {
+              setIsDepositSheetOpen(false)
+              tryRefresh()
+            }}
+          />
         </UiSheetContent>
       </UiSheet>
       <UiSheet
@@ -468,7 +482,10 @@ export default function DashboardClient() {
       />
 
       <UiSheet open={isAddTokenSheetOpen} onOpenChange={setIsAddTokenSheetOpen}>
-        <UiSheetContent side='bottom'>
+        <UiSheetContent
+          side='bottom'
+          className='max-h-[70dvh] overflow-y-scroll'
+        >
           <UiSheetHeader>
             <UiSheetTitle>Add Token</UiSheetTitle>
           </UiSheetHeader>

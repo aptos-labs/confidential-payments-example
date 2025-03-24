@@ -305,7 +305,7 @@ export const normalizeConfidentialBalance = async (
 
 export const depositConfidentialBalance = async (
   account: Account,
-  amount: number,
+  amount: bigint,
   tokenAddress = appConfig.DEFAULT_TOKEN.address,
 ) => {
   const depositTx = await aptos.confidentialCoin.deposit({
@@ -407,17 +407,37 @@ export const authorize = async () => {
 export const getFungibleAssetMetadata = async (
   tokenAddressHex: string,
 ): Promise<TokenBaseInfo> => {
-  const fungibleAsset = await aptos.getFungibleAssetMetadataByCreatorAddress({
-    creatorAddress: tokenAddressHex,
+  const fungibleAssets = await aptos.getFungibleAssetMetadataByAssetType({
+    assetType: tokenAddressHex,
   })
 
   return {
+    // ...fungibleAssets,
     address: tokenAddressHex,
-    name: fungibleAsset[0].name,
-    symbol: fungibleAsset[0].symbol,
-    decimals: fungibleAsset[0].decimals,
-    iconUri: fungibleAsset[0].icon_uri || '',
+    name: fungibleAssets.name,
+    symbol: fungibleAssets.symbol,
+    decimals: fungibleAssets.decimals,
+    iconUri: fungibleAssets.icon_uri ?? '',
   }
+  // return fungibleAssets.map(el => ({
+  //   address: tokenAddressHex,
+  //   name: el.name,
+  //   symbol: el.symbol,
+  //   decimals: el.decimals,
+  //   iconUri: el.icon_uri || '',
+  // }))
+}
+
+export const getFABalance = async (tokenAddressHex: string) => {
+  return aptos.fungibleAsset.getCurrentFungibleAssetBalances({
+    options: {
+      where: {
+        asset_type: {
+          _eq: tokenAddressHex,
+        },
+      },
+    },
+  })
 }
 
 export const sendApt = async (

@@ -18,6 +18,8 @@ export interface CarouselProps {
   loop?: boolean
   round?: boolean
   isShowPagination?: boolean
+  startIndex?: number
+  onIndexChange?: (index: number) => void
 }
 
 const DRAG_BUFFER = 0
@@ -34,16 +36,22 @@ export default function UiCarousel({
   loop = false,
   round = false,
   isShowPagination = false,
+  startIndex = 0,
+  onIndexChange = () => {},
 }: CarouselProps): JSX.Element {
   const containerPadding = 16
   const itemWidth = baseWidth - containerPadding * 2
   const trackItemOffset = itemWidth + GAP
 
   const carouselItems = loop ? [...items, items[0]] : items
-  const [currentIndex, setCurrentIndex] = useState<number>(0)
+  const [currentIndex, setCurrentIndex] = useState<number>(startIndex)
   const x = useMotionValue(0)
   const [isHovered, setIsHovered] = useState<boolean>(false)
   const [isResetting, setIsResetting] = useState<boolean>(false)
+
+  useEffect(() => {
+    onIndexChange(currentIndex)
+  }, [currentIndex, onIndexChange])
 
   const containerRef = useRef<HTMLDivElement>(null)
   useEffect(() => {

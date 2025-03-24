@@ -19,8 +19,12 @@ import { UiButton } from '@/ui/UiButton'
 import { UiInput } from '@/ui/UiInput'
 
 export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
-  const { addToken, registerAccountEncryptionKey, addTxHistoryItem } =
-    useConfidentialCoinContext()
+  const {
+    addToken,
+    registerAccountEncryptionKey,
+    addTxHistoryItem,
+    setSelectedTokenAddress,
+  } = useConfidentialCoinContext()
 
   const {
     formState,
@@ -49,11 +53,14 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   )
 
   const [isSearching, setIsSearching] = useState(false)
+  const [foundedTokens, setFoundedTokens] = useState<TokenBaseInfo[]>([])
 
   const isDisabled = isSearching || isFormDisabled
 
   const clearForm = useCallback(() => {
     setValue('tokenAddress', '')
+    setValue('tokenInfo', undefined)
+    setFoundedTokens([])
   }, [setValue])
 
   const submit = useCallback(
@@ -61,15 +68,20 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       handleSubmit(async formData => {
         disableForm()
         try {
-          const txReceipt = await registerAccountEncryptionKey(
-            formData.tokenAddress,
-          )
-          addTxHistoryItem({
-            txHash: txReceipt.hash,
-            txType: 'register',
-            createdAt: time().timestamp,
-          })
+          try {
+            const txReceipt = await registerAccountEncryptionKey(
+              formData.tokenAddress,
+            )
+            addTxHistoryItem({
+              txHash: txReceipt.hash,
+              txType: 'register',
+              createdAt: time().timestamp,
+            })
+          } catch (error) {
+            /* empty */
+          }
           addToken(formData.tokenInfo!)
+          setSelectedTokenAddress(formData.tokenInfo!.address)
           onSubmit()
           clearForm()
         } catch (error) {
@@ -86,6 +98,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       handleSubmit,
       onSubmit,
       registerAccountEncryptionKey,
+      setSelectedTokenAddress,
     ],
   )
 
@@ -96,6 +109,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       try {
         const token = await getFungibleAssetMetadata(tokenAddress)
 
+        setFoundedTokens([token])
         setValue('tokenInfo', token)
       } catch (error) {
         return undefined
@@ -104,19 +118,6 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     },
     [setValue],
   )
-
-  const renderTokenInfoItem = useCallback((label: string, value: string) => {
-    return (
-      <div className='flex flex-row items-center justify-between'>
-        <span className='uppercase text-textPrimary typography-caption2'>
-          {label}
-        </span>
-        <span className='text-right text-textPrimary typography-body2'>
-          {value}
-        </span>
-      </div>
-    )
-  }, [])
 
   useDebounce(
     async () => {
@@ -138,28 +139,32 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
         )}
       />
 
-      {formState.tokenInfo && (
-        <div className='mt-3 flex flex-col gap-3'>
-          {formState.tokenInfo.iconUri ? (
-            <Image
-              src={formState.tokenInfo.iconUri}
-              alt={formState.tokenInfo.name}
-              className='size-[75px] rounded-full'
-            />
-          ) : (
-            <Avatar
-              name={formState.tokenAddress}
-              className={'size-[75px] rounded-[50%]'}
-            />
-          )}
-          {renderTokenInfoItem('Name', formState.tokenInfo.name)}
-          {renderTokenInfoItem('Symbol', formState.tokenInfo.symbol)}
-          {renderTokenInfoItem(
-            'Decimals',
-            String(formState.tokenInfo.decimals),
-          )}
-        </div>
-      )}
+      <div className='mt-4 flex flex-col gap-4'>
+        {foundedTokens.map((el, idx) => (
+          <div key={idx} className='mt-3 flex gap-3'>
+            {el.iconUri ? (
+              <Image
+                src={el.iconUri}
+                alt={el.name}
+                className='size-[48px] rounded-full'
+              />
+            ) : (
+              <Avatar
+                name={el.address}
+                className={'size-[48px] rounded-[50%]'}
+              />
+            )}
+            <div className='flex flex-col gap-2'>
+              <span className='text-textPrimary typography-caption1'>
+                {el.name}
+              </span>
+              <span className='text-textSecondary typography-caption2'>
+                {el.symbol}
+              </span>
+            </div>
+          </div>
+        ))}
+      </div>
       <div className='mt-auto pt-4'>
         <UiButton className='w-full' onClick={submit} disabled={isDisabled}>
           Add

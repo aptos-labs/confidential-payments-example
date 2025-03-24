@@ -1,13 +1,14 @@
 'use client'
 
 import { config } from '@config'
-import type {
+import {
   Account,
   CommittedTransactionResponse,
   ConfidentialAmount,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
 import { useQuery } from '@tanstack/react-query'
+import { parseUnits } from 'ethers'
 import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
@@ -109,7 +110,7 @@ type ConfidentialCoinContextType = {
     auditorsEncryptionKeyHexList?: string[],
   ) => Promise<CommittedTransactionResponse>
   withdraw: (amount: string) => Promise<CommittedTransactionResponse>
-  deposit: (amount: number) => Promise<CommittedTransactionResponse>
+  deposit: (amount: bigint) => Promise<CommittedTransactionResponse>
   // TODO: rotate keys
 
   decryptionKeyStatusLoadingState: LoadingState
@@ -721,7 +722,13 @@ const useSelectedAccountDecryptionKeyStatus = (
     if (!selectedAccountDecryptionKey || !tokenAddress)
       throw new TypeError('Decryption key is not set')
 
-    const actualBalance = perTokenStatusesRaw[tokenAddress]?.actual
+    const currBalanceState = await getConfidentialBalances(
+      selectedAccount,
+      selectedAccountDecryptionKey.toString(),
+      tokenAddress,
+    )
+
+    const actualBalance = currBalanceState.actual
 
     if (!actualBalance) throw new TypeError('actual balance not loaded')
 
@@ -735,12 +742,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       actualBalance.amount,
       tokenAddress,
     )
-  }, [
-    perTokenStatusesRaw,
-    selectedAccount,
-    selectedAccountDecryptionKey,
-    tokenAddress,
-  ])
+  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress])
 
   // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -868,7 +870,7 @@ export const ConfidentialCoinContextProvider = ({
   )
 
   const deposit = useCallback(
-    async (amount: number) => {
+    async (amount: bigint) => {
       return depositConfidentialBalance(
         selectedAccount,
         amount,
@@ -881,8 +883,10 @@ export const ConfidentialCoinContextProvider = ({
   const testMintTokens = useCallback(async (): Promise<
     CommittedTransactionResponse[]
   > => {
+    const amountToDeposit = parseUnits('10', selectedToken.decimals)
+
     const mintTxReceipt = await mintTokens(selectedAccount)
-    const depositTxReceipt = await deposit(10)
+    const depositTxReceipt = await deposit(amountToDeposit)
 
     const rolloverTxReceipt = await rolloverAccount()
 
@@ -894,7 +898,22 @@ export const ConfidentialCoinContextProvider = ({
       ...rolloverTxReceipt,
       normalizeTxReceipt,
     ]
-  }, [deposit, normalizeAccount, rolloverAccount, selectedAccount])
+  }, [
+    deposit,
+    normalizeAccount,
+    rolloverAccount,
+    selectedAccount,
+    selectedToken.decimals,
+  ])
+
+  // useTimeoutFn(async () => {
+  //   const event = await aptos.getAccountEventsByEventType({
+  //     accountAddress: '0x0',
+  //     eventType: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::confidential_asset::Deposit`,
+  //   })
+  //
+  //   console.log(event)
+  // }, 100)
 
   return (
     <confidentialCoinContext.Provider

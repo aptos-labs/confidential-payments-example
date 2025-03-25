@@ -3,8 +3,9 @@ import { getSessionCookie } from 'better-auth/cookies'
 import { NextResponse } from 'next/server'
 
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
-  // eslint-disable-next-line no-console
+  /* eslint-disable no-console */
   console.log(JSON.stringify(request))
+  console.log(request.cookies.get('better-auth.session_token'))
 
   const sessionCookie = getSessionCookie(request, {
     // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
@@ -29,6 +30,7 @@ const authGuard = async ({ request }: MiddlewareFunctionProps) => {
     // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
     cookieName: 'session_token',
     cookiePrefix: 'better-auth',
+    useSecureCookies: false,
   })
 
   // eslint-disable-next-line no-console

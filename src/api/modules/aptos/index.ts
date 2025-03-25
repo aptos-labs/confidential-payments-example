@@ -401,20 +401,24 @@ export const generatePrivateKeyHex = () => {
 export const getFungibleAssetMetadata = async (
   tokenNameOrSymbolOrAddressHex: string,
 ): Promise<TokenBaseInfo[]> => {
+  const isHex = isHexString(tokenNameOrSymbolOrAddressHex)
+
   const fungibleAssets = await aptos.getFungibleAssetMetadata({
     options: {
       where: {
-        ...(isHexString(tokenNameOrSymbolOrAddressHex) && {
+        ...(isHex && {
           asset_type: {
             _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
           },
         }),
-        name: {
-          _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
-        },
-        symbol: {
-          _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
-        },
+        ...(!isHex && {
+          name: {
+            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+          },
+          symbol: {
+            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+          },
+        }),
         token_standard: {
           _eq: 'v2',
         },

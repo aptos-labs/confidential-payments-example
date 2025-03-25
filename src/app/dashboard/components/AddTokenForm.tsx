@@ -7,7 +7,7 @@ import { useCallback, useState } from 'react'
 import { Controller, SubmitHandler } from 'react-hook-form'
 import { useDebounce } from 'react-use'
 
-import { getFungibleAssetMetadata } from '@/api/modules/aptos'
+import { getFABalance, getFungibleAssetMetadata } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -33,6 +33,7 @@ import {
 
 export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   const {
+    selectedAccount,
     addToken,
     registerAccountEncryptionKey,
     addTxHistoryItem,
@@ -64,7 +65,9 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
     useState(false)
   const [isSearching, setIsSearching] = useState(false)
-  const [foundedTokens, setFoundedTokens] = useState<TokenBaseInfo[]>([])
+  const [foundedTokens, setFoundedTokens] = useState<
+    (TokenBaseInfo & { balanceAmount: string })[]
+  >([])
 
   const isDisabled = isSearching || isFormDisabled
 
@@ -111,18 +114,34 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     ],
   )
 
-  const searchToken = useCallback(async (tokenAddress: string) => {
-    setIsSearching(true)
+  const searchToken = useCallback(
+    async (tokenAddress: string) => {
+      setIsSearching(true)
 
-    try {
-      const tokens = await getFungibleAssetMetadata(tokenAddress)
+      try {
+        const tokens = await getFungibleAssetMetadata(tokenAddress)
 
-      setFoundedTokens(tokens)
-    } catch (error) {
-      return undefined
-    }
-    setIsSearching(false)
-  }, [])
+        const tokensBalances = await Promise.all(
+          tokens.map(async el => {
+            const balances = await getFABalance(selectedAccount, el.address)
+
+            return balances[0]
+          }),
+        )
+
+        setFoundedTokens(
+          tokens.map((el, idx) => ({
+            ...el,
+            balanceAmount: tokensBalances[idx]?.amount,
+          })),
+        )
+      } catch (error) {
+        return undefined
+      }
+      setIsSearching(false)
+    },
+    [selectedAccount],
+  )
 
   useDebounce(
     async () => {
@@ -132,6 +151,34 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     },
     500,
     [formState.tokenAddressOrNameOrSymbol],
+  )
+
+  const renderTokenImage = useCallback(
+    (tokenInfo: (typeof foundedTokens)[0]) => {
+      try {
+        const iconUrl = new URL(tokenInfo.iconUri)
+
+        return (
+          <Image
+            src={iconUrl.href}
+            alt={tokenInfo.name}
+            className='size-[48px] rounded-full'
+            width={48}
+            height={48}
+          />
+        )
+      } catch (_) {
+        /* empty */
+      }
+
+      return (
+        <Avatar
+          name={tokenInfo.address}
+          className={'size-[48px] rounded-[50%]'}
+        />
+      )
+    },
+    [],
   )
 
   return (
@@ -153,20 +200,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               'hover:brightness-150',
             )}
           >
-            {el.iconUri ? (
-              <Image
-                src={el.iconUri}
-                alt={el.name}
-                className='size-[48px] rounded-full'
-                width={48}
-                height={48}
-              />
-            ) : (
-              <Avatar
-                name={el.address}
-                className={'size-[48px] rounded-[50%]'}
-              />
-            )}
+            {renderTokenImage(el)}
             <div className='flex flex-1 flex-col gap-2 overflow-hidden md:overflow-auto'>
               <UiTooltipProvider delayDuration={0}>
                 <UiTooltip>
@@ -198,6 +232,12 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                   {el.address}
                 </span>
               </div>
+
+              {el.balanceAmount && (
+                <span className='text-textPrimary typography-caption1'>
+                  {el.balanceAmount} {el.symbol}
+                </span>
+              )}
             </div>
 
             <UiButton
@@ -236,20 +276,11 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
             <UiSeparator />
             {/*<UiDialogDescription>*/}
             <div className='flex w-full gap-2 overflow-hidden pt-2 text-left'>
-              {formState.tokenInfo?.iconUri ? (
-                <Image
-                  src={formState.tokenInfo?.iconUri}
-                  alt={formState.tokenInfo?.name}
-                  className='size-[48px] rounded-full'
-                  width={48}
-                  height={48}
-                />
-              ) : (
-                <Avatar
-                  name={formState.tokenInfo?.address}
-                  className={'size-[48px] rounded-[50%]'}
-                />
-              )}
+              {formState.tokenInfo &&
+                renderTokenImage({
+                  ...formState.tokenInfo,
+                  balanceAmount: '',
+                })}
 
               <div className='flex flex-1 flex-col'>
                 <span className='text-textPrimary typography-caption1'>

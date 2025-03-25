@@ -15,7 +15,7 @@ import { Control, Controller, useFieldArray } from 'react-hook-form'
 
 import { validateEncryptionKeyHex } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, isMobile } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -60,6 +60,8 @@ type Props = {
 
 export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
   ({ token, onSubmit }, ref) => {
+    const isMobileDevice = isMobile()
+
     const {
       transfer,
       loadSelectedDecryptionKeyState,
@@ -160,8 +162,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
         <UiSheetContent
-          side='bottom'
-          className='max-h-[70dvh] overflow-y-scroll'
+          side={isMobileDevice ? 'bottom' : 'right'}
+          className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
         >
           <UiSheetHeader>
             <UiSheetTitle>Transfer</UiSheetTitle>

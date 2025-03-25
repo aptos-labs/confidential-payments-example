@@ -40,7 +40,7 @@ type StoreState = {
   privateKeyHexList: string[]
   selectedAccountAddr: string
 
-  accountAddrHexToTokenAddrMap: Record<string, TokenBaseInfo[]>
+  accountAddrHexToTokenAddrMap: Record<string, string[]>
   _selectedTokenAddress: string
 
   accountAddrHexPerTokenTxHistory: Record<
@@ -112,7 +112,7 @@ const useWalletStore = create(
               ...state.accountAddrHexToTokenAddrMap,
               [accAddr]: [
                 ...(state.accountAddrHexToTokenAddrMap[accAddr] || []),
-                token,
+                token.address,
               ],
             },
           }))
@@ -123,7 +123,7 @@ const useWalletStore = create(
               ...state.accountAddrHexToTokenAddrMap,
               [accAddr]: (
                 state.accountAddrHexToTokenAddrMap[accAddr] || []
-              ).filter(token => token.address !== tokenAddress),
+              ).filter(addr => addr !== tokenAddress),
             },
           }))
         },
@@ -181,7 +181,7 @@ const useWalletStore = create(
 
 const useSelectedTokenAddress = () => {
   return useWalletStore(
-    state => state._selectedTokenAddress || config.DEFAULT_TOKEN.address,
+    state => state._selectedTokenAddress || config.DEFAULT_TOKEN_ADRESSES[0],
   )
 }
 

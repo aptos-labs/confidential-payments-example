@@ -4,13 +4,7 @@ type Config = {
   pgPoolCfg: PoolConfig
   AUTH_BASE_URL: string
   CONFIDENTIAL_ASSET_MODULE_ADDR: string
-  DEFAULT_TOKEN: {
-    address: string
-    name: string
-    symbol: string
-    decimals: number
-    iconUri: string
-  }
+  DEFAULT_TOKEN_ADRESSES: string[]
 
   GOOGLE_CLIENT_ID: string
   GOOGLE_CLIENT_SECRET: string
@@ -29,14 +23,9 @@ export const config: Config = {
   },
   AUTH_BASE_URL: process.env.AUTH_BASE_URL!,
   CONFIDENTIAL_ASSET_MODULE_ADDR: process.env.CONFIDENTIAL_ASSET_MODULE_ADDR!,
-  DEFAULT_TOKEN: {
-    address:
-      '0x8b4dd7ebf8150f349675dde8bd2e9daa66461107b181a67e764de85d82bbac21',
-    name: 'Mocked token',
-    symbol: 'MTK',
-    decimals: 0,
-    iconUri: '',
-  },
+  DEFAULT_TOKEN_ADRESSES: [
+    '0x000000000000000000000000000000000000000000000000000000000000000a',
+  ],
 
   GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,

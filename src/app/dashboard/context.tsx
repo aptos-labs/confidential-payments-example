@@ -18,6 +18,7 @@ import {
   getAptBalance,
   getConfidentialBalances,
   getFABalance,
+  getFungibleAssetMetadata,
   getIsAccountRegisteredWithToken,
   getIsBalanceFrozen,
   getIsBalanceNormalized,
@@ -137,7 +138,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
 
   tokens: [],
   perTokenStatuses: {},
-  selectedToken: config.DEFAULT_TOKEN as TokenBaseInfo,
+  selectedToken: {} as TokenBaseInfo,
   txHistory: [],
   addTxHistoryItem: () => {},
 
@@ -441,24 +442,48 @@ const useTokens = (accountAddressHex: string | undefined) => {
 
   const savedTokensPerAccAddr = useMemo(
     () =>
-      accountAddressHex ? accountAddrHexToTokenAddrMap[accountAddressHex] : [],
+      accountAddressHex
+        ? accountAddrHexToTokenAddrMap[accountAddressHex] || []
+        : [],
     [accountAddressHex, accountAddrHexToTokenAddrMap],
   )
 
-  const tokens = useMemo(() => {
-    if (!savedTokensPerAccAddr?.length) {
-      return [config.DEFAULT_TOKEN]
+  const { data: tokens } = useQuery({
+    initialData: [] as TokenBaseInfo[],
+    queryFn: async () => {
+      return Promise.all(
+        [...config.DEFAULT_TOKEN_ADRESSES, ...savedTokensPerAccAddr].map(
+          async addr => {
+            const [metadata] = await getFungibleAssetMetadata(addr)
+
+            return {
+              address: addr,
+              name: metadata.name,
+              symbol: metadata.symbol,
+              decimals: metadata.decimals,
+              iconUri: metadata.iconUri,
+            }
+          },
+        ),
+      )
+    },
+    queryKey: ['loadTokensMetadata', accountAddressHex, savedTokensPerAccAddr],
+  })
+
+  const selectedToken = useMemo<TokenBaseInfo>(() => {
+    const defaultToken = {
+      address: config.DEFAULT_TOKEN_ADRESSES[0],
+      name: '',
+      symbol: '',
+      decimals: 0,
+      iconUri: '',
     }
 
-    return [config.DEFAULT_TOKEN, ...savedTokensPerAccAddr]
-  }, [savedTokensPerAccAddr])
-
-  const selectedToken = useMemo(() => {
-    if (!accountAddressHex || !tokens.length) return config.DEFAULT_TOKEN
+    if (!accountAddressHex || !tokens.length) return defaultToken
 
     return (
       tokens.find(token => token.address === selectedTokenAddress) ||
-      config.DEFAULT_TOKEN
+      defaultToken
     )
   }, [accountAddressHex, tokens, selectedTokenAddress])
 
@@ -553,10 +578,10 @@ const useSelectedAccountDecryptionKeyStatus = (
       accountAddrHexToTokenAddrMap?.[selectedAccount.accountAddress.toString()]
 
     if (!savedTokensPerDK?.length) {
-      return [config.DEFAULT_TOKEN]
+      return config.DEFAULT_TOKEN_ADRESSES
     }
 
-    return [config.DEFAULT_TOKEN, ...savedTokensPerDK]
+    return [...config.DEFAULT_TOKEN_ADRESSES, ...savedTokensPerDK]
   }, [selectedAccount.accountAddress, accountAddrHexToTokenAddrMap])
 
   const {
@@ -577,7 +602,7 @@ const useSelectedAccountDecryptionKeyStatus = (
   >({
     initialData: [
       {
-        tokenAddress: config.DEFAULT_TOKEN.address,
+        tokenAddress: config.DEFAULT_TOKEN_ADRESSES[0],
         ...AccountDecryptionKeyStatusRawDefault,
       },
     ],
@@ -585,7 +610,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       if (!selectedAccount.accountAddress || !currentTokensList.length) {
         return [
           {
-            tokenAddress: config.DEFAULT_TOKEN.address,
+            tokenAddress: config.DEFAULT_TOKEN_ADRESSES[0],
             ...AccountDecryptionKeyStatusRawDefault,
           },
         ]
@@ -596,13 +621,10 @@ const useSelectedAccountDecryptionKeyStatus = (
           try {
             const isRegistered = await getIsAccountRegisteredWithToken(
               selectedAccount,
-              el.address,
+              el,
             )
 
-            const fungibleAssetBalance = await getFABalance(
-              selectedAccount,
-              el.address,
-            )
+            const fungibleAssetBalance = await getFABalance(selectedAccount, el)
 
             if (isRegistered) {
               try {
@@ -611,14 +633,14 @@ const useSelectedAccountDecryptionKeyStatus = (
                     getConfidentialBalances(
                       selectedAccount,
                       selectedAccountDecryptionKey.toString(),
-                      el.address,
+                      el,
                     ),
-                    getIsBalanceNormalized(selectedAccount, el.address),
-                    getIsBalanceFrozen(selectedAccount, el.address),
+                    getIsBalanceNormalized(selectedAccount, el),
+                    getIsBalanceFrozen(selectedAccount, el),
                   ])
 
                 return {
-                  tokenAddress: el.address,
+                  tokenAddress: el,
                   pending,
                   actual,
                   isRegistered,
@@ -628,7 +650,7 @@ const useSelectedAccountDecryptionKeyStatus = (
                 }
               } catch (error) {
                 return {
-                  tokenAddress: el.address,
+                  tokenAddress: el,
                   pending: undefined,
                   actual: undefined,
                   isRegistered,
@@ -640,7 +662,7 @@ const useSelectedAccountDecryptionKeyStatus = (
             }
 
             return {
-              tokenAddress: el.address,
+              tokenAddress: el,
               pending: undefined,
               actual: undefined,
               isRegistered,
@@ -650,7 +672,7 @@ const useSelectedAccountDecryptionKeyStatus = (
             }
           } catch (error) {
             return {
-              tokenAddress: el.address,
+              tokenAddress: el,
               pending: undefined,
               actual: undefined,
               isRegistered: false,
@@ -676,7 +698,7 @@ const useSelectedAccountDecryptionKeyStatus = (
       loadedTokens.length !== currentTokensList.length
         ? currentTokensList.map(el => ({
             ...AccountDecryptionKeyStatusRawDefault,
-            tokenAddress: el.address,
+            tokenAddress: el,
           }))
         : loadedTokens
 
@@ -724,7 +746,7 @@ const useSelectedAccountDecryptionKeyStatus = (
     if (!perTokenStatusesRaw) return AccountDecryptionKeyStatusRawDefault
 
     if (!tokenAddress) {
-      return perTokenStatusesRaw[config.DEFAULT_TOKEN.address]
+      return perTokenStatusesRaw[config.DEFAULT_TOKEN_ADRESSES[0]]
     }
 
     return perTokenStatusesRaw[tokenAddress]
@@ -733,7 +755,7 @@ const useSelectedAccountDecryptionKeyStatus = (
   const selectedAccountDecryptionKeyStatus = useMemo(() => {
     if (!perTokenStatuses) return AccountDecryptionKeyStatusDefault
 
-    if (!tokenAddress) return perTokenStatuses[config.DEFAULT_TOKEN.address]
+    if (!tokenAddress) return perTokenStatuses[config.DEFAULT_TOKEN_ADRESSES[0]]
 
     return perTokenStatuses[tokenAddress]
   }, [perTokenStatuses, tokenAddress])

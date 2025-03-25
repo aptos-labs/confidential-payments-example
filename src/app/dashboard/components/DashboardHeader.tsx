@@ -2,13 +2,7 @@
 
 import { BN, time } from '@distributedlab/tools'
 import Avatar from 'boring-avatars'
-import {
-  CheckIcon,
-  ChevronDown,
-  CopyIcon,
-  EllipsisIcon,
-  TrashIcon,
-} from 'lucide-react'
+import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'
 import { useRouter } from 'next/navigation'
 import {
   type ComponentProps,
@@ -24,7 +18,7 @@ import {
   validatePrivateKeyHex,
 } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatBalance } from '@/helpers'
+import { abbrCenter, ErrorHandler, isMobile } from '@/helpers'
 import { useCopyToClipboard, useForm } from '@/hooks'
 import { authStore } from '@/store/auth'
 import { cn } from '@/theme/utils'
@@ -49,6 +43,7 @@ export default function DashboardHeader({
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement>) {
+  const isMobileDevice = isMobile()
   const router = useRouter()
 
   const logout = authStore.useLogout({
@@ -63,7 +58,6 @@ export default function DashboardHeader({
     setSelectedAccount,
     addNewAccount,
     removeAccount,
-    aptBalance,
   } = useConfidentialCoinContext()
 
   const [isAccountsBottomSheet, setIsAccountsBottomSheet] = useState(false)
@@ -86,50 +80,33 @@ export default function DashboardHeader({
 
   return (
     <div {...rest} className={cn('flex w-full items-center', className)}>
-      <button onClick={logout}>
-        <UiIcon
-          name='LogOutIcon'
-          className='size-4 -scale-x-100 text-errorMain'
-        />
-      </button>
-
       <button
-        className='mx-auto flex flex-row items-center gap-2'
+        className='mr-auto flex flex-row items-center gap-2'
         onClick={() => setIsAccountsBottomSheet(true)}
       >
         <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
 
         <div className='max-w-[200px] overflow-hidden text-ellipsis'>
           <span className='w-full whitespace-nowrap uppercase text-textPrimary typography-subtitle4'>
-            {selectedAccount.accountAddress.toString()}
+            {abbrCenter(selectedAccount.accountAddress.toString())}
           </span>
         </div>
 
-        <ChevronDown className='size-5 text-textPrimary' />
-      </button>
-
-      <button
-        className='p-4 pr-0'
-        onClick={() => {
-          setIsTransferNativeBottomSheet(true)
-        }}
-      >
-        <div className='flex flex-row items-center gap-2'>
-          <span className='uppercase text-textPrimary typography-caption1'>
-            {formatBalance(aptBalance, 8)}
-          </span>
-          <span className='uppercase text-textPrimary typography-caption1'>
-            APT
-          </span>
-        </div>
+        <UiIcon name='ChevronsUpDownIcon' className='size-4 text-textPrimary' />
       </button>
 
       <UiSheet
         open={isAccountsBottomSheet}
         onOpenChange={setIsAccountsBottomSheet}
       >
-        <UiSheetContent side='top'>
+        <UiSheetContent side={isMobileDevice ? 'top' : 'left'}>
           <UiSheetHeader>
+            <button onClick={logout}>
+              <UiIcon
+                name='LogOutIcon'
+                className='size-4 -scale-x-100 text-errorMain'
+              />
+            </button>
             <UiSheetTitle>Accounts</UiSheetTitle>
           </UiSheetHeader>
           <div className='flex flex-1 flex-col'>
@@ -272,6 +249,8 @@ function AddNewAccountBottomSheet({
   onSubmit,
   ...rest
 }: AddNewAccountBottomSheetProps) {
+  const isMobileDevice = isMobile()
+
   const {
     formState,
     isFormDisabled,
@@ -310,7 +289,7 @@ function AddNewAccountBottomSheet({
 
   return (
     <UiSheet {...rest}>
-      <UiSheetContent side='bottom'>
+      <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
         <UiSheetHeader>
           <UiSheetTitle>Add Account</UiSheetTitle>
         </UiSheetHeader>

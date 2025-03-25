@@ -181,7 +181,7 @@ export const withdrawConfidentialBalance = async (
   decryptionKeyHex: string,
   withdrawAmount: bigint,
   encryptedActualBalance: TwistedElGamalCiphertext[],
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
@@ -203,7 +203,7 @@ export const transferConfidentialCoin = async (
   amountToTransfer: bigint,
   recipientAddressHex: string,
   auditorsEncryptionKeyHexList: string[],
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
@@ -235,7 +235,7 @@ export const safelyRotateConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,
   currEncryptedBalance: TwistedElGamalCiphertext[],
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const newDecryptionKey = TwistedEd25519PrivateKey.generate()
 
@@ -255,7 +255,7 @@ export const safelyRotateConfidentialBalance = async (
 export const safelyRolloverConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const rolloverTxPayloads = await aptos.confidentialCoin.safeRolloverPendingCB(
     {
@@ -272,7 +272,7 @@ export const safelyRolloverConfidentialBalance = async (
 export const registerConfidentialBalance = async (
   account: Account,
   publicKeyHex: string,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const registerVBTxBody = await aptos.confidentialCoin.registerBalance({
     sender: account.accountAddress,
@@ -288,7 +288,7 @@ export const normalizeConfidentialBalance = async (
   decryptionKeyHex: string,
   encryptedPendingBalance: TwistedElGamalCiphertext[],
   amount: bigint,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const normalizeTx = await aptos.confidentialCoin.normalizeUserBalance({
     tokenAddress,
@@ -305,7 +305,7 @@ export const normalizeConfidentialBalance = async (
 export const depositConfidentialBalance = async (
   account: Account,
   amount: bigint,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const depositTx = await aptos.confidentialCoin.deposit({
     sender: account.accountAddress,
@@ -317,7 +317,7 @@ export const depositConfidentialBalance = async (
 
 export const getIsAccountRegisteredWithToken = async (
   account: Account,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const isRegistered = await aptos.confidentialCoin.hasUserRegistered({
     accountAddress: account.accountAddress,
@@ -329,7 +329,7 @@ export const getIsAccountRegisteredWithToken = async (
 
 export const getIsBalanceNormalized = async (
   account: Account,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const isNormalized = await aptos.confidentialCoin.isUserBalanceNormalized({
     accountAddress: account.accountAddress,
@@ -341,7 +341,7 @@ export const getIsBalanceNormalized = async (
 
 export const getIsBalanceFrozen = async (
   account: Account,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const isFrozen = await aptos.confidentialCoin.isBalanceFrozen({
     accountAddress: account.accountAddress,
@@ -362,7 +362,7 @@ export const getAptBalance = async (account: Account) => {
 export const getConfidentialBalances = async (
   account: Account,
   decryptionKeyHex: string,
-  tokenAddress = appConfig.DEFAULT_TOKEN.address,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 

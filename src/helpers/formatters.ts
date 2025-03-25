@@ -155,3 +155,7 @@ export function formatBalance(
     return '0'
   }
 }
+
+export function abbrCenter(addr: string, start = 4, end = 4) {
+  return `${addr.slice(0, start)}...${addr.slice(-end)}`
+}

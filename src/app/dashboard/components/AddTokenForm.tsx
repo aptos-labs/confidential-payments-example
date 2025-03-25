@@ -196,7 +196,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
           <div
             key={idx}
             className={cn(
-              'relative isolate mt-3 flex gap-3',
+              'relative isolate mt-3 flex gap-3 md:flex-wrap',
               'hover:brightness-150',
             )}
           >
@@ -213,7 +213,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                       className='size-4 text-textPrimary'
                     />
                   </UiTooltipTrigger>
-                  <UiTooltipContent className='max-w-[75vw] overflow-hidden text-ellipsis'>
+                  <UiTooltipContent className='overflow-hidden text-ellipsis'>
                     <span className='text-textSecondary typography-caption1'>
                       {el.address}
                     </span>
@@ -241,7 +241,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
             </div>
 
             <UiButton
-              className='ml-auto hidden min-w-[200px] md:flex'
+              className='ml-auto hidden w-full md:flex'
               type='button'
               disabled={isDisabled}
               onClick={() => {
@@ -253,7 +253,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
             </UiButton>
 
             <button
-              className='absolute inset-0 z-20'
+              className='absolute inset-0 z-20 md:hidden'
               type='button'
               onClick={() => {
                 setValue('tokenInfo', el)

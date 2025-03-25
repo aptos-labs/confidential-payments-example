@@ -37,7 +37,7 @@ import DashboardHeader from '@/app/dashboard/components/DashboardHeader'
 import TokenInfo from '@/app/dashboard/components/TokenInfo'
 import WithdrawForm from '@/app/dashboard/components/WithdrawForm'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatDateDMYT } from '@/helpers'
+import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TxHistoryItem } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -58,6 +58,8 @@ import {
 } from './components/TransferFormSheet'
 
 export default function DashboardClient() {
+  const isMobileDevice = isMobile()
+
   const router = useRouter()
   const pathname = usePathname()
   const searchParams = useSearchParams()
@@ -254,7 +256,11 @@ export default function DashboardClient() {
       </header>
       <UiSeparator />
       <div className='flex size-full flex-1 flex-col'>
-        <div ref={carouselWrpRef} className='w-full self-center py-6'>
+        <div
+          key={tokens.length}
+          ref={carouselWrpRef}
+          className='w-full self-center py-6'
+        >
           {carouselWrpRef.current && (
             <UiCarousel
               baseWidth={carouselWrpRef.current?.clientWidth}
@@ -274,7 +280,10 @@ export default function DashboardClient() {
                     />
                   )
                 }),
-                <div className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'>
+                <div
+                  key={tokens.length + 1}
+                  className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
+                >
                   <button
                     className='flex flex-col items-center gap-2 uppercase'
                     onClick={() => {
@@ -432,8 +441,8 @@ export default function DashboardClient() {
 
       <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
         <UiSheetContent
-          side='bottom'
-          className={'max-h-[80dvh] overflow-y-scroll'}
+          side={isMobileDevice ? 'bottom' : 'right'}
+          className={'max-h-[80dvh] overflow-y-scroll md:max-h-none'}
         >
           <UiSheetHeader>
             <UiSheetTitle>Deposit {selectedToken.name}</UiSheetTitle>
@@ -451,7 +460,7 @@ export default function DashboardClient() {
         open={isTokenInfoSheetOpen}
         onOpenChange={setIsTokenInfoSheetOpen}
       >
-        <UiSheetContent side='bottom'>
+        <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
           <UiSheetHeader>
             <UiSheetTitle>Token Info</UiSheetTitle>
           </UiSheetHeader>
@@ -462,7 +471,7 @@ export default function DashboardClient() {
         </UiSheetContent>
       </UiSheet>
       <UiSheet open={isWithdrawSheetOpen} onOpenChange={setIsWithdrawSheetOpen}>
-        <UiSheetContent side='bottom'>
+        <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
           <UiSheetHeader>
             <UiSheetTitle>Withdraw</UiSheetTitle>
           </UiSheetHeader>
@@ -486,8 +495,8 @@ export default function DashboardClient() {
 
       <UiSheet open={isAddTokenSheetOpen} onOpenChange={setIsAddTokenSheetOpen}>
         <UiSheetContent
-          side='bottom'
-          className='max-h-[70dvh] overflow-y-scroll'
+          side={isMobileDevice ? 'bottom' : 'right'}
+          className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
         >
           <UiSheetHeader>
             <UiSheetTitle>Add Token</UiSheetTitle>

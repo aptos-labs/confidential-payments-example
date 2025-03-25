@@ -99,9 +99,12 @@ export default function DashboardHeader({
         open={isAccountsBottomSheet}
         onOpenChange={setIsAccountsBottomSheet}
       >
-        <UiSheetContent side={isMobileDevice ? 'top' : 'left'}>
+        <UiSheetContent
+          side={isMobileDevice ? 'top' : 'left'}
+          className='flex flex-col'
+        >
           <UiSheetHeader>
-            <button onClick={logout}>
+            <button onClick={logout} className='md:hidden'>
               <UiIcon
                 name='LogOutIcon'
                 className='size-4 -scale-x-100 text-errorMain'
@@ -134,14 +137,28 @@ export default function DashboardHeader({
 
             <UiSeparator className='my-4' />
 
-            <UiButton
-              onClick={() => {
-                setIsAccountsBottomSheet(false)
-                setIsAddAccountBottomSheet(true)
-              }}
-            >
-              Add Account
-            </UiButton>
+            <div className='flex flex-col gap-3'>
+              <UiButton
+                onClick={() => {
+                  setIsAccountsBottomSheet(false)
+                  setIsAddAccountBottomSheet(true)
+                }}
+              >
+                Add Account
+              </UiButton>
+
+              <UiButton
+                onClick={logout}
+                className='mt-auto hidden md:flex'
+                variant='outline'
+              >
+                Logout
+                <UiIcon
+                  name='LogOutIcon'
+                  className='size-4 -scale-x-100 text-errorMain'
+                />
+              </UiButton>
+            </div>
           </div>
         </UiSheetContent>
       </UiSheet>

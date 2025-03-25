@@ -27,9 +27,9 @@ import {
   ReactElement,
   useCallback,
   useEffect,
-  useRef,
   useState,
 } from 'react'
+import { useMeasure } from 'react-use'
 
 import AddTokenForm from '@/app/dashboard/components/AddTokenForm'
 import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard'
@@ -202,7 +202,7 @@ export default function DashboardClient() {
     setIsSubmitting(false)
   }, [addTxHistoryItem, rolloverAccount, tryRefresh])
 
-  const carouselWrpRef = useRef<HTMLDivElement>(null)
+  const [carouselWrpRef, { width: carouselWidth }] = useMeasure()
 
   const clearAllParams = useCallback(() => {
     router.replace(`${pathname}?`)
@@ -258,57 +258,56 @@ export default function DashboardClient() {
       <div className='flex size-full flex-1 flex-col'>
         <div
           key={tokens.length}
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
           ref={carouselWrpRef}
           className='w-full self-center py-6'
         >
-          {carouselWrpRef.current && (
-            <UiCarousel
-              baseWidth={carouselWrpRef.current?.clientWidth}
-              items={[
-                ...tokens.map((token, idx) => {
-                  const currTokenStatuses = perTokenStatuses[token.address]
+          <UiCarousel
+            baseWidth={carouselWidth}
+            items={[
+              ...tokens.map((token, idx) => {
+                const currTokenStatuses = perTokenStatuses[token.address]
 
-                  return (
-                    <ConfidentialAssetCard
-                      key={idx}
-                      className='w-full'
-                      token={token}
-                      actualAmount={currTokenStatuses.actualAmount}
-                      isNormalized={currTokenStatuses.isNormalized}
-                      isFrozen={currTokenStatuses.isFrozen}
-                      isRegistered={currTokenStatuses.isRegistered}
-                    />
-                  )
-                }),
-                <div
-                  key={tokens.length + 1}
-                  className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
+                return (
+                  <ConfidentialAssetCard
+                    key={idx}
+                    className='w-full'
+                    token={token}
+                    actualAmount={currTokenStatuses.actualAmount}
+                    isNormalized={currTokenStatuses.isNormalized}
+                    isFrozen={currTokenStatuses.isFrozen}
+                    isRegistered={currTokenStatuses.isRegistered}
+                  />
+                )
+              }),
+              <div
+                key={tokens.length + 1}
+                className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
+              >
+                <button
+                  className='flex flex-col items-center gap-2 uppercase'
+                  onClick={() => {
+                    setIsAddTokenSheetOpen(true)
+                  }}
                 >
-                  <button
-                    className='flex flex-col items-center gap-2 uppercase'
-                    onClick={() => {
-                      setIsAddTokenSheetOpen(true)
-                    }}
-                  >
-                    <PlusCircleIcon
-                      size={64}
-                      className='text-textPrimary typography-caption1'
-                    />
-                    Add Token
-                  </button>
-                </div>,
-              ]}
-              onIndexChange={index => {
-                if (!tokens[index]?.address) return
+                  <PlusCircleIcon
+                    size={64}
+                    className='text-textPrimary typography-caption1'
+                  />
+                  Add Token
+                </button>
+              </div>,
+            ]}
+            onIndexChange={index => {
+              if (!tokens[index]?.address) return
 
-                setSelectedTokenAddress(tokens[index].address)
-              }}
-              startIndex={
-                tokens.findIndex(el => el.address === selectedToken.address) ??
-                0
-              }
-            />
-          )}
+              setSelectedTokenAddress(tokens[index].address)
+            }}
+            startIndex={
+              tokens.findIndex(el => el.address === selectedToken.address) ?? 0
+            }
+          />
         </div>
 
         <div className='flex w-full flex-row items-center justify-center gap-8'>

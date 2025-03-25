@@ -139,5 +139,5 @@
 }
 
 #root {
-  @apply w-[100vw] h-[100vh] bg-[var(--color-background)] text-[var(--color-foreground)];
+  @apply h-[100vh] w-[100vw] bg-[var(--color-background)] text-[var(--color-foreground)];
 }

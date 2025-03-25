@@ -171,6 +171,7 @@ const useWalletStore = create(
 
       partialize: state => ({
         privateKeyHexList: state.privateKeyHexList,
+        selectedAccountAddr: state.selectedAccountAddr,
         accountAddrHexToTokenAddrMap: state.accountAddrHexToTokenAddrMap,
         _selectedTokenAddress: state._selectedTokenAddress,
         accountAddrHexPerTokenTxHistory: state.accountAddrHexPerTokenTxHistory,

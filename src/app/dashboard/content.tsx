@@ -34,7 +34,7 @@ export default function DashboardPageContent() {
     try {
       await preloadTablesForBalances()
 
-      if (!activeKeylessAccount) {
+      if (!activeKeylessAccount && keylessAccounts.length) {
         await switchKeylessAccount(keylessAccounts[0].idToken.raw)
       }
     } catch (error) {

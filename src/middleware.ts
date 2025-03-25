@@ -1,20 +1,24 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo'
-import { getSessionCookie } from 'better-auth/cookies'
 import { NextResponse } from 'next/server'
 
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
-  /* eslint-disable no-console */
-  console.log(JSON.stringify(request))
-  console.log(request.cookies.get('better-auth.session_token'))
+  // const sessionCookie = getSessionCookie(request, {
+  //   // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
+  //   cookieName: 'session_token',
+  //   cookiePrefix: 'better-auth',
+  // })
 
-  const sessionCookie = getSessionCookie(request, {
-    // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
-    cookieName: 'session_token',
-    cookiePrefix: 'better-auth',
-  })
+  // Manual cookie parsing as temporary workaround
+  const cookieHeader = request.headers.get('cookie')
+  const cookies = cookieHeader?.split('; ').reduce((acc, cookie) => {
+    const [key, value] = cookie.split('=')
+    acc.set(key, value)
+    return acc
+  }, new Map())
 
-  // eslint-disable-next-line no-console
-  console.log(sessionCookie)
+  const sessionCookie =
+    cookies?.get('better-auth.session_token') ||
+    cookies?.get('__Secure-better-auth.session_token')
 
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
@@ -24,17 +28,23 @@ const appGuard = async ({ request }: MiddlewareFunctionProps) => {
 }
 
 const authGuard = async ({ request }: MiddlewareFunctionProps) => {
-  // eslint-disable-next-line no-console
-  console.log(JSON.stringify(request))
-  const sessionCookie = getSessionCookie(request, {
-    // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
-    cookieName: 'session_token',
-    cookiePrefix: 'better-auth',
-    useSecureCookies: false,
-  })
+  // const sessionCookie = getSessionCookie(request, {
+  //   // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
+  //   cookieName: 'session_token',
+  //   cookiePrefix: 'better-auth',
+  // })
 
-  // eslint-disable-next-line no-console
-  console.log(sessionCookie)
+  // Manual cookie parsing as temporary workaround
+  const cookieHeader = request.headers.get('cookie')
+  const cookies = cookieHeader?.split('; ').reduce((acc, cookie) => {
+    const [key, value] = cookie.split('=')
+    acc.set(key, value)
+    return acc
+  }, new Map())
+
+  const sessionCookie =
+    cookies?.get('better-auth.session_token') ||
+    cookies?.get('__Secure-better-auth.session_token')
 
   if (sessionCookie) {
     return NextResponse.redirect(new URL('/dashboard', request.url))

@@ -6,9 +6,6 @@ import { nextCookies } from 'better-auth/next-js'
 import { Pool } from 'pg'
 
 export const auth = betterAuth({
-  advanced: {
-    useSecureCookies: false,
-  },
   database: new Pool({
     connectionString: config.PG_URL,
   }),

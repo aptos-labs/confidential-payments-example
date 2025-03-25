@@ -3,11 +3,17 @@ import { getSessionCookie } from 'better-auth/cookies'
 import { NextResponse } from 'next/server'
 
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(request))
+
   const sessionCookie = getSessionCookie(request, {
     // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
     cookieName: 'session_token',
     cookiePrefix: 'better-auth',
   })
+
+  // eslint-disable-next-line no-console
+  console.log(sessionCookie)
 
   if (!sessionCookie) {
     return NextResponse.redirect(new URL('/sign-in', request.url))
@@ -17,11 +23,16 @@ const appGuard = async ({ request }: MiddlewareFunctionProps) => {
 }
 
 const authGuard = async ({ request }: MiddlewareFunctionProps) => {
+  // eslint-disable-next-line no-console
+  console.log(JSON.stringify(request))
   const sessionCookie = getSessionCookie(request, {
     // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
     cookieName: 'session_token',
     cookiePrefix: 'better-auth',
   })
+
+  // eslint-disable-next-line no-console
+  console.log(sessionCookie)
 
   if (sessionCookie) {
     return NextResponse.redirect(new URL('/dashboard', request.url))

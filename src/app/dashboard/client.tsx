@@ -250,7 +250,7 @@ export default function DashboardClient() {
   ])
 
   return (
-    <div className='size-full overflow-hidden'>
+    <div className='size-full'>
       <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12'>
         <DashboardHeader className='' />
       </header>
@@ -417,24 +417,27 @@ export default function DashboardClient() {
           </div>
         )}
 
-        <div className='flex w-full flex-1 flex-col overflow-hidden p-4'>
-          <div className='flex w-full flex-1 flex-col'>
-            {txHistory.length ? (
-              <div className='flex flex-col gap-6'>
-                {txHistory.reverse().map((el, idx) => (
-                  <TxItem key={idx} {...el} />
-                ))}
-              </div>
-            ) : (
-              <div className='my-auto flex flex-col items-center gap-4 self-center'>
-                <FolderOpenIcon size={128} className='text-componentDisabled' />
+        <div
+          className={cn(
+            'mt-12 flex w-full flex-1 flex-col p-4',
+            'md:mx-auto md:max-w-[500px]',
+          )}
+        >
+          {txHistory.length ? (
+            <div className='flex flex-col gap-6'>
+              {txHistory.reverse().map((el, idx) => (
+                <TxItem key={idx} {...el} />
+              ))}
+            </div>
+          ) : (
+            <div className='my-auto flex flex-col items-center gap-4 self-center'>
+              <FolderOpenIcon size={128} className='text-componentDisabled' />
 
-                <span className='text-textSecondary typography-subtitle2'>
-                  No transactions yet.
-                </span>
-              </div>
-            )}
-          </div>
+              <span className='text-textSecondary typography-subtitle2'>
+                No transactions yet.
+              </span>
+            </div>
+          )}
         </div>
       </div>
 

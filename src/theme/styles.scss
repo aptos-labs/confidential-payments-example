@@ -137,3 +137,7 @@
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
+
+#root {
+  @apply w-[100vw] h-[100vh] bg-[var(--color-background)] text-[var(--color-foreground)];
+}

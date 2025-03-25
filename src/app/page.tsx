@@ -10,7 +10,7 @@ export default async function RootPage() {
         <UiThreads amplitude={1} distance={0} enableMouseInteraction={true} />
       </div>
 
-      <div className='absolute inset-0 z-20 flex size-full flex-col items-center justify-center gap-4 text-center'>
+      <div className='absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-4 text-center'>
         <span className='tex-textPrimary typography-h1'>
           Confidential Assets
         </span>

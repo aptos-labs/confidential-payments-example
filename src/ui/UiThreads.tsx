@@ -1,5 +1,6 @@
 'use client'
 
+import { useReducedMotion } from 'motion/react'
 import { Color, Mesh, Program, Renderer, Triangle } from 'ogl'
 import React, { useEffect, useRef } from 'react'
 
@@ -128,14 +129,19 @@ const UiThreads: React.FC<ThreadsProps> = ({
   color = [1, 1, 1],
   amplitude = 1,
   distance = 0,
-  enableMouseInteraction = false,
+  enableMouseInteraction = true,
   ...rest
 }) => {
+  const isReducedMotion = useReducedMotion()
+
+  const shouldEnableMouseInteraction =
+    enableMouseInteraction && !isReducedMotion
+
   const containerRef = useRef<HTMLDivElement>(null)
   const animationFrameId = useRef<number>()
 
   useEffect(() => {
-    if (!containerRef.current) return
+    if (!containerRef.current || isReducedMotion) return
     const container = containerRef.current
 
     const renderer = new Renderer({ dpr: devicePixelRatio, alpha: true })
@@ -191,13 +197,13 @@ const UiThreads: React.FC<ThreadsProps> = ({
     function handleMouseLeave() {
       targetMouse = [0.5, 0.5]
     }
-    if (enableMouseInteraction) {
+    if (shouldEnableMouseInteraction) {
       container.addEventListener('mousemove', handleMouseMove)
       container.addEventListener('mouseleave', handleMouseLeave)
     }
 
     function update(t: number) {
-      if (enableMouseInteraction) {
+      if (shouldEnableMouseInteraction) {
         // Smoothly interpolate the current mouse position toward the target.
         const smoothing = 0.05
         currentMouse[0] += smoothing * (targetMouse[0] - currentMouse[0])
@@ -218,14 +224,20 @@ const UiThreads: React.FC<ThreadsProps> = ({
       if (animationFrameId.current)
         cancelAnimationFrame(animationFrameId.current)
       window.removeEventListener('resize', resize)
-      if (enableMouseInteraction) {
+      if (shouldEnableMouseInteraction) {
         container.removeEventListener('mousemove', handleMouseMove)
         container.removeEventListener('mouseleave', handleMouseLeave)
       }
       if (container.contains(gl.canvas)) container.removeChild(gl.canvas)
       gl.getExtension('WEBGL_lose_context')?.loseContext()
     }
-  }, [color, amplitude, distance, enableMouseInteraction])
+  }, [
+    color,
+    amplitude,
+    distance,
+    shouldEnableMouseInteraction,
+    isReducedMotion,
+  ])
 
   return <div ref={containerRef} className='relative size-full' {...rest} />
 }

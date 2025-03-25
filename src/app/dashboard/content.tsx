@@ -12,9 +12,12 @@ import { ConfidentialCoinContextProvider } from '@/app/dashboard/context'
 import Loading from '@/app/dashboard/loading'
 import { ErrorHandler } from '@/helpers'
 import { authStore } from '@/store/auth'
+import { walletStore } from '@/store/wallet'
 
 export default function DashboardPageContent() {
   'use client'
+
+  const walletAccounts = walletStore.useWalletAccounts()
 
   const [isInitialized, setIsInitialized] = useState(false)
 
@@ -40,7 +43,8 @@ export default function DashboardPageContent() {
     setIsInitialized(true)
   }, 10)
 
-  if (!isInitialized) return <Loading />
+  if (!isInitialized || !(walletAccounts.length || keylessAccounts.length))
+    return <Loading />
 
   return (
     <QueryClientProvider client={queryClient}>

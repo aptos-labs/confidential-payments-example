@@ -9,6 +9,7 @@ import {
   EllipsisIcon,
   TrashIcon,
 } from 'lucide-react'
+import { useRouter } from 'next/navigation'
 import {
   type ComponentProps,
   HTMLAttributes,
@@ -25,7 +26,9 @@ import {
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard, useForm } from '@/hooks'
+import { authStore } from '@/store/auth'
 import { cn } from '@/theme/utils'
+import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import {
   UiDropdownMenu,
@@ -46,6 +49,14 @@ export default function DashboardHeader({
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement>) {
+  const router = useRouter()
+
+  const logout = authStore.useLogout({
+    onSuccess: () => {
+      router.push('/sign-in')
+    },
+  })
+
   const {
     accountsList,
     selectedAccount,
@@ -74,7 +85,14 @@ export default function DashboardHeader({
   }, [])
 
   return (
-    <div {...rest} className={cn('flex flex-row items-center', className)}>
+    <div {...rest} className={cn('flex w-full items-center', className)}>
+      <button onClick={logout}>
+        <UiIcon
+          name='LogOutIcon'
+          className='size-4 -scale-x-100 text-errorMain'
+        />
+      </button>
+
       <button
         className='mx-auto flex flex-row items-center gap-2'
         onClick={() => setIsAccountsBottomSheet(true)}

@@ -438,6 +438,8 @@ const useLogout = (opts?: {
       fetchOptions: {
         onSuccess: () => {
           opts?.onSuccess?.()
+          clearAuthStore()
+          clearWalletStore()
         },
         onError: () => {
           opts?.onError?.()
@@ -447,8 +449,6 @@ const useLogout = (opts?: {
         },
       },
     })
-    clearAuthStore()
-    await Promise.all([clearWalletStore()])
   }
 }
 

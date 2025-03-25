@@ -250,7 +250,7 @@ export default function DashboardClient() {
   return (
     <div className='size-full overflow-hidden'>
       <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12'>
-        <DashboardHeader className='ml-auto' />
+        <DashboardHeader className='' />
       </header>
       <UiSeparator />
       <div className='flex size-full flex-1 flex-col'>

@@ -5,6 +5,7 @@ type Config = {
   AUTH_BASE_URL: string
   CONFIDENTIAL_ASSET_MODULE_ADDR: string
   DEFAULT_TOKEN_ADRESSES: string[]
+  PG_URL: string
 
   GOOGLE_CLIENT_ID: string
   GOOGLE_CLIENT_SECRET: string
@@ -21,6 +22,7 @@ export const config: Config = {
     min: 2, // minimum number of clients
     idleTimeoutMillis: 30000, // how long a client is allowed to remain idle before being closed
   },
+  PG_URL: process.env.PG_URL!,
   AUTH_BASE_URL: process.env.AUTH_BASE_URL!,
   CONFIDENTIAL_ASSET_MODULE_ADDR: process.env.CONFIDENTIAL_ASSET_MODULE_ADDR!,
   DEFAULT_TOKEN_ADRESSES: [

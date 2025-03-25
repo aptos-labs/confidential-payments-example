@@ -39,3 +39,4 @@ stats.html
 .env.*
 !.env.example
 tsconfig.tsbuildinfo
+.vercel

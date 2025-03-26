@@ -10,8 +10,10 @@ import {
   ConfidentialCoin,
   Ed25519PrivateKey,
   EphemeralKeyPair,
+  GetFungibleAssetMetadataResponse,
   type InputGenerateTransactionPayloadData,
   KeylessAccount,
+  MoveValue,
   Network,
   NetworkToNetworkName,
   PrivateKey,
@@ -351,6 +353,50 @@ export const getIsBalanceFrozen = async (
   return isFrozen
 }
 
+export const getCoinByFaAddress = async (
+  tokenAddress: string,
+): Promise<{
+  account_address: string
+  module_name: string
+  struct_name: string
+}> => {
+  const pairedCoinTypeStruct = (
+    await aptos.view({
+      payload: {
+        function: '0x1::coin::paired_coin',
+        functionArguments: [tokenAddress],
+      },
+    })
+  ).at(0) as { vec: MoveValue[] }
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  return pairedCoinTypeStruct.vec[0]
+}
+
+export const getFAByCoinType = async (coinType: string): Promise<string> => {
+  const fungibleAsset = (
+    await aptos.view({
+      payload: {
+        function: '0x1::coin::paired_metadata',
+        typeArguments: [coinType],
+      },
+    })
+  ).at(0) as { vec: { inner: string }[] }
+
+  return fungibleAsset?.vec[0].inner
+}
+
+export const getCoinBalanceByFaAddress = (
+  account: Account,
+  tokenAddress: string,
+) => {
+  return aptos.account.getAccountCoinAmount({
+    accountAddress: account.accountAddress,
+    faMetadataAddress: tokenAddress,
+  })
+}
+
 export const getAptBalance = async (account: Account) => {
   const aptBalance = await aptos.getAccountAPTAmount({
     accountAddress: account.accountAddress,
@@ -403,30 +449,62 @@ export const getFungibleAssetMetadata = async (
 ): Promise<TokenBaseInfo[]> => {
   const isHex = isHexString(tokenNameOrSymbolOrAddressHex)
 
-  const fungibleAssets = await aptos.getFungibleAssetMetadata({
-    options: {
-      where: {
-        ...(isHex && {
-          asset_type: {
-            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+  const searchByHexPromise = isHex
+    ? aptos.getFungibleAssetMetadata({
+        options: {
+          where: {
+            asset_type: {
+              _ilike:
+                tokenNameOrSymbolOrAddressHex.length === 3
+                  ? `%0x${tokenNameOrSymbolOrAddressHex.replace('0x', '').padStart(64, '0')}%`
+                  : `%${tokenNameOrSymbolOrAddressHex}%`,
+            },
           },
-        }),
-        ...(!isHex && {
-          name: {
-            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
-          },
-          symbol: {
-            _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
-          },
-        }),
-        token_standard: {
-          _eq: 'v2',
         },
-      },
-    },
-  })
+      })
+    : undefined
 
-  return fungibleAssets.map(el => ({
+  const searchByNamePromise = isHex
+    ? undefined
+    : aptos.getFungibleAssetMetadata({
+        options: {
+          where: {
+            name: {
+              _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+            },
+          },
+        },
+      })
+
+  const searchBySymbolPromise = isHex
+    ? undefined
+    : aptos.getFungibleAssetMetadata({
+        options: {
+          where: {
+            symbol: {
+              _ilike: `%${tokenNameOrSymbolOrAddressHex}%`,
+            },
+          },
+        },
+      })
+
+  const searchResults = await Promise.all([
+    searchByHexPromise,
+    searchByNamePromise,
+    searchBySymbolPromise,
+  ])
+
+  const filteredUniqueFungibleAssets = searchResults
+    .flat()
+    .reduce((acc, el) => {
+      if (!acc.find(accEl => accEl.asset_type === el?.asset_type) && el) {
+        acc.push(el)
+      }
+
+      return acc
+    }, [] as GetFungibleAssetMetadataResponse)
+
+  return filteredUniqueFungibleAssets.map(el => ({
     address: el.asset_type,
     name: el.name,
     symbol: el.symbol,
@@ -592,12 +670,13 @@ export const KeylessAccountEncoding = {
  */
 export const validateKeylessAccount = (
   account: KeylessAccount,
-): KeylessAccount | undefined =>
+): KeylessAccount | undefined => {
   // Check the Ephemeral key pair expiration
-  isValidEphemeralKeyPair(account.ephemeralKeyPair) &&
-  // Check the idToken for nonce
-  isValidIdToken(account.jwt) &&
-  // If the EphemeralAccount nonce algorithm changes, this will need to be updated
-  decodeIdToken(account.jwt).nonce === account.ephemeralKeyPair.nonce
+  return isValidEphemeralKeyPair(account.ephemeralKeyPair) &&
+    // Check the idToken for nonce
+    isValidIdToken(account.jwt) &&
+    // If the EphemeralAccount nonce algorithm changes, this will need to be updated
+    decodeIdToken(account.jwt).nonce === account.ephemeralKeyPair.nonce
     ? account
     : undefined
+}

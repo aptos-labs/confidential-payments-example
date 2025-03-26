@@ -7,9 +7,13 @@ import { useCallback, useState } from 'react'
 import { Controller, SubmitHandler } from 'react-hook-form'
 import { useDebounce } from 'react-use'
 
-import { getFABalance, getFungibleAssetMetadata } from '@/api/modules/aptos'
+import {
+  getFABalance,
+  getFAByCoinType,
+  getFungibleAssetMetadata,
+} from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, formatBalance } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -68,8 +72,25 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   const [foundedTokens, setFoundedTokens] = useState<
     (TokenBaseInfo & { balanceAmount: string })[]
   >([])
+  const [selectedToken, setSelectedToken] = useState<TokenBaseInfo>()
 
   const isDisabled = isSearching || isFormDisabled
+
+  const ensureV2Token = useCallback(async () => {
+    if (!selectedToken) return
+
+    try {
+      const tokenAddress = await getFAByCoinType(selectedToken?.address)
+
+      const [token] = await getFungibleAssetMetadata(tokenAddress)
+
+      return token
+    } catch (error) {
+      /* empty */
+    }
+
+    return selectedToken
+  }, [selectedToken])
 
   const clearForm = useCallback(() => {
     setValue('tokenAddressOrNameOrSymbol', '')
@@ -235,7 +256,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
 
               {el.balanceAmount && (
                 <span className='text-textPrimary typography-caption1'>
-                  {el.balanceAmount} {el.symbol}
+                  {formatBalance(el.balanceAmount, el.decimals)} {el.symbol}
                 </span>
               )}
             </div>
@@ -245,7 +266,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               type='button'
               disabled={isDisabled}
               onClick={() => {
-                setValue('tokenInfo', el)
+                setSelectedToken(el)
                 setIsConfirmationDialogOpen(true)
               }}
             >
@@ -256,7 +277,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               className='absolute inset-0 z-20 md:hidden'
               type='button'
               onClick={() => {
-                setValue('tokenInfo', el)
+                setSelectedToken(el)
                 setIsConfirmationDialogOpen(true)
               }}
             />
@@ -271,28 +292,28 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
         <UiDialogContent>
           <UiDialogHeader>
             <UiDialogTitle className='pb-2'>
-              Add {formState.tokenInfo?.symbol} token?
+              Add {selectedToken?.symbol} token?
             </UiDialogTitle>
             <UiSeparator />
             {/*<UiDialogDescription>*/}
             <div className='flex w-full gap-2 overflow-hidden pt-2 text-left'>
-              {formState.tokenInfo &&
+              {selectedToken &&
                 renderTokenImage({
-                  ...formState.tokenInfo,
+                  ...selectedToken,
                   balanceAmount: '',
                 })}
 
               <div className='flex flex-1 flex-col'>
                 <span className='text-textPrimary typography-caption1'>
-                  {formState.tokenInfo?.name}
+                  {selectedToken?.name}
                 </span>
                 <span className='text-textSecondary typography-caption2'>
-                  {formState.tokenInfo?.symbol}
+                  {selectedToken?.symbol}
                 </span>
                 <div className='relative isolate h-5 w-full'>
                   <div className='absolute inset-0 overflow-hidden text-ellipsis'>
                     <span className='w-full text-textSecondary typography-caption3'>
-                      {formState.tokenInfo?.address}
+                      {selectedToken?.address}
                     </span>
                   </div>
                 </div>
@@ -316,7 +337,16 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               >
                 Cancel
               </UiButton>
-              <UiButton className='flex-1' type={'submit'}>
+              <UiButton
+                className='flex-1'
+                type={'button'}
+                onClick={async () => {
+                  const token = await ensureV2Token()
+
+                  setValue('tokenInfo', token)
+                  handleSubmit(submit)()
+                }}
+              >
                 Add
               </UiButton>
             </form>

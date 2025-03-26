@@ -414,7 +414,6 @@ const useLogin = (opts?: {
         authClient.signIn.social(
           {
             provider: 'apple',
-            scopes: ['email', 'name', 'openid'],
             idToken: {
               token: idToken,
               nonce: ephemeralKeyPair.nonce,

@@ -1,9 +1,10 @@
 'use client'
 
 import { time } from '@distributedlab/tools'
-import { parseUnits } from 'ethers'
+import { FixedNumber, parseUnits } from 'ethers'
 import { useCallback, useState } from 'react'
 
+import { getFABalance } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -25,6 +26,7 @@ export default function DepositManualForm({
   onSubmit?: () => void
 }) {
   const {
+    selectedAccount,
     selectedToken,
     deposit,
     rolloverAccount,
@@ -35,10 +37,15 @@ export default function DepositManualForm({
 
   const [isOtherRecipient, setIsOtherRecipient] = useState(false)
 
+  const formattedTotalBalance = formatBalance(
+    perTokenStatuses[selectedToken.address].fungibleAssetBalance,
+    selectedToken.decimals,
+  )
+
   const { control, disableForm, enableForm, isFormDisabled, handleSubmit } =
     useForm({ recipient: '', amount: '' }, yup =>
       yup.object().shape({
-        amount: yup.number().required(),
+        amount: yup.number().max(+formattedTotalBalance).required(),
         ...(isOtherRecipient && {
           recipient: yup.string().required(),
         }),
@@ -54,6 +61,15 @@ export default function DepositManualForm({
             String(formData.amount),
             selectedToken.decimals,
           )
+
+          const [faOnlyBalance] = await getFABalance(
+            selectedAccount,
+            selectedToken.address,
+          )
+
+          const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+            faOnlyBalance.amount,
+          ).lt(FixedNumber.fromValue(amountToDeposit))
 
           const depositTxReceipt = await deposit(amountToDeposit)
           addTxHistoryItem({
@@ -99,6 +115,8 @@ export default function DepositManualForm({
       normalizeAccount,
       onSubmit,
       rolloverAccount,
+      selectedAccount,
+      selectedToken.address,
       selectedToken.decimals,
     ],
   )
@@ -117,6 +135,8 @@ export default function DepositManualForm({
         control={control}
         name='amount'
         placeholder='amount'
+        type='number'
+        inputMode='decimal'
         label={
           isOtherRecipient ? (
             'Amount'
@@ -145,10 +165,7 @@ export default function DepositManualForm({
         <span className='text-textPrimary typography-caption3'>
           Current FA balance:
           <span className='ml-2 text-textPrimary typography-caption1'>
-            {formatBalance(
-              perTokenStatuses[selectedToken.address].fungibleAssetBalance,
-              selectedToken.decimals,
-            )}
+            {formattedTotalBalance}
           </span>
           <span className='ml-2 uppercase text-textPrimary typography-caption1'>
             {selectedToken.symbol}

@@ -104,12 +104,14 @@ export default function DashboardHeader({
           className='flex flex-col'
         >
           <UiSheetHeader>
-            <button onClick={logout} className='md:hidden'>
-              <UiIcon
-                name='LogOutIcon'
-                className='size-4 -scale-x-100 text-errorMain'
-              />
-            </button>
+            {isMobileDevice && (
+              <button onClick={logout} className='md:hidden'>
+                <UiIcon
+                  name='LogOutIcon'
+                  className='size-4 -scale-x-100 text-errorMain'
+                />
+              </button>
+            )}
             <UiSheetTitle>Accounts</UiSheetTitle>
           </UiSheetHeader>
           <div className='flex flex-1 flex-col'>
@@ -147,17 +149,19 @@ export default function DashboardHeader({
                 Add Account
               </UiButton>
 
-              <UiButton
-                onClick={logout}
-                className='mt-auto hidden md:flex'
-                variant='outline'
-              >
-                Logout
-                <UiIcon
-                  name='LogOutIcon'
-                  className='size-4 -scale-x-100 text-errorMain'
-                />
-              </UiButton>
+              {!isMobileDevice && (
+                <UiButton
+                  onClick={logout}
+                  className='mt-auto'
+                  variant='outline'
+                >
+                  Logout
+                  <UiIcon
+                    name='LogOutIcon'
+                    className='size-4 -scale-x-100 text-errorMain'
+                  />
+                </UiButton>
+              )}
             </div>
           </div>
         </UiSheetContent>

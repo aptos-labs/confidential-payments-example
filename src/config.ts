@@ -9,6 +9,9 @@ type Config = {
 
   GOOGLE_CLIENT_ID: string
   GOOGLE_CLIENT_SECRET: string
+
+  APPLE_CLIENT_ID: string
+  APPLE_CLIENT_SECRET: string
 }
 
 export const config: Config = {
@@ -31,4 +34,7 @@ export const config: Config = {
 
   GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,
+
+  APPLE_CLIENT_ID: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID!,
+  APPLE_CLIENT_SECRET: process.env.APPLE_CLIENT_SECRET!,
 }

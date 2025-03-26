@@ -14,8 +14,12 @@ export const auth = betterAuth({
   },
   socialProviders: {
     google: {
-      clientId: config.GOOGLE_CLIENT_ID as string,
-      clientSecret: config.GOOGLE_CLIENT_SECRET as string,
+      clientId: config.GOOGLE_CLIENT_ID,
+      clientSecret: config.GOOGLE_CLIENT_SECRET,
+    },
+    apple: {
+      clientId: config.APPLE_CLIENT_ID,
+      clientSecret: config.APPLE_CLIENT_SECRET,
     },
   },
   plugins: [nextCookies()],

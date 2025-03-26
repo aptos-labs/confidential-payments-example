@@ -40,3 +40,4 @@ stats.html
 !.env.example
 tsconfig.tsbuildinfo
 .vercel
+*.p8

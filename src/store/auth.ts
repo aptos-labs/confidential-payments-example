@@ -137,26 +137,25 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
           } = await get().deriveKeylessAccount(idToken)
 
           const { pepper } = activeAccount
-          set({
-            accounts: storedAccount
-              ? // If the account already exists, update it. Otherwise, append it.
-                get().accounts.map(a =>
-                  a.idToken.decoded.sub === decodedToken.sub
-                    ? {
-                        idToken: { decoded: decodedToken, raw: idToken },
-                        pepper,
-                      }
-                    : a,
-                )
-              : [
-                  ...get().accounts,
-                  {
-                    idToken: { decoded: decodedToken, raw: idToken },
-                    pepper,
-                  },
-                ],
-            activeAccount,
-          })
+
+          if (storedAccount) {
+            set({
+              accounts: get().accounts.map(a =>
+                a.idToken.decoded.sub === decodedToken.sub
+                  ? { idToken: { decoded: decodedToken, raw: idToken }, pepper }
+                  : a,
+              ),
+              activeAccount,
+            })
+          } else {
+            set({
+              accounts: [
+                ...get().accounts,
+                { idToken: { decoded: decodedToken, raw: idToken }, pepper },
+              ],
+              activeAccount,
+            })
+          }
 
           await activeAccount.checkKeylessAccountValidity(aptos.config)
 
@@ -381,7 +380,73 @@ const useLogin = (opts?: {
     })
   }
 
-  return { loginWithEmailPassword, getGoogleRequestLoginUrl, loginWithGoogle }
+  const getAppleRequestLoginUrl = useMemo(() => {
+    const redirectUrl = new URL('https://appleid.apple.com/auth/authorize')
+    // const state = Math.random().toString(36).substring(2, 15)
+
+    const searchParams = new URLSearchParams({
+      client_id: config.APPLE_CLIENT_ID,
+      /**
+       * The redirect_uri must be registered in the Google Developer Console. This callback page
+       * parses the id_token from the URL fragment and combines it with the ephemeral key pair to
+       * derive the keyless account.
+       *
+       * window.location.origin == http://localhost:5173
+       */
+      redirect_uri: `${window.location.origin}/sign-in`,
+      /**
+       * This uses the OpenID Connect implicit flow to return an id_token.
+       */
+      response_type: 'code',
+      scope: 'openid email profile',
+      nonce: ephemeralKeyPair.nonce,
+    })
+    redirectUrl.search = searchParams.toString()
+
+    return redirectUrl.toString()
+  }, [ephemeralKeyPair.nonce])
+
+  const loginWithApple = async (idToken: string) => {
+    await switchKeylessAccount(idToken)
+
+    return new Promise((resolve, reject) => {
+      try {
+        authClient.signIn.social(
+          {
+            provider: 'apple',
+            scopes: ['email', 'name', 'openid'],
+            idToken: {
+              token: idToken,
+              nonce: ephemeralKeyPair.nonce,
+            },
+          },
+          {
+            onSuccess: ctx => {
+              opts?.onSuccess?.()
+              resolve(ctx.data)
+            },
+            onError: ctxError => {
+              opts?.onError?.()
+              reject(ctxError)
+            },
+            onRequest: () => {
+              opts?.onRequest?.()
+            },
+          },
+        )
+      } catch (error) {
+        reject(error)
+      }
+    })
+  }
+
+  return {
+    loginWithEmailPassword,
+    getGoogleRequestLoginUrl,
+    loginWithGoogle,
+    getAppleRequestLoginUrl,
+    loginWithApple,
+  }
 }
 
 const useRegister = (opts?: {

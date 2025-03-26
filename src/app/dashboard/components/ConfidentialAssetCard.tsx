@@ -2,18 +2,22 @@
 
 import Avatar from 'boring-avatars'
 import { Check, Copy } from 'lucide-react'
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { formatBalance } from '@/helpers'
+import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
+import { UiButton } from '@/ui/UiButton'
+import { UiSkeleton } from '@/ui/UiSkeleton'
 
 export default function ConfidentialAssetCard({
   token,
   // encryptionKey,
   actualAmount,
+
+  isLoading,
 
   /* eslint-disable unused-imports/no-unused-vars */
   isNormalized,
@@ -24,6 +28,8 @@ export default function ConfidentialAssetCard({
 
   ...rest
 }: {
+  isLoading: boolean
+
   token: TokenBaseInfo
 
   actualAmount: string
@@ -32,56 +38,30 @@ export default function ConfidentialAssetCard({
   isFrozen: boolean
   isRegistered: boolean
 } & HTMLAttributes<HTMLDivElement>) {
-  // eslint-disable-next-line no-empty-pattern
   const {
-    /* empty */
+    registerAccountEncryptionKey,
+    reloadAptBalance,
+    loadSelectedDecryptionKeyState,
   } = useConfidentialCoinContext()
 
-  // const VBStatusContent = useMemo(() => {
-  //   const commonClasses =
-  //     'z-10 flex flex-col justify-center items-center gap-2 overflow-hidden bg-errorMain pt-1'
-  //
-  //   if (!isRegistered) {
-  //     return (
-  //       <div className={cn(commonClasses, 'bg-textSecondary')}>
-  //         <span className='text-textPrimary typography-body2'>
-  //           Balance is not registered
-  //         </span>
-  //         <CreditCard size={18} className='text-baseWhite' />
-  //       </div>
-  //     )
-  //   }
-  //
-  //   if (isFrozen) {
-  //     return (
-  //       <div className={cn(commonClasses, 'bg-componentDisabled')}>
-  //         <span className='text-textPrimary typography-body2'>
-  //           Balance is Frozen
-  //         </span>
-  //         <Snowflake size={18} className='text-baseWhite' />
-  //       </div>
-  //     )
-  //   }
-  //
-  //   if (!isNormalized) {
-  //     return (
-  //       <div className={cn(commonClasses, 'bg-warningDarker')}>
-  //         <span className='text-textPrimary typography-body2'>
-  //           Balance is unnormalized
-  //         </span>
-  //         <TriangleAlertIcon size={18} className='text-baseWhite' />
-  //       </div>
-  //     )
-  //   }
-  //
-  //   return
-  // }, [isFrozen, isNormalized, isRegistered])
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const tryRegister = async () => {
+    setIsSubmitting(true)
+    try {
+      await registerAccountEncryptionKey(token.address)
+      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()])
+    } catch (error) {
+      ErrorHandler.process(error)
+    }
+    setIsSubmitting(false)
+  }
 
   const { copy, isCopied } = useCopyToClipboard()
 
   return (
     <div {...rest} className={cn('relative overflow-hidden', className)}>
-      <div className={cn('relative')}>
+      <div className={cn('relative isolate')}>
         <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
           {/*{VBStatusContent}*/}
 
@@ -115,6 +95,24 @@ export default function ConfidentialAssetCard({
             </div>
           </div>
         </div>
+      </div>
+      <div
+        className={cn(
+          'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
+          isRegistered ? 'hidden' : 'flex',
+        )}
+      >
+        {isLoading ? (
+          <UiSkeleton className='absolute-center size-[95%]' />
+        ) : (
+          <UiButton
+            className='absolute-center min-w-[300px]'
+            onClick={tryRegister}
+            disabled={isSubmitting}
+          >
+            Start
+          </UiButton>
+        )}
       </div>
     </div>
   )

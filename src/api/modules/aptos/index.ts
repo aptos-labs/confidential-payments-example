@@ -374,6 +374,17 @@ export const getCoinByFaAddress = async (
   return pairedCoinTypeStruct.vec[0]
 }
 
+export const parseCoinTypeFromCoinStruct = (coinStruct: {
+  account_address: string
+  module_name: string
+  struct_name: string
+}) => {
+  const moduleNameUtf8 = ethers.toUtf8String(coinStruct.module_name)
+  const structNameUtf8 = ethers.toUtf8String(coinStruct.struct_name)
+
+  return `${coinStruct.account_address}::${moduleNameUtf8}::${structNameUtf8}`
+}
+
 export const getFAByCoinType = async (coinType: string): Promise<string> => {
   const fungibleAsset = (
     await aptos.view({

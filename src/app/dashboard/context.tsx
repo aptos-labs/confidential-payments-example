@@ -16,6 +16,7 @@ import { createContext, useContext, useMemo } from 'react'
 import {
   depositConfidentialBalance,
   getAptBalance,
+  getCoinByFaAddress,
   getConfidentialBalances,
   getFABalance,
   getFungibleAssetMetadata,
@@ -24,6 +25,7 @@ import {
   getIsBalanceNormalized,
   mintTokens,
   normalizeConfidentialBalance,
+  parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
   safelyRolloverConfidentialBalance,
   transferConfidentialCoin,
@@ -624,7 +626,21 @@ const useSelectedAccountDecryptionKeyStatus = (
               el,
             )
 
-            const fungibleAssetBalance = await getFABalance(selectedAccount, el)
+            const coin = await (async () => {
+              try {
+                return await getCoinByFaAddress(el)
+              } catch (error) {
+                console.error('Error fetching coin by FA address:', error)
+                return undefined
+              }
+            })()
+
+            const assetType = coin ? parseCoinTypeFromCoinStruct(coin) : el
+
+            const fungibleAssetBalance = await getFABalance(
+              selectedAccount,
+              assetType,
+            )
 
             if (isRegistered) {
               try {

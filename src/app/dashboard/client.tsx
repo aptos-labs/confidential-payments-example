@@ -274,6 +274,10 @@ export default function DashboardClient() {
                     key={idx}
                     className='w-full'
                     token={token}
+                    isLoading={
+                      decryptionKeyStatusLoadingState === 'loading' ||
+                      accountsLoadingState === 'loading'
+                    }
                     actualAmount={currTokenStatuses.actualAmount}
                     isNormalized={currTokenStatuses.isNormalized}
                     isFrozen={currTokenStatuses.isFrozen}

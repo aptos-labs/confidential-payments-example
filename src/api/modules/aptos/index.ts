@@ -13,6 +13,7 @@ import {
   GetFungibleAssetMetadataResponse,
   type InputGenerateTransactionPayloadData,
   KeylessAccount,
+  MoveStructId,
   MoveValue,
   Network,
   NetworkToNetworkName,
@@ -36,6 +37,10 @@ import {
 } from '@/api/modules/aptos/wasmRangeProof'
 import { config as appConfig } from '@/config'
 import { type TokenBaseInfo } from '@/store/wallet'
+
+ConfidentialCoin.setConfidentialCoinModuleAddress(
+  appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
+)
 
 RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP)
 RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP)
@@ -317,6 +322,21 @@ export const depositConfidentialBalance = async (
   return sendAndWaitTx(depositTx, account)
 }
 
+export const depositConfidentialBalanceCoin = async (
+  account: Account,
+  amount: bigint,
+  coinType: MoveStructId,
+  to?: AccountAddress,
+) => {
+  const depositTx = await aptos.confidentialCoin.depositCoin({
+    sender: account.accountAddress,
+    coinType: coinType,
+    amount: amount,
+    to: to,
+  })
+  return sendAndWaitTx(depositTx, account)
+}
+
 export const getIsAccountRegisteredWithToken = async (
   account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
@@ -378,7 +398,7 @@ export const parseCoinTypeFromCoinStruct = (coinStruct: {
   account_address: string
   module_name: string
   struct_name: string
-}) => {
+}): MoveStructId => {
   const moduleNameUtf8 = ethers.toUtf8String(coinStruct.module_name)
   const structNameUtf8 = ethers.toUtf8String(coinStruct.struct_name)
 

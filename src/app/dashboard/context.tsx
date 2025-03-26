@@ -15,6 +15,7 @@ import { createContext, useContext, useMemo } from 'react'
 
 import {
   depositConfidentialBalance,
+  depositConfidentialBalanceCoin,
   getAptBalance,
   getCoinByFaAddress,
   getConfidentialBalances,
@@ -118,6 +119,7 @@ type ConfidentialCoinContextType = {
   ) => Promise<CommittedTransactionResponse>
   withdraw: (amount: string) => Promise<CommittedTransactionResponse>
   deposit: (amount: bigint) => Promise<CommittedTransactionResponse>
+  depositCoin: (amount: bigint) => Promise<CommittedTransactionResponse>
   // TODO: rotate keys
 
   decryptionKeyStatusLoadingState: LoadingState
@@ -166,6 +168,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   transfer: async () => ({}) as CommittedTransactionResponse,
   withdraw: async () => ({}) as CommittedTransactionResponse,
   deposit: async () => ({}) as CommittedTransactionResponse,
+  depositCoin: async () => ({}) as CommittedTransactionResponse,
 
   decryptionKeyStatusLoadingState: 'idle',
   loadSelectedDecryptionKeyState: async () => {},
@@ -946,6 +949,19 @@ export const ConfidentialCoinContextProvider = ({
     [selectedAccount, selectedToken.address],
   )
 
+  const depositCoin = useCallback(
+    async (amount: bigint) => {
+      const coinType = await getCoinByFaAddress(selectedToken.address)
+
+      return depositConfidentialBalanceCoin(
+        selectedAccount,
+        amount,
+        parseCoinTypeFromCoinStruct(coinType),
+      )
+    },
+    [selectedAccount, selectedToken.address],
+  )
+
   const testMintTokens = useCallback(async (): Promise<
     CommittedTransactionResponse[]
   > => {
@@ -1017,6 +1033,7 @@ export const ConfidentialCoinContextProvider = ({
         transfer,
         withdraw,
         deposit,
+        depositCoin,
 
         selectedAccountDecryptionKeyStatus,
         decryptionKeyStatusLoadingState,

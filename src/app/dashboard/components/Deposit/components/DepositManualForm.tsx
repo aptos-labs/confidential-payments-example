@@ -29,6 +29,7 @@ export default function DepositManualForm({
     selectedAccount,
     selectedToken,
     deposit,
+    depositCoin,
     rolloverAccount,
     normalizeAccount,
     addTxHistoryItem,
@@ -68,10 +69,13 @@ export default function DepositManualForm({
           )
 
           const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
-            faOnlyBalance.amount,
+            faOnlyBalance?.amount || '0',
           ).lt(FixedNumber.fromValue(amountToDeposit))
 
-          const depositTxReceipt = await deposit(amountToDeposit)
+          const depositTxReceipt = isInsufficientFAOnlyBalance
+            ? await depositCoin(amountToDeposit)
+            : await deposit(amountToDeposit)
+
           addTxHistoryItem({
             txHash: depositTxReceipt.hash,
             txType: 'deposit',
@@ -109,6 +113,7 @@ export default function DepositManualForm({
     [
       addTxHistoryItem,
       deposit,
+      depositCoin,
       disableForm,
       enableForm,
       handleSubmit,

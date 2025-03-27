@@ -168,7 +168,7 @@ export default function DepositManualForm({
       />
       <div className='flex w-full justify-end'>
         <span className='text-textPrimary typography-caption3'>
-          Current FA balance:
+          Current public balance:
           <span className='ml-2 text-textPrimary typography-caption1'>
             {formattedTotalBalance}
           </span>

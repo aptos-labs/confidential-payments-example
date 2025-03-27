@@ -929,9 +929,16 @@ export const ConfidentialCoinContextProvider = ({
 
   const depositTo = useCallback(
     async (amount: bigint, to: string) => {
-      return depositConfidentialBalance(selectedAccount, amount, to)
+      if (!selectedToken) throw new TypeError('Token is not set')
+
+      return depositConfidentialBalance(
+        selectedAccount,
+        amount,
+        to,
+        selectedToken.address,
+      )
     },
-    [selectedAccount],
+    [selectedAccount, selectedToken],
   )
 
   const depositCoinTo = useCallback(

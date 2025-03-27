@@ -323,7 +323,6 @@ export default function DashboardClient() {
             onClick={() => {
               setIsDepositSheetOpen(true)
             }}
-            disabled={isActionsDisabled}
           />
 
           <CircleButton

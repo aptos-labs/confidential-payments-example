@@ -43,7 +43,7 @@ export default function DashboardPageContent() {
     setIsInitialized(true)
   }, 10)
 
-  if (!isInitialized || !(walletAccounts.length || keylessAccounts.length))
+  if (!isInitialized || (!walletAccounts.length && !keylessAccounts.length))
     return <Loading />
 
   return (

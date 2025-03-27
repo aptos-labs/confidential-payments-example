@@ -200,7 +200,7 @@ function AccountListItem({
   ...rest
 }: AccountListItemProps) {
   const addrCopyManager = useCopyToClipboard()
-  const pkCopyManager = useCopyToClipboard()
+  // const pkCopyManager = useCopyToClipboard()
 
   return (
     <div
@@ -235,7 +235,7 @@ function AccountListItem({
               )}
               Copy public
             </UiDropdownMenuItem>
-            <UiDropdownMenuItem
+            {/* <UiDropdownMenuItem
             // onClick={() => pkCopyManager.copy(privateKeyHex)}
             >
               {pkCopyManager.isCopied ? (
@@ -244,7 +244,7 @@ function AccountListItem({
                 <CopyIcon className={'size-4'} />
               )}
               Copy private
-            </UiDropdownMenuItem>
+            </UiDropdownMenuItem> */}
 
             {isRemovable && (
               <UiDropdownMenuItem

@@ -1,11 +1,12 @@
 'use client'
 
 import Avatar from 'boring-avatars'
+import { formatUnits } from 'ethers'
 import { Check, Copy } from 'lucide-react'
 import { HTMLAttributes, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatBalance } from '@/helpers'
+import { ErrorHandler } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -87,7 +88,7 @@ export default function ConfidentialAssetCard({
           <div className='flex items-center'>
             <div className='flex items-end gap-1'>
               <div className='text-textPrimary typography-h2'>
-                {formatBalance(actualAmount, token.decimals)}
+                {actualAmount && formatUnits(actualAmount, token.decimals)}
               </div>
               <span className='-translate-y-[7px] text-textSecondary typography-subtitle2'>
                 {token.symbol}

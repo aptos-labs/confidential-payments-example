@@ -1,5 +1,6 @@
 'use client'
 
+import { formatUnits } from 'ethers'
 import QRCode from 'react-qr-code'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
@@ -18,11 +19,14 @@ import DepositManualForm from './components/DepositManualForm'
 import DepositMint from './components/DepositMint'
 
 export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
-  const { selectedAccount, selectedToken } = useConfidentialCoinContext()
+  const { selectedAccount, selectedToken, perTokenStatuses } =
+    useConfidentialCoinContext()
 
   const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`
 
   const { copy, isCopied } = useCopyToClipboard()
+
+  const currentStatus = perTokenStatuses[selectedToken.address]
 
   return (
     <div className='flex flex-col items-center gap-4'>
@@ -37,7 +41,7 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
 
       <div className='flex w-full flex-col gap-2'>
         <span className='self-start uppercase text-textPrimary typography-caption3'>
-          Encryption key
+          Address
         </span>
         <div className='flex w-full items-center gap-2 rounded-xl bg-componentPrimary p-4'>
           <div className='flex-1 overflow-hidden text-ellipsis'>
@@ -56,33 +60,46 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
         </div>
       </div>
 
-      <UiAccordion type={'single'} collapsible className='w-full'>
-        <UiAccordionItem value='item-1'>
-          <UiAccordionTrigger>
-            <div className='flex items-center gap-2'>
-              <span className='text-textPrimary typography-caption3'>
-                Advanced
-              </span>
-            </div>
-          </UiAccordionTrigger>
-          <UiAccordionContent>
-            <UiTabs defaultValue='faucet' className='w-full'>
-              <UiTabsList>
-                <UiTabsTrigger value='faucet'>
-                  Buy {selectedToken.symbol}
-                </UiTabsTrigger>
-                <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
-              </UiTabsList>
-              <UiTabsContent value='faucet'>
-                <DepositMint onSubmit={onSubmit} />
-              </UiTabsContent>
-              <UiTabsContent value='manual'>
-                <DepositManualForm onSubmit={onSubmit} />
-              </UiTabsContent>
-            </UiTabs>
-          </UiAccordionContent>
-        </UiAccordionItem>
-      </UiAccordion>
+      {currentStatus.isRegistered ? (
+        <UiAccordion type={'single'} collapsible className='w-full'>
+          <UiAccordionItem value='item-1'>
+            <UiAccordionTrigger>
+              <div className='flex items-center gap-2'>
+                <span className='text-textPrimary typography-caption3'>
+                  Advanced
+                </span>
+              </div>
+            </UiAccordionTrigger>
+            <UiAccordionContent>
+              <UiTabs defaultValue='faucet' className='w-full'>
+                <UiTabsList>
+                  <UiTabsTrigger value='faucet'>
+                    Buy {selectedToken.symbol}
+                  </UiTabsTrigger>
+                  <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
+                </UiTabsList>
+                <UiTabsContent value='faucet'>
+                  <DepositMint onSubmit={onSubmit} />
+                </UiTabsContent>
+                <UiTabsContent value='manual'>
+                  <DepositManualForm onSubmit={onSubmit} />
+                </UiTabsContent>
+              </UiTabs>
+            </UiAccordionContent>
+          </UiAccordionItem>
+        </UiAccordion>
+      ) : (
+        <span className='text-textSecondary typography-caption2'>
+          Public balance:{' '}
+          <span className='text-textPrimary'>
+            {formatUnits(
+              currentStatus.fungibleAssetBalance,
+              selectedToken.decimals,
+            )}{' '}
+            {selectedToken.symbol}
+          </span>
+        </span>
+      )}
     </div>
   )
 }

@@ -333,10 +333,12 @@ export const normalizeConfidentialBalance = async (
 export const depositConfidentialBalance = async (
   account: Account,
   amount: bigint,
+  to: string,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
   const depositTx = await aptos.confidentialCoin.deposit({
     sender: account.accountAddress,
+    to: AccountAddress.from(to),
     tokenAddress: tokenAddress,
     amount: amount,
   })

@@ -118,8 +118,14 @@ type ConfidentialCoinContextType = {
     auditorsEncryptionKeyHexList?: string[],
   ) => Promise<CommittedTransactionResponse>
   withdraw: (amount: string) => Promise<CommittedTransactionResponse>
-  deposit: (amount: bigint) => Promise<CommittedTransactionResponse>
-  depositCoin: (amount: bigint) => Promise<CommittedTransactionResponse>
+  depositTo: (
+    amount: bigint,
+    to: string,
+  ) => Promise<CommittedTransactionResponse>
+  depositCoinTo: (
+    amount: bigint,
+    to: string,
+  ) => Promise<CommittedTransactionResponse>
   // TODO: rotate keys
 
   decryptionKeyStatusLoadingState: LoadingState
@@ -167,8 +173,8 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   rolloverAccount: async () => [] as CommittedTransactionResponse[],
   transfer: async () => ({}) as CommittedTransactionResponse,
   withdraw: async () => ({}) as CommittedTransactionResponse,
-  deposit: async () => ({}) as CommittedTransactionResponse,
-  depositCoin: async () => ({}) as CommittedTransactionResponse,
+  depositTo: async () => ({}) as CommittedTransactionResponse,
+  depositCoinTo: async () => ({}) as CommittedTransactionResponse,
 
   decryptionKeyStatusLoadingState: 'idle',
   loadSelectedDecryptionKeyState: async () => {},
@@ -549,28 +555,11 @@ const useTokens = (accountAddressHex: string | undefined) => {
 const useSelectedAccountDecryptionKeyStatus = (
   tokenAddress: string | undefined,
 ) => {
-  const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
-  const activeKeylessAccount = authStore.useAuthStore(
-    state => state.activeAccount,
-  )
+  const { selectedAccountDecryptionKey } = useSelectedAccountDecryptionKey()
+
   const selectedTokenAddress = walletStore.useSelectedTokenAddress()
 
   const selectedAccount = useSelectedAccount()
-
-  const selectedAccountDecryptionKey = useMemo(() => {
-    if (
-      selectedAccount.accountAddress.toString().toLowerCase() ===
-      activeKeylessAccount?.accountAddress.toString().toLowerCase()
-    ) {
-      return walletStore.decryptionKeyFromPepper(rawKeylessAccounts[0].pepper)
-    }
-
-    return walletStore.decryptionKeyFromPrivateKey(selectedAccount)
-  }, [
-    activeKeylessAccount?.accountAddress,
-    rawKeylessAccounts,
-    selectedAccount,
-  ])
 
   const accountAddrHexToTokenAddrMap = walletStore.useWalletStore(
     state => state.accountAddrHexToTokenAddrMap,
@@ -938,25 +927,22 @@ export const ConfidentialCoinContextProvider = ({
     ],
   )
 
-  const deposit = useCallback(
-    async (amount: bigint) => {
-      return depositConfidentialBalance(
-        selectedAccount,
-        amount,
-        selectedToken.address,
-      )
+  const depositTo = useCallback(
+    async (amount: bigint, to: string) => {
+      return depositConfidentialBalance(selectedAccount, amount, to)
     },
-    [selectedAccount, selectedToken.address],
+    [selectedAccount],
   )
 
-  const depositCoin = useCallback(
-    async (amount: bigint) => {
+  const depositCoinTo = useCallback(
+    async (amount: bigint, to: string) => {
       const coinType = await getCoinByFaAddress(selectedToken.address)
 
       return depositConfidentialBalanceCoin(
         selectedAccount,
         amount,
         parseCoinTypeFromCoinStruct(coinType),
+        to,
       )
     },
     [selectedAccount, selectedToken.address],
@@ -968,7 +954,10 @@ export const ConfidentialCoinContextProvider = ({
     const amountToDeposit = parseUnits('10', selectedToken.decimals)
 
     const mintTxReceipt = await mintTokens(selectedAccount)
-    const depositTxReceipt = await deposit(amountToDeposit)
+    const depositTxReceipt = await depositTo(
+      amountToDeposit,
+      selectedAccount.accountAddress.toString(),
+    )
 
     const rolloverTxReceipt = await rolloverAccount()
 
@@ -981,7 +970,7 @@ export const ConfidentialCoinContextProvider = ({
       normalizeTxReceipt,
     ]
   }, [
-    deposit,
+    depositTo,
     normalizeAccount,
     rolloverAccount,
     selectedAccount,
@@ -1032,8 +1021,8 @@ export const ConfidentialCoinContextProvider = ({
         rolloverAccount,
         transfer,
         withdraw,
-        deposit,
-        depositCoin,
+        depositTo,
+        depositCoinTo,
 
         selectedAccountDecryptionKeyStatus,
         decryptionKeyStatusLoadingState,

@@ -28,8 +28,8 @@ export default function DepositManualForm({
   const {
     selectedAccount,
     selectedToken,
-    deposit,
-    depositCoin,
+    depositTo,
+    depositCoinTo,
     rolloverAccount,
     normalizeAccount,
     addTxHistoryItem,
@@ -44,13 +44,13 @@ export default function DepositManualForm({
   )
 
   const { control, disableForm, enableForm, isFormDisabled, handleSubmit } =
-    useForm({ recipient: '', amount: '' }, yup =>
-      yup.object().shape({
-        amount: yup.number().max(+formattedTotalBalance).required(),
-        ...(isOtherRecipient && {
+    useForm(
+      { recipient: selectedAccount.accountAddress.toString(), amount: '' },
+      yup =>
+        yup.object().shape({
+          amount: yup.number().max(+formattedTotalBalance).required(),
           recipient: yup.string().required(),
         }),
-      }),
     )
 
   const submit = useCallback(
@@ -73,8 +73,8 @@ export default function DepositManualForm({
           ).lt(FixedNumber.fromValue(amountToDeposit))
 
           const depositTxReceipt = isInsufficientFAOnlyBalance
-            ? await depositCoin(amountToDeposit)
-            : await deposit(amountToDeposit)
+            ? await depositCoinTo(amountToDeposit, formData.recipient)
+            : await depositTo(amountToDeposit, formData.recipient)
 
           addTxHistoryItem({
             txHash: depositTxReceipt.hash,
@@ -112,8 +112,8 @@ export default function DepositManualForm({
       })(),
     [
       addTxHistoryItem,
-      deposit,
-      depositCoin,
+      depositCoinTo,
+      depositTo,
       disableForm,
       enableForm,
       handleSubmit,

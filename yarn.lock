@@ -1698,6 +1698,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@noble/ed25519@npm:^2.2.3":
+  version: 2.2.3
+  resolution: "@noble/ed25519@npm:2.2.3"
+  checksum: 39d7ab81e520c7393e9356bde12d9a7a944b3cb6b97676125989d23217716c295ccc6e3a899bf57b9e10fe4409cc0092f6f15266a4b66ee9a9060690b873955f
+  languageName: node
+  linkType: hard
+
 "@noble/hashes@npm:1.3.2":
   version: 1.3.2
   resolution: "@noble/hashes@npm:1.3.2"
@@ -13334,6 +13341,7 @@ __metadata:
     "@lukachi/aptos-labs-ts-sdk": "npm:1.37.0"
     "@next/env": "npm:^15.2.3"
     "@next/eslint-plugin-next": "npm:^15.2.3"
+    "@noble/ed25519": "npm:^2.2.3"
     "@originjs/vite-plugin-commonjs": "npm:^1.0.3"
     "@radix-ui/react-accordion": "npm:^1.2.3"
     "@radix-ui/react-avatar": "npm:^1.1.3"

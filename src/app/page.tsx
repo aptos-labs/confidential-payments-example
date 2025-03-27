@@ -19,7 +19,7 @@ export default async function RootPage() {
           Bringing innovative solutions to secure your digital world.
         </span>
 
-        <Link href='/sign-in'>
+        <Link href='/sign-in' prefetch>
           <UiButton className='mt-3 min-w-[200px] bg-textPrimary px-6 py-3 text-backgroundPrimary hover:cursor-pointer'>
             Begin
           </UiButton>

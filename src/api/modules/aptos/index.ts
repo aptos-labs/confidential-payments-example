@@ -25,6 +25,7 @@ import {
   TwistedEd25519PublicKey,
   type TwistedElGamalCiphertext,
 } from '@lukachi/aptos-labs-ts-sdk'
+import { sha256 } from '@noble/hashes/sha256'
 import { ethers, isHexString } from 'ethers'
 import { jwtDecode } from 'jwt-decode'
 import { z } from 'zod'
@@ -123,7 +124,11 @@ export const decryptionKeyFromPrivateKey = (account: Account) => {
 }
 
 export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
-  return new TwistedEd25519PrivateKey(ethers.zeroPadBytes(pepper, 32))
+  const bytes = ethers.getBytes(ethers.zeroPadBytes(pepper, 32))
+
+  const hashDigest = sha256(bytes)
+
+  return new TwistedEd25519PrivateKey(hashDigest)
 }
 
 export const sendAndWaitTx = async (
@@ -169,6 +174,22 @@ export const sendAndWaitBatchTxs = async (
       aptos.waitForTransaction({ transactionHash: txHash }),
     ),
   )
+}
+
+export const getModuleMockedTokenAddr = async () => {
+  const [vec] = await aptos.view<
+    [
+      {
+        inner: string
+      },
+    ]
+  >({
+    payload: {
+      function: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::get_token_metadata`,
+    },
+  })
+
+  return vec.inner
 }
 
 export const mintTokens = async (account: Account) => {
@@ -326,13 +347,13 @@ export const depositConfidentialBalanceCoin = async (
   account: Account,
   amount: bigint,
   coinType: MoveStructId,
-  to?: AccountAddress,
+  to?: string,
 ) => {
   const depositTx = await aptos.confidentialCoin.depositCoin({
     sender: account.accountAddress,
     coinType: coinType,
     amount: amount,
-    to: to,
+    to: to ? AccountAddress.from(to) : account.accountAddress,
   })
   return sendAndWaitTx(depositTx, account)
 }

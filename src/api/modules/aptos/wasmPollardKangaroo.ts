@@ -53,7 +53,7 @@ export const preloadTablesForBalances = async () => {
   const decryptChunk = (pk: Uint8Array, instance: WASMKangaroo) => {
     if (bytesToNumberLE(pk) === 0n) return 0n
 
-    const result = instance.solve_dlp(pk)
+    const result = instance.solve_dlp(pk, 30n)
 
     if (!result) throw new TypeError('Decryption failed')
 

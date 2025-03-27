@@ -2,7 +2,7 @@
 
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
-import { useCallback } from 'react'
+import { useCallback, useState } from 'react'
 
 import { ErrorHandler } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -15,6 +15,8 @@ export default function RegisterFormContent() {
   const router = useRouter()
 
   const register = authStore.useRegister()
+
+  const [authError, setAuthError] = useState<Error>()
 
   const { control, handleSubmit, disableForm, enableForm, isFormDisabled } =
     useForm(
@@ -49,6 +51,7 @@ export default function RegisterFormContent() {
 
           router.push('/dashboard')
         } catch (error) {
+          setAuthError(error as Error)
           ErrorHandler.process(error)
         }
         enableForm()
@@ -70,6 +73,9 @@ export default function RegisterFormContent() {
           name='name'
           label='Name'
           placeholder='name'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
 
@@ -79,6 +85,9 @@ export default function RegisterFormContent() {
           label='Email'
           placeholder='m@example.com'
           type='email'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
 
@@ -88,6 +97,9 @@ export default function RegisterFormContent() {
           label='Password'
           placeholder='password'
           type='password'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
 
@@ -97,8 +109,17 @@ export default function RegisterFormContent() {
           label='Repeat Password'
           placeholder='password'
           type='password'
+          onChange={() => {
+            setAuthError(undefined)
+          }}
           disabled={isFormDisabled}
         />
+
+        {authError && (
+          <p className='self-center text-balance text-errorMain typography-caption3'>
+            {authError?.message}
+          </p>
+        )}
 
         <UiButton type='submit' className='w-full' disabled={isFormDisabled}>
           Register

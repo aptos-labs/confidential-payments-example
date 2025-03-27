@@ -43,17 +43,28 @@ export default function ConfidentialAssetCard({
     registerAccountEncryptionKey,
     reloadAptBalance,
     loadSelectedDecryptionKeyState,
+    perTokenStatuses,
   } = useConfidentialCoinContext()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const tryRegister = async () => {
     setIsSubmitting(true)
+
+    const currTokenStatus = perTokenStatuses[token.address]
+
     try {
       await registerAccountEncryptionKey(token.address)
       await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()])
     } catch (error) {
-      ErrorHandler.process(error)
+      if (+currTokenStatus.fungibleAssetBalance >= 0) {
+        ErrorHandler.process(
+          error,
+          'Insufficient APT balance, try funding your account',
+        )
+      } else {
+        ErrorHandler.process(error)
+      }
     }
     setIsSubmitting(false)
   }
@@ -100,7 +111,7 @@ export default function ConfidentialAssetCard({
       <div
         className={cn(
           'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
-          isRegistered ? 'hidden' : 'flex',
+          !isRegistered ? 'hidden' : 'flex',
         )}
       >
         {isLoading ? (

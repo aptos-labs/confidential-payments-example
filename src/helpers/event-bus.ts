@@ -1,3 +1,5 @@
+'use client'
+
 import { EventEmitter } from '@distributedlab/tools'
 
 export enum BusEvents {

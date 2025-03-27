@@ -6,7 +6,7 @@ export class ErrorHandler {
   static process(error: Error | unknown, errorMessage = ''): void {
     const { msgTranslation, msgType } = ErrorHandler._getErrorMessage(error)
     if (msgTranslation) {
-      bus.emit(msgType as BusEvents, msgTranslation || errorMessage)
+      bus.emit(msgType, errorMessage || msgTranslation)
     }
 
     ErrorHandler.processWithoutFeedback(error)
@@ -18,23 +18,23 @@ export class ErrorHandler {
 
   static _getErrorMessage(error: Error | unknown): {
     msgTranslation: string
-    msgType: 'error' | 'warning'
+    msgType: BusEvents
   } {
     let errorMessage = ''
-    let msgType: 'error' | 'warning' = 'error'
+    let msgType: BusEvents.Error | BusEvents.Warning = BusEvents.Error
 
     if (error instanceof Error) {
       switch (error.constructor) {
         default: {
-          errorMessage = ''
-          msgType = 'error'
+          errorMessage = 'Oops... Something went wrong'
+          msgType = BusEvents.Error
         }
       }
     }
 
     return {
       msgTranslation: errorMessage,
-      msgType: msgType || 'error',
+      msgType: msgType || BusEvents.Error,
     }
   }
 }

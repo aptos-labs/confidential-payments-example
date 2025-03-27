@@ -89,16 +89,20 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
           </UiAccordionItem>
         </UiAccordion>
       ) : (
-        <span className='text-textSecondary typography-caption2'>
-          Public balance:{' '}
-          <span className='text-textPrimary'>
-            {formatUnits(
-              currentStatus.fungibleAssetBalance,
-              selectedToken.decimals,
-            )}{' '}
-            {selectedToken.symbol}
-          </span>
-        </span>
+        <>
+          {currentStatus.fungibleAssetBalance && (
+            <span className='text-textSecondary typography-caption2'>
+              Public balance:{' '}
+              <span className='text-textPrimary'>
+                {formatUnits(
+                  currentStatus.fungibleAssetBalance,
+                  selectedToken.decimals,
+                )}{' '}
+                {selectedToken.symbol}
+              </span>
+            </span>
+          )}
+        </>
       )}
     </div>
   )

@@ -141,7 +141,6 @@ export default function DepositManualForm({
         name='amount'
         placeholder='amount'
         type='number'
-        inputMode='decimal'
         label={
           isOtherRecipient ? (
             'Amount'

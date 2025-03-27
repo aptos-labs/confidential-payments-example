@@ -367,6 +367,17 @@ export default function DashboardClient() {
               disabled={isActionsDisabled}
             />
           )}
+
+          {!perTokenStatuses[selectedToken.address].isNormalized && (
+            <CircleButton
+              caption={'Normalize'}
+              iconProps={{
+                name: 'RefreshCwIcon',
+              }}
+              onClick={tryNormalize}
+              disabled={isActionsDisabled}
+            />
+          )}
         </div>
 
         {[decryptionKeyStatusLoadingState, accountsLoadingState].every(

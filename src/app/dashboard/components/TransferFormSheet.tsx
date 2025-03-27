@@ -191,7 +191,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                     {...field}
                     placeholder='Enter amount'
                     type='number'
-                    inputMode={'decimal'}
                     disabled={isFormDisabled}
                   />
                 )}

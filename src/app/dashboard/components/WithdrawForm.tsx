@@ -98,7 +98,7 @@ export default function WithdrawForm({
             <UiInput
               {...field}
               placeholder='Enter amount'
-              type='decimal'
+              type='number'
               disabled={isFormDisabled}
             />
           )}

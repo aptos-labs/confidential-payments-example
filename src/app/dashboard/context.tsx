@@ -582,25 +582,15 @@ const useSelectedAccountDecryptionKeyStatus = (
     data: loadedTokens,
     isLoading,
     isLoadingError,
-    refetch: reload,
-  } = useQuery<
-    {
-      tokenAddress: string
-      pending: ConfidentialAmount | undefined
-      actual: ConfidentialAmount | undefined
-      fungibleAssetBalance: string
-      isRegistered: boolean
-      isNormalized: boolean
-      isFrozen: boolean
-    }[]
-  >({
-    initialData: [
+    reload,
+  } = useLoading(
+    [
       {
         tokenAddress: config.DEFAULT_TOKEN_ADRESSES[0],
         ...AccountDecryptionKeyStatusRawDefault,
       },
     ],
-    queryFn: async () => {
+    async () => {
       if (!selectedAccount.accountAddress || !currentTokensList.length) {
         return [
           {
@@ -692,14 +682,15 @@ const useSelectedAccountDecryptionKeyStatus = (
         }),
       )
     },
-    queryKey: [
-      'loadedTokens',
-      selectedTokenAddress,
-      selectedAccount.accountAddress.toString(),
-      currentTokensList,
-      selectedAccountDecryptionKey,
-    ],
-  })
+    {
+      loadArgs: [
+        selectedTokenAddress,
+        selectedAccount,
+        currentTokensList,
+        selectedAccountDecryptionKey,
+      ],
+    },
+  )
 
   const perTokenStatusesRaw = useMemo(() => {
     const tokens =
@@ -983,15 +974,6 @@ export const ConfidentialCoinContextProvider = ({
     selectedAccount,
     selectedToken.decimals,
   ])
-
-  // useTimeoutFn(async () => {
-  //   const event = await aptos.getAccountEventsByEventType({
-  //     accountAddress: '0x0',
-  //     eventType: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::confidential_asset::Deposit`,
-  //   })
-  //
-  //   console.log(event)
-  // }, 100)
 
   return (
     <confidentialCoinContext.Provider

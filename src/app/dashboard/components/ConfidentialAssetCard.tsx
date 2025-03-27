@@ -111,7 +111,7 @@ export default function ConfidentialAssetCard({
       <div
         className={cn(
           'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
-          !isRegistered ? 'hidden' : 'flex',
+          isRegistered ? 'hidden' : 'flex',
         )}
       >
         {isLoading ? (

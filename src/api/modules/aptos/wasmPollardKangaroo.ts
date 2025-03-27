@@ -76,10 +76,24 @@ export const preloadTablesForBalances = async () => {
         .slice(-(encrypted.length / 2))
         .map(el => el.toRawBytes())
 
-      return Promise.all([
-        ...(await olderChunks.map(el => decryptChunk(el, kangaroo16))),
-        ...(await yongerChunks.map(el => decryptChunk(el, kangaroo32))),
-      ])
+      return new Promise((resolve, reject) => {
+        const timeout = setTimeout(() => {
+          reject(new Error('Decryption timed out after 5 seconds'))
+        }, 5000)
+
+        Promise.all([
+          ...olderChunks.map(el => decryptChunk(el, kangaroo16)),
+          ...yongerChunks.map(el => decryptChunk(el, kangaroo32)),
+        ])
+          .then(result => {
+            clearTimeout(timeout)
+            resolve(result)
+          })
+          .catch(err => {
+            clearTimeout(timeout)
+            reject(err)
+          })
+      })
     },
   )
 }

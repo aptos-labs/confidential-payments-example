@@ -781,8 +781,11 @@ const useSelectedAccountDecryptionKeyStatus = (
 
     if (!actualBalance) throw new TypeError('actual balance not loaded')
 
-    if (!actualBalance?.amountEncrypted || !actualBalance?.amount)
-      throw new TypeError('Pending amount is not loaded')
+    if (!actualBalance?.amountEncrypted)
+      throw new TypeError('actualBalance?.amountEncrypted is not defined')
+
+    if (!actualBalance?.amount)
+      throw new TypeError('actualBalance?.amount is not defined')
 
     return normalizeConfidentialBalance(
       selectedAccount,

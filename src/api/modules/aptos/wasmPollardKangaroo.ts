@@ -30,10 +30,10 @@ export const preloadTables = async () => {
   TwistedElGamal.setDecryptionFn(async pk => {
     if (bytesToNumberLE(pk) === 0n) return 0n
 
-    let result = kangaroo16.solve_dlp(pk, 30n)
+    let result = kangaroo16.solve_dlp(pk, 1_000n)
 
     if (!result) {
-      result = kangaroo32.solve_dlp(pk, 120n)
+      result = kangaroo32.solve_dlp(pk, 3_000n)
     }
 
     if (!result) {
@@ -50,10 +50,14 @@ export const preloadTablesForBalances = async () => {
   const kangaroo16 = await createKangaroo(16)
   const kangaroo32 = await createKangaroo(32)
 
-  const decryptChunk = (pk: Uint8Array, instance: WASMKangaroo) => {
+  const decryptChunk = (
+    pk: Uint8Array,
+    instance: WASMKangaroo,
+    timeoutMillis: bigint,
+  ) => {
     if (bytesToNumberLE(pk) === 0n) return 0n
 
-    const result = instance.solve_dlp(pk, 30n)
+    const result = instance.solve_dlp(pk, timeoutMillis)
 
     if (!result) throw new TypeError('Decryption failed')
 
@@ -82,8 +86,8 @@ export const preloadTablesForBalances = async () => {
         }, 5000)
 
         Promise.all([
-          ...olderChunks.map(el => decryptChunk(el, kangaroo16)),
-          ...yongerChunks.map(el => decryptChunk(el, kangaroo32)),
+          ...olderChunks.map(el => decryptChunk(el, kangaroo16, 500n)),
+          ...yongerChunks.map(el => decryptChunk(el, kangaroo32, 1500n)),
         ])
           .then(result => {
             clearTimeout(timeout)

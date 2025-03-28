@@ -1,7 +1,8 @@
 'use client'
 
 import { time } from '@distributedlab/tools'
-import { parseUnits } from 'ethers'
+import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
+import { formatUnits, parseUnits } from 'ethers'
 import {
   ComponentProps,
   forwardRef,
@@ -21,7 +22,7 @@ import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
-import { UiInput } from '@/ui/UiInput'
+import { ControlledUiInput, UiInput } from '@/ui/UiInput'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
   UiSheet,
@@ -67,7 +68,10 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       loadSelectedDecryptionKeyState,
       addTxHistoryItem,
       reloadAptBalance,
+      perTokenStatuses,
     } = useConfidentialCoinContext()
+
+    const currTokenStatus = perTokenStatuses[token.address]
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
 
@@ -86,8 +90,24 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       },
       yup =>
         yup.object().shape({
-          receiverAddressHex: yup.string().required('Enter receiver'),
-          amount: yup.number().required('Enter amount'),
+          receiverAddressHex: yup
+            .string()
+            .test('Invalid address', v => {
+              if (!v) return false
+
+              return AccountAddress.isValid({
+                input: v,
+              }).valid
+            })
+            .required('Enter receiver'),
+          amount: yup
+            .number()
+            .max(
+              currTokenStatus.actualAmount
+                ? +formatUnits(currTokenStatus.actualAmount, token.decimals)
+                : 0,
+            )
+            .required('Enter amount'),
           auditorsEncryptionKeysHex: yup.array().of(
             yup.string().test('Invalid encryption key', v => {
               if (!v) return false
@@ -171,29 +191,21 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           <UiSeparator className='mb-4 mt-2' />
           <div className='flex flex-col'>
             <div className='flex flex-col gap-4'>
-              <Controller
+              <ControlledUiInput
                 control={control}
                 name='receiverAddressHex'
-                render={({ field }) => (
-                  <UiInput
-                    {...field}
-                    placeholder='Enter recipient address'
-                    disabled={isFormDisabled}
-                  />
-                )}
+                label='Recipient'
+                placeholder='Enter recipient address'
+                disabled={isFormDisabled}
               />
 
-              <Controller
+              <ControlledUiInput
                 control={control}
                 name='amount'
-                render={({ field }) => (
-                  <UiInput
-                    {...field}
-                    placeholder='Enter amount'
-                    type='number'
-                    disabled={isFormDisabled}
-                  />
-                )}
+                label='Amount'
+                placeholder='Enter amount'
+                type='number'
+                disabled={isFormDisabled}
               />
             </div>
 

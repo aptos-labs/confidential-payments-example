@@ -79,7 +79,7 @@ export default function DepositManualForm({
           addTxHistoryItem({
             txHash: depositTxReceipt.hash,
             txType: 'deposit',
-            createdAt: Date.now(),
+            createdAt: time().timestamp,
           })
 
           const rolloverTxReceipt = await rolloverAccount()

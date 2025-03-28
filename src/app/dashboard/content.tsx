@@ -2,6 +2,7 @@
 
 import { QueryClientProvider } from '@tanstack/react-query'
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary'
+import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useTimeoutFn } from 'react-use'
 
@@ -43,8 +44,11 @@ export default function DashboardPageContent() {
     setIsInitialized(true)
   }, 10)
 
-  if (!isInitialized || (!walletAccounts.length && !keylessAccounts.length))
-    return <Loading />
+  if (!isInitialized) return <Loading />
+
+  if (!walletAccounts.length && !keylessAccounts.length) {
+    return <LogoutFallback />
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -55,4 +59,17 @@ export default function DashboardPageContent() {
       </ConfidentialCoinContextProvider>
     </QueryClientProvider>
   )
+}
+
+function LogoutFallback() {
+  const router = useRouter()
+  const logout = authStore.useLogout({
+    onSuccess: () => router.push('/sign-in'),
+  })
+
+  useTimeoutFn(async () => {
+    await logout()
+  }, 10)
+
+  return null
 }

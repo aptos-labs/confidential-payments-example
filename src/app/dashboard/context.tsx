@@ -653,7 +653,7 @@ const useSelectedAccountDecryptionKeyStatus = (
               isRegistered,
               isNormalized: false,
               isFrozen: false,
-              fungibleAssetBalance: fungibleAssetBalance[0].amount,
+              fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
             }
           }
 
@@ -676,7 +676,7 @@ const useSelectedAccountDecryptionKeyStatus = (
               isRegistered,
               isNormalized: false,
               isFrozen: false,
-              fungibleAssetBalance: fungibleAssetBalance[0].amount,
+              fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
             }
           }
 

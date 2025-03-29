@@ -32,6 +32,7 @@ import {
   transferConfidentialCoin,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
+import { tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { authStore } from '@/store/auth'
 import {
@@ -115,9 +116,17 @@ type ConfidentialCoinContextType = {
   transfer: (
     receiverEncryptionKeyHex: string,
     amount: string,
-    auditorsEncryptionKeyHexList?: string[],
+    opts?: {
+      isSyncFirst?: boolean
+      auditorsEncryptionKeyHexList?: string[]
+    },
   ) => Promise<CommittedTransactionResponse>
-  withdraw: (amount: string) => Promise<CommittedTransactionResponse>
+  withdraw: (
+    amount: string,
+    opts?: {
+      isSyncFirst?: boolean
+    },
+  ) => Promise<CommittedTransactionResponse>
   depositTo: (
     amount: bigint,
     to: string,
@@ -221,7 +230,6 @@ const useAccounts = () => {
     data: { accountsList, keylessAccAddrToIdTokens },
     isLoading: isAccountsLoading,
     isLoadingError: isAccountsLoadingError,
-    isEmpty: isAccountsEmpty,
   } = useLoading<{
     accountsList: Account[]
     keylessAccAddrToIdTokens: Record<string, string>
@@ -268,7 +276,6 @@ const useAccounts = () => {
     data: aptBalance,
     isLoading: isBalanceLoading,
     isLoadingError: isBalanceLoadingError,
-    isEmpty: isBalanceEmpty,
     reload,
   } = useLoading(
     0,
@@ -283,14 +290,10 @@ const useAccounts = () => {
 
     if (isAccountsLoadingError || isBalanceLoadingError) return 'error'
 
-    if (isAccountsEmpty || isBalanceEmpty) return 'idle'
-
     return 'success'
   }, [
-    isAccountsEmpty,
     isAccountsLoading,
     isAccountsLoadingError,
-    isBalanceEmpty,
     isBalanceLoading,
     isBalanceLoadingError,
   ])
@@ -462,8 +465,14 @@ const useTokens = (accountAddressHex: string | undefined) => {
   const { data: tokens } = useQuery({
     initialData: [] as TokenBaseInfo[],
     queryFn: async () => {
+      const filteredSavedTokens = savedTokensPerAccAddr.filter(el => {
+        return !config.DEFAULT_TOKEN_ADRESSES.map(i =>
+          i.toLowerCase(),
+        ).includes(el.toLowerCase())
+      })
+
       return Promise.all(
-        [...config.DEFAULT_TOKEN_ADRESSES, ...savedTokensPerAccAddr].map(
+        [...config.DEFAULT_TOKEN_ADRESSES, ...filteredSavedTokens].map(
           async addr => {
             const [metadata] = await getFungibleAssetMetadata(addr)
 
@@ -602,73 +611,10 @@ const useSelectedAccountDecryptionKeyStatus = (
 
       return Promise.all(
         currentTokensList.map(async el => {
-          try {
-            const isRegistered = await getIsAccountRegisteredWithToken(
-              selectedAccount,
-              el,
-            )
-
-            const coin = await (async () => {
-              try {
-                return await getCoinByFaAddress(el)
-              } catch (error) {
-                console.error('Error fetching coin by FA address:', error)
-                return undefined
-              }
-            })()
-
-            const assetType = coin ? parseCoinTypeFromCoinStruct(coin) : el
-
-            const fungibleAssetBalance = await getFABalance(
-              selectedAccount,
-              assetType,
-            )
-
-            if (isRegistered) {
-              try {
-                const [{ pending, actual }, isNormalized, isFrozen] =
-                  await Promise.all([
-                    getConfidentialBalances(
-                      selectedAccount,
-                      selectedAccountDecryptionKey.toString(),
-                      el,
-                    ),
-                    getIsBalanceNormalized(selectedAccount, el),
-                    getIsBalanceFrozen(selectedAccount, el),
-                  ])
-
-                return {
-                  tokenAddress: el,
-                  pending,
-                  actual,
-                  isRegistered,
-                  isNormalized,
-                  isFrozen,
-                  fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
-                }
-              } catch (error) {
-                return {
-                  tokenAddress: el,
-                  pending: undefined,
-                  actual: undefined,
-                  isRegistered,
-                  isNormalized: false,
-                  isFrozen: false,
-                  fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
-                }
-              }
-            }
-
-            return {
-              tokenAddress: el,
-              pending: undefined,
-              actual: undefined,
-              isRegistered,
-              isNormalized: false,
-              isFrozen: false,
-              fungibleAssetBalance: fungibleAssetBalance[0].amount,
-            }
-          } catch (error) {
+          const [isRegistered, checkRegisterError] = await tryCatch(
+            getIsAccountRegisteredWithToken(selectedAccount, el),
+          )
+          if (checkRegisterError) {
             return {
               tokenAddress: el,
               pending: undefined,
@@ -678,6 +624,73 @@ const useSelectedAccountDecryptionKeyStatus = (
               isFrozen: false,
               fungibleAssetBalance: '',
             }
+          }
+
+          const [coin] = await tryCatch(getCoinByFaAddress(el))
+
+          const assetType = coin ? parseCoinTypeFromCoinStruct(coin) : el
+
+          const [fungibleAssetBalance, getFABalanceError] = await tryCatch(
+            getFABalance(selectedAccount, assetType),
+          )
+          if (getFABalanceError) {
+            return {
+              tokenAddress: el,
+              pending: undefined,
+              actual: undefined,
+              isRegistered,
+              isNormalized: false,
+              isFrozen: false,
+              fungibleAssetBalance: '',
+            }
+          }
+
+          if (!isRegistered) {
+            return {
+              tokenAddress: el,
+              pending: undefined,
+              actual: undefined,
+              isRegistered,
+              isNormalized: false,
+              isFrozen: false,
+              fungibleAssetBalance: fungibleAssetBalance[0].amount,
+            }
+          }
+
+          const [registeredDetails, getRegisteredDetailsError] = await tryCatch(
+            Promise.all([
+              getConfidentialBalances(
+                selectedAccount,
+                selectedAccountDecryptionKey.toString(),
+                el,
+              ),
+              getIsBalanceNormalized(selectedAccount, el),
+              getIsBalanceFrozen(selectedAccount, el),
+            ]),
+          )
+          if (getRegisteredDetailsError) {
+            return {
+              tokenAddress: el,
+              pending: undefined,
+              actual: undefined,
+              isRegistered,
+              isNormalized: false,
+              isFrozen: false,
+              fungibleAssetBalance: fungibleAssetBalance[0].amount,
+            }
+          }
+
+          const [{ pending, actual }, isNormalized, isFrozen] =
+            registeredDetails
+
+          return {
+            tokenAddress: el,
+            pending,
+            actual,
+            isRegistered,
+            isNormalized,
+            isFrozen,
+            fungibleAssetBalance: fungibleAssetBalance?.[0]?.amount,
           }
         }),
       )
@@ -877,18 +890,35 @@ export const ConfidentialCoinContextProvider = ({
     async (
       receiverAddressHex: string,
       amount: string,
-      auditorsEncryptionKeyHexList?: string[],
+      opts?: {
+        auditorsEncryptionKeyHexList?: string[]
+        isSyncFirst?: boolean
+      },
     ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
         throw new TypeError('actual amount not loaded')
 
+      const amountEncrypted = opts?.isSyncFirst
+        ? await (async () => {
+            const { actual } = await getConfidentialBalances(
+              selectedAccount,
+              selectedAccountDecryptionKey.toString(),
+              selectedToken.address,
+            )
+
+            return actual?.amountEncrypted
+          })()
+        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted
+
+      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
+
       return transferConfidentialCoin(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
-        selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted,
+        amountEncrypted,
         BigInt(amount),
         receiverAddressHex,
-        auditorsEncryptionKeyHexList ?? [], // TODO: add auditors
+        opts?.auditorsEncryptionKeyHexList ?? [],
         selectedToken.address,
       )
     },
@@ -901,15 +931,34 @@ export const ConfidentialCoinContextProvider = ({
   )
 
   const withdraw = useCallback(
-    async (amount: string) => {
+    async (
+      amount: string,
+      opts?: {
+        isSyncFirst?: boolean
+      },
+    ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
         throw new TypeError('actual amount not loaded')
+
+      const amountEncrypted = opts?.isSyncFirst
+        ? await (async () => {
+            const { actual } = await getConfidentialBalances(
+              selectedAccount,
+              selectedAccountDecryptionKey.toString(),
+              selectedToken.address,
+            )
+
+            return actual?.amountEncrypted
+          })()
+        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted
+
+      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
 
       return withdrawConfidentialBalance(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
-        selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted,
+        amountEncrypted,
         selectedToken.address,
       )
     },

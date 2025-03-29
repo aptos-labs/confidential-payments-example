@@ -3,7 +3,7 @@
 import Avatar from 'boring-avatars'
 import { formatUnits } from 'ethers'
 import { Check, Copy } from 'lucide-react'
-import { HTMLAttributes, useState } from 'react'
+import { HTMLAttributes, useMemo, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler } from '@/helpers'
@@ -16,6 +16,7 @@ import { UiSkeleton } from '@/ui/UiSkeleton'
 export default function ConfidentialAssetCard({
   token,
   // encryptionKey,
+  pendingAmount,
   actualAmount,
 
   isLoading,
@@ -33,6 +34,7 @@ export default function ConfidentialAssetCard({
 
   token: TokenBaseInfo
 
+  pendingAmount: string
   actualAmount: string
 
   isNormalized: boolean
@@ -47,6 +49,10 @@ export default function ConfidentialAssetCard({
   } = useConfidentialCoinContext()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const amountsSumBN = useMemo(() => {
+    return BigInt(pendingAmount || 0) + BigInt(actualAmount || 0)
+  }, [actualAmount, pendingAmount])
 
   const tryRegister = async () => {
     setIsSubmitting(true)
@@ -75,8 +81,6 @@ export default function ConfidentialAssetCard({
     <div {...rest} className={cn('relative overflow-hidden', className)}>
       <div className={cn('relative isolate')}>
         <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
-          {/*{VBStatusContent}*/}
-
           <div className='relative flex items-center gap-2'>
             <Avatar name={token.address} size={20} variant='pixel' />
 
@@ -99,7 +103,9 @@ export default function ConfidentialAssetCard({
           <div className='flex items-center'>
             <div className='flex items-end gap-1'>
               <div className='text-textPrimary typography-h2'>
-                {actualAmount && formatUnits(actualAmount, token.decimals)}
+                {actualAmount &&
+                  pendingAmount &&
+                  formatUnits(amountsSumBN, token.decimals)}
               </div>
               <span className='-translate-y-[7px] text-textSecondary typography-subtitle2'>
                 {token.symbol}

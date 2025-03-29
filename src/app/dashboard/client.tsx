@@ -1,6 +1,5 @@
 'use client'
 
-import { time } from '@distributedlab/tools'
 import {
   ArrowDownIcon,
   ArrowRightIcon,
@@ -14,9 +13,6 @@ import {
   IdCardIcon,
   KeyIcon,
   LockIcon,
-  PlusCircleIcon,
-  Snowflake,
-  TriangleAlertIcon,
   UnlockIcon,
 } from 'lucide-react'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
@@ -24,7 +20,6 @@ import {
   ButtonHTMLAttributes,
   ComponentProps,
   HTMLAttributes,
-  ReactElement,
   useCallback,
   useEffect,
   useState,
@@ -78,20 +73,12 @@ export default function DashboardClient() {
     selectedToken,
     setSelectedTokenAddress,
 
-    // selectedAccountDecryptionKey,
     selectedAccountDecryptionKeyStatus,
-
-    unfreezeAccount,
-    normalizeAccount,
-    rolloverAccount,
 
     loadSelectedDecryptionKeyState,
     decryptionKeyStatusLoadingState,
 
     txHistory,
-    addTxHistoryItem,
-
-    testMintTokens,
 
     reloadAptBalance,
 
@@ -116,91 +103,21 @@ export default function DashboardClient() {
     setIsSubmitting(false)
   }, [loadSelectedDecryptionKeyState, reloadAptBalance])
 
-  const tryUnfreeze = useCallback(async () => {
-    setIsSubmitting(true)
-    try {
-      const txReceipt = await unfreezeAccount()
-      addTxHistoryItem({
-        txHash: txReceipt.hash,
-        txType: 'unfreeze',
-        createdAt: time().timestamp,
-      })
-      await tryRefresh()
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-    setIsSubmitting(false)
-  }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
-
-  const tryNormalize = useCallback(async () => {
-    setIsSubmitting(true)
-    try {
-      const txReceipt = await normalizeAccount()
-      addTxHistoryItem({
-        txHash: txReceipt.hash,
-        txType: 'normalize',
-        createdAt: time().timestamp,
-      })
-      await tryRefresh()
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-    setIsSubmitting(false)
-  }, [addTxHistoryItem, normalizeAccount, tryRefresh])
-
-  const tryTestMint = useCallback(async () => {
-    setIsSubmitting(true)
-    try {
-      const [mintTxReceipt, depositTxReceipt] = await testMintTokens()
-      addTxHistoryItem({
-        txHash: mintTxReceipt.hash,
-        txType: 'mint',
-        createdAt: time().timestamp,
-      })
-      addTxHistoryItem({
-        txHash: depositTxReceipt.hash,
-        txType: 'deposit',
-        createdAt: time().timestamp,
-      })
-      await tryRefresh()
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-    setIsSubmitting(false)
-  }, [addTxHistoryItem, testMintTokens, tryRefresh])
-
-  const tryRollover = useCallback(async () => {
-    setIsSubmitting(true)
-    try {
-      const rolloverAccountTxReceipts = await rolloverAccount()
-
-      rolloverAccountTxReceipts.forEach(el => {
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-ignore
-        if (el.payload.function.includes('rollover')) {
-          addTxHistoryItem({
-            txHash: el.hash,
-            txType: 'rollover',
-            createdAt: time().timestamp,
-          })
-
-          tryRefresh()
-          return
-        }
-
-        addTxHistoryItem({
-          txHash: el.hash,
-          txType: 'normalize',
-          createdAt: time().timestamp,
-        })
-
-        tryRefresh()
-      })
-    } catch (error) {
-      ErrorHandler.process(error)
-    }
-    setIsSubmitting(false)
-  }, [addTxHistoryItem, rolloverAccount, tryRefresh])
+  // const tryUnfreeze = useCallback(async () => {
+  //   setIsSubmitting(true)
+  //   try {
+  //     const txReceipt = await unfreezeAccount()
+  //     addTxHistoryItem({
+  //       txHash: txReceipt.hash,
+  //       txType: 'unfreeze',
+  //       createdAt: time().timestamp,
+  //     })
+  //     await tryRefresh()
+  //   } catch (error) {
+  //     ErrorHandler.process(error)
+  //   }
+  //   setIsSubmitting(false)
+  // }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
 
   const [carouselWrpRef, { width: carouselWidth }] = useMeasure()
 
@@ -278,6 +195,7 @@ export default function DashboardClient() {
                       decryptionKeyStatusLoadingState,
                       accountsLoadingState,
                     ].includes('loading')}
+                    pendingAmount={currTokenStatuses.pendingAmount}
                     actualAmount={currTokenStatuses.actualAmount}
                     isNormalized={currTokenStatuses.isNormalized}
                     isFrozen={currTokenStatuses.isFrozen}
@@ -285,23 +203,24 @@ export default function DashboardClient() {
                   />
                 )
               }),
-              <div
-                key={tokens.length + 1}
-                className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
-              >
-                <button
-                  className='flex flex-col items-center gap-2 uppercase'
-                  onClick={() => {
-                    setIsAddTokenSheetOpen(true)
-                  }}
-                >
-                  <PlusCircleIcon
-                    size={64}
-                    className='text-textPrimary typography-caption1'
-                  />
-                  Add Token
-                </button>
-              </div>,
+              // TODO: uncomment when want to add new tokens
+              // <div
+              //   key={tokens.length + 1}
+              //   className='flex w-2/3 flex-col items-center justify-center self-center rounded-2xl bg-componentPrimary py-10'
+              // >
+              //   <button
+              //     className='flex flex-col items-center gap-2 uppercase'
+              //     onClick={() => {
+              //       setIsAddTokenSheetOpen(true)
+              //     }}
+              //   >
+              //     <PlusCircleIcon
+              //       size={64}
+              //       className='text-textPrimary typography-caption1'
+              //     />
+              //     Add Token
+              //   </button>
+              // </div>,
             ]}
             onIndexChange={index => {
               if (!tokens[index]?.address) return
@@ -356,31 +275,9 @@ export default function DashboardClient() {
             }}
             disabled={isActionsDisabled}
           />
-
-          {Boolean(+perTokenStatuses[selectedToken.address].pendingAmount) && (
-            <CircleButton
-              caption={'Rollover'}
-              iconProps={{
-                name: 'RefreshCwIcon',
-              }}
-              onClick={tryRollover}
-              disabled={isActionsDisabled}
-            />
-          )}
-
-          {!perTokenStatuses[selectedToken.address].isNormalized && (
-            <CircleButton
-              caption={'Normalize'}
-              iconProps={{
-                name: 'RefreshCwIcon',
-              }}
-              onClick={tryNormalize}
-              disabled={isActionsDisabled}
-            />
-          )}
         </div>
 
-        {[decryptionKeyStatusLoadingState, accountsLoadingState].every(
+        {/* {[decryptionKeyStatusLoadingState, accountsLoadingState].every(
           el => el === 'success',
         ) && (
           <div className='flex flex-col gap-4 p-4'>
@@ -399,37 +296,9 @@ export default function DashboardClient() {
                   disabled={isSubmitting}
                 />
               )}
-
-              {!selectedAccountDecryptionKeyStatus.isNormalized && (
-                <ActionCard
-                  title='Normalize Balance'
-                  desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                  leadingContent={
-                    <TriangleAlertIcon
-                      size={32}
-                      className='self-center text-textPrimary'
-                    />
-                  }
-                  onClick={tryNormalize}
-                  disabled={isSubmitting}
-                />
-              )}
-
-              <ActionCard
-                title='Test Mint'
-                desc='Mint 10 test tokens'
-                leadingContent={
-                  <HandCoinsIcon
-                    size={32}
-                    className='self-center text-textPrimary'
-                  />
-                }
-                onClick={tryTestMint}
-                disabled={isSubmitting}
-              />
             </>
           </div>
-        )}
+        )} */}
 
         <div
           className={cn(
@@ -590,41 +459,6 @@ function TxItem({
         )}
       </button>
     </div>
-  )
-}
-
-function ActionCard({
-  title,
-  desc,
-  leadingContent,
-  disabled,
-  ...rest
-}: {
-  title: string
-  desc?: string
-  leadingContent?: ReactElement
-} & ButtonHTMLAttributes<HTMLButtonElement>) {
-  return (
-    <button
-      {...rest}
-      className={cn(
-        'flex flex-row gap-4 rounded-2xl bg-componentPrimary p-4',
-        disabled && 'opacity-50',
-        rest.className,
-      )}
-      disabled={disabled}
-    >
-      {leadingContent}
-      <div className='flex flex-1 flex-col items-start text-left'>
-        <span className='text-textPrimary typography-subtitle2'>{title}</span>
-        {desc && (
-          <span className='text-textSecondary typography-body3'>{desc}</span>
-        )}
-      </div>
-      <div className='flex size-9 flex-col items-center justify-center self-center rounded-full bg-componentSelected'>
-        <UiIcon name={'ChevronRightIcon'} className='size-6 text-textPrimary' />
-      </div>
-    </button>
   )
 }
 

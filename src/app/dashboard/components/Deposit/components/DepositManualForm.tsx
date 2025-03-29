@@ -30,8 +30,6 @@ export default function DepositManualForm({
     selectedToken,
     depositTo,
     depositCoinTo,
-    rolloverAccount,
-    normalizeAccount,
     addTxHistoryItem,
     perTokenStatuses,
   } = useConfidentialCoinContext()
@@ -82,28 +80,6 @@ export default function DepositManualForm({
             createdAt: time().timestamp,
           })
 
-          const rolloverTxReceipt = await rolloverAccount()
-          rolloverTxReceipt.forEach(el => {
-            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-            // @ts-ignore
-            if (el.payload.function.includes('rollover')) {
-              addTxHistoryItem({
-                txHash: el.hash,
-                txType: 'rollover',
-                createdAt: time().timestamp,
-              })
-
-              return
-            }
-          })
-
-          const normalizeTxReceipt = await normalizeAccount()
-          addTxHistoryItem({
-            txHash: normalizeTxReceipt.hash,
-            txType: 'normalize',
-            createdAt: time().timestamp,
-          })
-
           onSubmit?.()
         } catch (error) {
           ErrorHandler.process(error)
@@ -117,9 +93,7 @@ export default function DepositManualForm({
       disableForm,
       enableForm,
       handleSubmit,
-      normalizeAccount,
       onSubmit,
-      rolloverAccount,
       selectedAccount,
       selectedToken.address,
       selectedToken.decimals,

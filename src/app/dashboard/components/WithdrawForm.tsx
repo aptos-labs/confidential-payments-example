@@ -1,12 +1,12 @@
 'use client'
 
 import { time } from '@distributedlab/tools'
-import { parseUnits } from 'ethers'
-import { useCallback } from 'react'
+import { formatUnits, parseUnits } from 'ethers'
+import { useCallback, useMemo } from 'react'
 import { Controller } from 'react-hook-form'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { UiButton } from '@/ui/UiButton'
@@ -25,7 +25,19 @@ export default function WithdrawForm({
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
     reloadAptBalance,
+    perTokenStatuses,
+    rolloverAccount,
   } = useConfidentialCoinContext()
+
+  const currentTokenStatus = perTokenStatuses[token.address]
+
+  const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0)
+
+  const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0)
+
+  const amountsSumBN = useMemo(() => {
+    return pendingAmountBN + actualAmountBN
+  }, [actualAmountBN, pendingAmountBN])
 
   const {
     isFormDisabled,
@@ -40,7 +52,10 @@ export default function WithdrawForm({
     },
     yup =>
       yup.object().shape({
-        amount: yup.number().required('Enter amount'),
+        amount: yup
+          .number()
+          .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
+          .required('Enter amount'),
       }),
   )
 
@@ -52,29 +67,73 @@ export default function WithdrawForm({
     () =>
       handleSubmit(async formData => {
         disableForm()
-        try {
-          const txReceipt = await withdraw(
-            parseUnits(String(formData.amount), token.decimals).toString(),
-          )
-          addTxHistoryItem({
-            txHash: txReceipt.hash,
-            txType: 'withdraw',
-            createdAt: time().timestamp,
+
+        const formAmountBN = parseUnits(String(formData.amount), token.decimals)
+
+        if (actualAmountBN < formAmountBN) {
+          const [rolloverTxs, rolloverError] = await tryCatch(rolloverAccount())
+          if (rolloverError) {
+            ErrorHandler.process(rolloverError)
+            enableForm()
+            return
+          }
+
+          rolloverTxs.forEach(el => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            if (el.payload.function.includes('rollover')) {
+              addTxHistoryItem({
+                txHash: el.hash,
+                txType: 'rollover',
+                createdAt: time().timestamp,
+              })
+
+              return
+            }
+
+            addTxHistoryItem({
+              txHash: el.hash,
+              txType: 'normalize',
+              createdAt: time().timestamp,
+            })
           })
-
-          await Promise.all([
-            loadSelectedDecryptionKeyState(),
-            reloadAptBalance(),
-          ])
-
-          onSubmit()
-          clearForm()
-        } catch (error) {
-          ErrorHandler.process(error)
         }
+
+        const [withdrawTx, withdrawError] = await tryCatch(
+          withdraw(
+            parseUnits(String(formData.amount), token.decimals).toString(),
+            {
+              isSyncFirst: true,
+            },
+          ),
+        )
+        if (withdrawError) {
+          ErrorHandler.process(withdrawError)
+          enableForm()
+          return
+        }
+
+        addTxHistoryItem({
+          txHash: withdrawTx.hash,
+          txType: 'withdraw',
+          createdAt: time().timestamp,
+        })
+
+        const [, reloadError] = await tryCatch(
+          Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
+        )
+        if (reloadError) {
+          ErrorHandler.process(reloadError)
+          enableForm()
+          return
+        }
+
+        onSubmit()
+        clearForm()
         enableForm()
       })(),
     [
+      actualAmountBN,
       addTxHistoryItem,
       clearForm,
       disableForm,
@@ -83,6 +142,7 @@ export default function WithdrawForm({
       loadSelectedDecryptionKeyState,
       onSubmit,
       reloadAptBalance,
+      rolloverAccount,
       token.decimals,
       withdraw,
     ],

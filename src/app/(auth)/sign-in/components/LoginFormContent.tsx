@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { authStore } from '@/store/auth'
 import { cn } from '@/theme/utils'
@@ -40,19 +40,23 @@ export default function LoginFormContent() {
     if (!googleIdToken && !appleIdToken) return
 
     const loginWithSocial = async () => {
-      try {
-        if (googleIdToken) {
-          loginWithGoogle(googleIdToken)
-        } else if (appleIdToken) {
-          loginWithApple(appleIdToken)
-        }
-      } catch (error) {
+      const [, error] = await tryCatch(
+        (async () => {
+          if (googleIdToken) {
+            loginWithGoogle(googleIdToken)
+          } else if (appleIdToken) {
+            loginWithApple(appleIdToken)
+          }
+        })(),
+      )
+      if (error) {
         ErrorHandler.process(error)
+        router.push('/sign-in')
       }
     }
 
     loginWithSocial()
-  }, [appleIdToken, googleIdToken, loginWithApple, loginWithGoogle])
+  }, [appleIdToken, googleIdToken, loginWithApple, loginWithGoogle, router])
 
   const [authError, setAuthError] = useState<Error>()
 

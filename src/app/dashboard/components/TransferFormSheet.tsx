@@ -9,6 +9,7 @@ import {
   HTMLAttributes,
   useCallback,
   useImperativeHandle,
+  useMemo,
   useRef,
   useState,
 } from 'react'
@@ -16,7 +17,7 @@ import { Control, Controller, useFieldArray } from 'react-hook-form'
 
 import { validateEncryptionKeyHex } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, isMobile } from '@/helpers'
+import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -69,9 +70,18 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       addTxHistoryItem,
       reloadAptBalance,
       perTokenStatuses,
+      rolloverAccount,
     } = useConfidentialCoinContext()
 
     const currTokenStatus = perTokenStatuses[token.address]
+
+    const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0)
+
+    const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0)
+
+    const amountsSumBN = useMemo(() => {
+      return pendingAmountBN + actualAmountBN
+    }, [actualAmountBN, pendingAmountBN])
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
 
@@ -102,11 +112,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             .required('Enter receiver'),
           amount: yup
             .number()
-            .max(
-              currTokenStatus.actualAmount
-                ? +formatUnits(currTokenStatus.actualAmount, token.decimals)
-                : 0,
-            )
+            .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
             .required('Enter amount'),
           auditorsEncryptionKeysHex: yup.array().of(
             yup.string().test('Invalid encryption key', v => {
@@ -127,31 +133,79 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       () =>
         handleSubmit(async formData => {
           disableForm()
-          try {
-            const txReceipt = await transfer(
+
+          const formAmountBN = parseUnits(
+            String(formData.amount),
+            token.decimals,
+          )
+          if (actualAmountBN < formAmountBN) {
+            const [rolloverTxs, rolloverError] =
+              await tryCatch(rolloverAccount())
+            if (rolloverError) {
+              ErrorHandler.process(rolloverError)
+              enableForm()
+              return
+            }
+
+            rolloverTxs.forEach(el => {
+              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+              // @ts-ignore
+              if (el.payload.function.includes('rollover')) {
+                addTxHistoryItem({
+                  txHash: el.hash,
+                  txType: 'rollover',
+                  createdAt: time().timestamp,
+                })
+
+                return
+              }
+
+              addTxHistoryItem({
+                txHash: el.hash,
+                txType: 'normalize',
+                createdAt: time().timestamp,
+              })
+            })
+          }
+
+          const [transferTx, transferError] = await tryCatch(
+            transfer(
               formData.receiverAddressHex,
               parseUnits(String(formData.amount), token.decimals).toString(),
-              formData.auditorsEncryptionKeysHex,
-            )
-            addTxHistoryItem({
-              txHash: txReceipt.hash,
-              txType: 'transfer',
-              createdAt: time().timestamp,
-            })
-
-            await Promise.all([
-              loadSelectedDecryptionKeyState(),
-              reloadAptBalance(),
-            ])
-
-            onSubmit()
-            clearForm()
-          } catch (error) {
-            ErrorHandler.process(error)
+              {
+                isSyncFirst: true,
+                auditorsEncryptionKeyHexList:
+                  formData.auditorsEncryptionKeysHex,
+              },
+            ),
+          )
+          if (transferError) {
+            ErrorHandler.process(transferError)
+            enableForm()
+            return
           }
+
+          addTxHistoryItem({
+            txHash: transferTx.hash,
+            txType: 'transfer',
+            createdAt: time().timestamp,
+          })
+
+          const [, reloadError] = await tryCatch(
+            Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
+          )
+          if (reloadError) {
+            ErrorHandler.process(reloadError)
+            enableForm()
+            return
+          }
+
+          onSubmit()
+          clearForm()
           enableForm()
         })(),
       [
+        actualAmountBN,
         addTxHistoryItem,
         clearForm,
         disableForm,
@@ -160,6 +214,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         loadSelectedDecryptionKeyState,
         onSubmit,
         reloadAptBalance,
+        rolloverAccount,
         token.decimals,
         transfer,
       ],

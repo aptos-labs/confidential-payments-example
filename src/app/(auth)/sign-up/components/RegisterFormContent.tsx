@@ -4,7 +4,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { useCallback, useState } from 'react'
 
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { authStore } from '@/store/auth'
 import { cn } from '@/theme/utils'
@@ -42,19 +42,23 @@ export default function RegisterFormContent() {
     () =>
       handleSubmit(async formData => {
         disableForm()
-        try {
-          await register({
-            name: formData.name,
-            email: formData.email,
-            password: formData.password,
-          })
 
-          router.push('/dashboard')
-        } catch (error) {
+        const [, error] = await tryCatch(
+          (async () => {
+            await register({
+              name: formData.name,
+              email: formData.email,
+              password: formData.password,
+            })
+          })(),
+        )
+        if (error) {
           setAuthError(error as Error)
           ErrorHandler.process(error)
+          enableForm()
         }
-        enableForm()
+
+        router.push('/dashboard')
       })(),
     [disableForm, enableForm, handleSubmit, register, router],
   )

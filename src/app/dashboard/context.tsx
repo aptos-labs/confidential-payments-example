@@ -276,7 +276,7 @@ const useAccounts = () => {
     data: aptBalance,
     isLoading: isBalanceLoading,
     isLoadingError: isBalanceLoadingError,
-    reload,
+    update,
   } = useLoading(
     0,
     () => {
@@ -394,7 +394,7 @@ const useAccounts = () => {
     aptBalance,
 
     accountsLoadingState,
-    reloadAptBalance: reload,
+    reloadAptBalance: update,
   }
 }
 

@@ -1,15 +1,21 @@
 import { APTOS_FA } from '@lukachi/aptos-labs-ts-sdk'
 import { useState } from 'react'
 
-import { getModuleMockedTokenAddr } from '@/api/modules/aptos'
+import { getModuleMockedTokenAddr, mintAptCoin } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { bus, BusEvents, ErrorHandler } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
 
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
-  const { selectedToken, testMintTokens } = useConfidentialCoinContext()
+  const {
+    selectedAccount,
+    selectedToken,
+    testMintTokens,
+    reloadAptBalance,
+    loadSelectedDecryptionKeyState,
+  } = useConfidentialCoinContext()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -39,6 +45,18 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     try {
       await testMintTokens()
       onSubmit?.()
+    } catch (error) {
+      ErrorHandler.process(error)
+    }
+    setIsSubmitting(false)
+  }
+
+  const tryFundAptBalance = async () => {
+    setIsSubmitting(true)
+    try {
+      await mintAptCoin(selectedAccount)
+      await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
+      bus.emit(BusEvents.Success, 'Successfully funded your balance with 1 APT')
     } catch (error) {
       ErrorHandler.process(error)
     }
@@ -78,6 +96,14 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
                 This is an Aptos Fungible Asset, you can get them in aptos
                 faucets or by trading with other users.
               </span>
+
+              <UiButton
+                className='w-full'
+                onClick={tryFundAptBalance}
+                disabled={isSubmitting}
+              >
+                Buy
+              </UiButton>
             </>
           )
         }

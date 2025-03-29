@@ -204,6 +204,16 @@ export const mintTokens = async (account: Account) => {
   return sendAndWaitTx(tx, account)
 }
 
+export const mintAptCoin = async (
+  account: Account,
+  fundAmount = 1 * 10 ** 8,
+) => {
+  await aptos.fundAccount({
+    accountAddress: account.accountAddress,
+    amount: fundAmount,
+  })
+}
+
 export const withdrawConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,

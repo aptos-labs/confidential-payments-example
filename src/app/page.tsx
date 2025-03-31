@@ -8,11 +8,7 @@ export default async function RootPage() {
       </div> */}
 
       <div className='absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-4 text-center'>
-        <span className='text-textPrimary typography-h3 sm:typography-h2 md:typography-h1'>
-          Confidential Assets
-        </span>
-
-        <span className='text-textPrimary typography-h3'>
+        <span className='typography-h3 text-textPrimary sm:typography-h2 md:typography-h1'>
           Confidential Assets
         </span>
 

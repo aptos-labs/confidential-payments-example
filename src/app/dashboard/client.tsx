@@ -70,6 +70,8 @@ export default function DashboardClient() {
   const {
     accountsLoadingState,
 
+    tokensLoadingState,
+
     selectedToken,
     setSelectedTokenAddress,
 
@@ -128,9 +130,11 @@ export default function DashboardClient() {
   // TODO: enchance to more fabric orchestration
   useEffect(() => {
     if (
-      [decryptionKeyStatusLoadingState, accountsLoadingState].every(
-        el => el === 'success',
-      )
+      [
+        decryptionKeyStatusLoadingState,
+        accountsLoadingState,
+        tokensLoadingState,
+      ].every(el => el === 'success')
     )
       return
 
@@ -155,6 +159,7 @@ export default function DashboardClient() {
 
     clearAllParams()
   }, [
+    tokensLoadingState,
     accountsLoadingState,
     clearAllParams,
     decryptionKeyStatusLoadingState,
@@ -194,6 +199,7 @@ export default function DashboardClient() {
                     isLoading={[
                       decryptionKeyStatusLoadingState,
                       accountsLoadingState,
+                      tokensLoadingState,
                     ].includes('loading')}
                     pendingAmount={currTokenStatuses.pendingAmount}
                     actualAmount={currTokenStatuses.actualAmount}
@@ -277,7 +283,7 @@ export default function DashboardClient() {
           />
         </div>
 
-        {/* {[decryptionKeyStatusLoadingState, accountsLoadingState].every(
+        {/* {[decryptionKeyStatusLoadingState, accountsLoadingState, tokensLoadingState].every(
           el => el === 'success',
         ) && (
           <div className='flex flex-col gap-4 p-4'>

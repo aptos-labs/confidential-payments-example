@@ -7,7 +7,6 @@ import {
   ConfidentialAmount,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
-import { useQuery } from '@tanstack/react-query'
 import { parseUnits } from 'ethers'
 import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
@@ -94,6 +93,7 @@ type ConfidentialCoinContextType = {
   reloadAptBalance: () => Promise<void>
 
   tokens: TokenBaseInfo[]
+  tokensLoadingState: LoadingState
   perTokenStatuses: Record<string, AccountDecryptionKeyStatus>
 
   selectedToken: TokenBaseInfo
@@ -156,6 +156,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   reloadAptBalance: async () => {},
 
   tokens: [],
+  tokensLoadingState: 'idle',
   perTokenStatuses: {},
   selectedToken: {} as TokenBaseInfo,
   txHistory: [],
@@ -462,9 +463,13 @@ const useTokens = (accountAddressHex: string | undefined) => {
     [accountAddressHex, accountAddrHexToTokenAddrMap],
   )
 
-  const { data: tokens } = useQuery({
-    initialData: [] as TokenBaseInfo[],
-    queryFn: async () => {
+  const {
+    data: tokens,
+    isLoading: isTokensLoading,
+    isLoadingError: isTokensLoadingError,
+  } = useLoading(
+    [],
+    async () => {
       const filteredSavedTokens = savedTokensPerAccAddr.filter(el => {
         return !config.DEFAULT_TOKEN_ADRESSES.map(i =>
           i.toLowerCase(),
@@ -474,7 +479,20 @@ const useTokens = (accountAddressHex: string | undefined) => {
       return Promise.all(
         [...config.DEFAULT_TOKEN_ADRESSES, ...filteredSavedTokens].map(
           async addr => {
-            const [metadata] = await getFungibleAssetMetadata(addr)
+            const [metadatas, error] = await tryCatch(
+              getFungibleAssetMetadata(addr),
+            )
+            if (error || !metadatas?.length) {
+              return {
+                address: addr,
+                name: '',
+                symbol: '',
+                decimals: 0,
+                iconUri: '',
+              }
+            }
+
+            const [metadata] = metadatas
 
             return {
               address: addr,
@@ -487,8 +505,18 @@ const useTokens = (accountAddressHex: string | undefined) => {
         ),
       )
     },
-    queryKey: ['loadTokensMetadata', accountAddressHex, savedTokensPerAccAddr],
-  })
+    {
+      loadArgs: [accountAddressHex, savedTokensPerAccAddr],
+    },
+  )
+
+  const tokensLoadingState = useMemo<LoadingState>(() => {
+    if (isTokensLoading) return 'loading'
+
+    if (isTokensLoadingError) return 'error'
+
+    return 'success'
+  }, [isTokensLoading, isTokensLoadingError])
 
   const selectedToken = useMemo<TokenBaseInfo>(() => {
     const defaultToken = {
@@ -552,6 +580,7 @@ const useTokens = (accountAddressHex: string | undefined) => {
 
   return {
     tokens,
+    tokensLoadingState,
     selectedToken,
     txHistory,
     setSelectedTokenAddress: setSelectedTokenAddress,
@@ -867,6 +896,7 @@ export const ConfidentialCoinContextProvider = ({
 
   const {
     tokens,
+    tokensLoadingState,
     selectedToken,
     txHistory,
     addToken,
@@ -1043,6 +1073,7 @@ export const ConfidentialCoinContextProvider = ({
         reloadAptBalance,
 
         tokens,
+        tokensLoadingState,
         perTokenStatuses,
         selectedToken,
         txHistory,

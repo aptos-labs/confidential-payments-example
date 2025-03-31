@@ -73,7 +73,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         if (isCurrTokenIsModuleMockedOne) {
           return (
             <>
-              <span className='text-textPrimary typography-caption2'>
+              <span className='typography-caption2 text-textPrimary'>
                 Mint tokens from the faucet to use within the application.
                 Ensure you have sufficient permissions to access the feature.
               </span>
@@ -92,7 +92,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         if (isAptosFA) {
           return (
             <>
-              <span className='text-textPrimary typography-caption2'>
+              <span className='typography-caption2 text-textPrimary'>
                 This is an Aptos Fungible Asset, you can get them in aptos
                 faucets or by trading with other users.
               </span>

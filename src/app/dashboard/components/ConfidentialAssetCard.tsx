@@ -79,59 +79,75 @@ export default function ConfidentialAssetCard({
 
   return (
     <div {...rest} className={cn('relative overflow-hidden', className)}>
-      <div className={cn('relative isolate')}>
-        <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
-          <div className='relative flex items-center gap-2'>
-            <Avatar name={token.address} size={20} variant='pixel' />
+      {isLoading ? (
+        <div className={cn('relative isolate')}>
+          <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
+            <div className='relative flex items-center gap-2'>
+              <UiSkeleton className='size-5 rounded-full' />
+              <UiSkeleton className='h-3 w-32' />
+              <UiSkeleton className='size-6' />
+            </div>
 
-            <span className='text-textPrimary typography-subtitle1'>
-              {token.name}
-            </span>
-
-            <button
-              className='absolute left-full top-1/2 -translate-y-1/2'
-              onClick={() => copy(token.address)}
-            >
-              {isCopied ? (
-                <Check size={24} className={'pl-2 text-textSecondary'} />
-              ) : (
-                <Copy size={24} className={'pl-2 text-textSecondary'} />
-              )}
-            </button>
-          </div>
-
-          <div className='flex items-center'>
             <div className='flex items-end gap-1'>
-              <div className='text-textPrimary typography-h2'>
-                {actualAmount &&
-                  pendingAmount &&
-                  formatUnits(amountsSumBN, token.decimals)}
-              </div>
-              <span className='-translate-y-[7px] text-textSecondary typography-subtitle2'>
-                {token.symbol}
-              </span>
+              <UiSkeleton className='h-16 w-24' />
+              <UiSkeleton className='h-8 w-12' />
             </div>
           </div>
         </div>
-      </div>
-      <div
-        className={cn(
-          'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
-          isRegistered ? 'hidden' : 'flex',
-        )}
-      >
-        {isLoading ? (
-          <UiSkeleton className='absolute-center size-[95%]' />
-        ) : (
-          <UiButton
-            className='absolute-center min-w-[300px]'
-            onClick={tryRegister}
-            disabled={isSubmitting}
+      ) : (
+        <>
+          <div className={cn('relative isolate')}>
+            <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
+              <div className='relative flex items-center gap-2'>
+                <Avatar name={token.address} size={20} variant='pixel' />
+
+                <span className='typography-subtitle1 text-textPrimary'>
+                  {token.name}
+                </span>
+
+                <button
+                  className='absolute left-full top-1/2 -translate-y-1/2'
+                  onClick={() => copy(token.address)}
+                >
+                  {isCopied ? (
+                    <Check size={24} className={'pl-2 text-textSecondary'} />
+                  ) : (
+                    <Copy size={24} className={'pl-2 text-textSecondary'} />
+                  )}
+                </button>
+              </div>
+
+              <div className='flex items-center'>
+                <div className='flex items-end gap-1'>
+                  <div className='typography-h2 text-textPrimary'>
+                    {actualAmount &&
+                      pendingAmount &&
+                      formatUnits(amountsSumBN, token.decimals)}
+                  </div>
+                  <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
+                    {token.symbol}
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div
+            className={cn(
+              'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
+              isRegistered ? 'hidden' : 'flex',
+            )}
           >
-            Start
-          </UiButton>
-        )}
-      </div>
+            <UiButton
+              className='absolute-center min-w-[300px]'
+              onClick={tryRegister}
+              disabled={isSubmitting}
+            >
+              Start
+            </UiButton>
+          </div>
+        </>
+      )}
     </div>
   )
 }

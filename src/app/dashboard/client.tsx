@@ -316,7 +316,7 @@ export default function DashboardClient() {
             <div className='my-auto flex flex-col items-center gap-4 self-center'>
               <FolderOpenIcon size={128} className='text-componentDisabled' />
 
-              <span className='text-textSecondary typography-subtitle2'>
+              <span className='typography-subtitle2 text-textSecondary'>
                 No transactions yet.
               </span>
             </div>
@@ -485,7 +485,7 @@ function CircleButton({
           className={cn('size-4 text-textPrimary', iconProps.className)}
         />
       </span>
-      <span className='uppercase text-textSecondary typography-caption3'>
+      <span className='typography-caption3 uppercase text-textSecondary'>
         {caption}
       </span>
     </button>

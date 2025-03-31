@@ -10,8 +10,15 @@ import { ErrorHandler } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
+import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
+import {
+  UiTooltip,
+  UiTooltipContent,
+  UiTooltipProvider,
+  UiTooltipTrigger,
+} from '@/ui/UiTooltip'
 
 export default function ConfidentialAssetCard({
   token,
@@ -118,33 +125,52 @@ export default function ConfidentialAssetCard({
               </div>
 
               <div className='flex items-center'>
-                <div className='flex items-end gap-1'>
-                  <div className='typography-h2 text-textPrimary'>
-                    {actualAmount &&
-                      pendingAmount &&
-                      formatUnits(amountsSumBN, token.decimals)}
+                {isRegistered ? (
+                  <>
+                    <div className='flex items-end gap-1'>
+                      <div className='typography-h2 text-textPrimary'>
+                        {actualAmount &&
+                          pendingAmount &&
+                          formatUnits(amountsSumBN, token.decimals)}
+                      </div>
+                      <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
+                        {token.symbol}
+                      </span>
+                    </div>
+                  </>
+                ) : (
+                  <div className='flex flex-col items-center gap-2'>
+                    <UiButton
+                      className='min-w-[300px]'
+                      onClick={tryRegister}
+                      disabled={isSubmitting}
+                    >
+                      Start
+                    </UiButton>
+
+                    <UiTooltipProvider delayDuration={0}>
+                      <UiTooltip>
+                        <UiTooltipTrigger className='flex items-center gap-2'>
+                          <span className='typography-caption1 text-textPrimary'>
+                            Let's register this token as your private balance
+                          </span>
+                          <UiIcon
+                            name='InfoIcon'
+                            className='size-4 text-textPrimary'
+                          />
+                        </UiTooltipTrigger>
+                        <UiTooltipContent className='overflow-hidden text-ellipsis'>
+                          <span className='typography-caption1 text-textSecondary'>
+                            make sure you have anough APT to send transactions,
+                            or you can buy some in deposit modal
+                          </span>
+                        </UiTooltipContent>
+                      </UiTooltip>
+                    </UiTooltipProvider>
                   </div>
-                  <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
-                    {token.symbol}
-                  </span>
-                </div>
+                )}
               </div>
             </div>
-          </div>
-
-          <div
-            className={cn(
-              'absolute-center size-full w-[50%] rounded-md border border-gray-100 bg-gray-900 bg-opacity-60 bg-clip-padding backdrop-blur-sm backdrop-filter',
-              isRegistered ? 'hidden' : 'flex',
-            )}
-          >
-            <UiButton
-              className='absolute-center min-w-[300px]'
-              onClick={tryRegister}
-              disabled={isSubmitting}
-            >
-              Start
-            </UiButton>
           </div>
         </>
       )}

@@ -46,7 +46,7 @@ export default function DashboardPageContent() {
 
   if (!isInitialized) return <Loading />
 
-  if (!walletAccounts.length && !keylessAccounts.length) {
+  if (!walletAccounts.length && !activeKeylessAccount) {
     return <LogoutFallback />
   }
 

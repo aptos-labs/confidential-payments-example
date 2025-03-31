@@ -226,7 +226,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               <UiTooltipProvider delayDuration={0}>
                 <UiTooltip>
                   <UiTooltipTrigger className='hidden items-center gap-2 md:flex'>
-                    <span className='text-textPrimary typography-caption1'>
+                    <span className='typography-caption1 text-textPrimary'>
                       {el.name}
                     </span>
                     <UiIcon
@@ -235,27 +235,27 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                     />
                   </UiTooltipTrigger>
                   <UiTooltipContent className='overflow-hidden text-ellipsis'>
-                    <span className='text-textSecondary typography-caption1'>
+                    <span className='typography-caption1 text-textSecondary'>
                       {el.address}
                     </span>
                   </UiTooltipContent>
                 </UiTooltip>
               </UiTooltipProvider>
-              <span className='inline text-textPrimary typography-caption1 md:hidden'>
+              <span className='typography-caption1 inline text-textPrimary md:hidden'>
                 {el.name}
               </span>
 
-              <span className='text-textSecondary typography-caption2'>
+              <span className='typography-caption2 text-textSecondary'>
                 {el.symbol}
               </span>
               <div className='w-full overflow-hidden text-ellipsis md:hidden'>
-                <span className='text-textSecondary typography-caption3'>
+                <span className='typography-caption3 text-textSecondary'>
                   {el.address}
                 </span>
               </div>
 
               {el.balanceAmount && (
-                <span className='text-textPrimary typography-caption1'>
+                <span className='typography-caption1 text-textPrimary'>
                   {formatBalance(el.balanceAmount, el.decimals)} {el.symbol}
                 </span>
               )}
@@ -304,15 +304,15 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                 })}
 
               <div className='flex flex-1 flex-col'>
-                <span className='text-textPrimary typography-caption1'>
+                <span className='typography-caption1 text-textPrimary'>
                   {selectedToken?.name}
                 </span>
-                <span className='text-textSecondary typography-caption2'>
+                <span className='typography-caption2 text-textSecondary'>
                   {selectedToken?.symbol}
                 </span>
                 <div className='relative isolate h-5 w-full'>
                   <div className='absolute inset-0 overflow-hidden text-ellipsis'>
-                    <span className='w-full text-textSecondary typography-caption3'>
+                    <span className='typography-caption3 w-full text-textSecondary'>
                       {selectedToken?.address}
                     </span>
                   </div>

@@ -1,5 +1,6 @@
 'use client'
 
+import { formatUnits } from 'ethers'
 import QRCode from 'react-qr-code'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
@@ -81,8 +82,21 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
               </UiTabsContent>
               <UiTabsContent value='manual'>
                 <>
-                  {currentStatus.isRegistered && (
+                  {currentStatus.isRegistered ? (
                     <DepositManualForm onSubmit={onSubmit} />
+                  ) : (
+                    <>
+                      <span className='typography-caption2 text-textSecondary'>
+                        Public balance:
+                        <span className='text-textPrimary'>
+                          {formatUnits(
+                            currentStatus.fungibleAssetBalance || '0',
+                            selectedToken.decimals,
+                          )}
+                          {selectedToken.symbol}
+                        </span>
+                      </span>
+                    </>
                   )}
                 </>
               </UiTabsContent>

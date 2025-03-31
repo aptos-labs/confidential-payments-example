@@ -30,10 +30,10 @@ export const preloadTables = async () => {
   TwistedElGamal.setDecryptionFn(async pk => {
     if (bytesToNumberLE(pk) === 0n) return 0n
 
-    let result = kangaroo16.solve_dlp(pk, 1_000n)
+    let result = kangaroo16.solve_dlp(pk, 500n)
 
     if (!result) {
-      result = kangaroo32.solve_dlp(pk, 3_000n)
+      result = kangaroo32.solve_dlp(pk, 1500n)
     }
 
     if (!result) {
@@ -86,8 +86,8 @@ export const preloadTablesForBalances = async () => {
         }, 5000)
 
         Promise.all([
-          ...olderChunks.map(el => decryptChunk(el, kangaroo16, 500n)),
-          ...yongerChunks.map(el => decryptChunk(el, kangaroo32, 1500n)),
+          ...olderChunks.map(el => decryptChunk(el, kangaroo16, 1500n)),
+          ...yongerChunks.map(el => decryptChunk(el, kangaroo32, 3500n)),
         ])
           .then(result => {
             clearTimeout(timeout)

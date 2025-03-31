@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useTimeoutFn } from 'react-use'
 
 import { queryClient } from '@/api/client'
-import { preloadTablesForBalances } from '@/api/modules/aptos/wasmPollardKangaroo'
+import { preloadTables } from '@/api/modules/aptos/wasmPollardKangaroo'
 import DashboardClient from '@/app/dashboard/client'
 import { ConfidentialCoinContextProvider } from '@/app/dashboard/context'
 import Loading from '@/app/dashboard/loading'
@@ -33,7 +33,8 @@ export default function DashboardPageContent() {
   useTimeoutFn(async () => {
     setIsInitialized(false)
     try {
-      await preloadTablesForBalances()
+      // await preloadTablesForBalances()
+      await preloadTables()
 
       if (!activeKeylessAccount && keylessAccounts.length) {
         await switchKeylessAccount(keylessAccounts[0].idToken.raw)

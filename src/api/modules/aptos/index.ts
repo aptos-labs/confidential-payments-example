@@ -39,9 +39,11 @@ import {
 import { config as appConfig } from '@/config'
 import { type TokenBaseInfo } from '@/store/wallet'
 
-ConfidentialCoin.setConfidentialCoinModuleAddress(
-  appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-)
+if (appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR) {
+  ConfidentialCoin.setConfidentialCoinModuleAddress(
+    appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
+  )
+}
 
 RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP)
 RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP)

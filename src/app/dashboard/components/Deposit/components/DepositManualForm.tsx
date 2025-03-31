@@ -122,7 +122,7 @@ export default function DepositManualForm({
             <UiTooltipProvider delayDuration={0}>
               <UiTooltip>
                 <UiTooltipTrigger>
-                  <div className='flex items-center gap-2 text-textPrimary typography-caption2'>
+                  <div className='typography-caption2 flex items-center gap-2 text-textPrimary'>
                     Amount
                     <UiIcon
                       name='InfoIcon'
@@ -140,12 +140,12 @@ export default function DepositManualForm({
         }
       />
       <div className='flex w-full justify-end'>
-        <span className='text-textPrimary typography-caption3'>
+        <span className='typography-caption3 text-textPrimary'>
           Current public balance:
-          <span className='ml-2 text-textPrimary typography-caption1'>
+          <span className='typography-caption1 ml-2 text-textPrimary'>
             {formattedTotalBalance}
           </span>
-          <span className='ml-2 uppercase text-textPrimary typography-caption1'>
+          <span className='typography-caption1 ml-2 uppercase text-textPrimary'>
             {selectedToken.symbol}
           </span>
         </span>

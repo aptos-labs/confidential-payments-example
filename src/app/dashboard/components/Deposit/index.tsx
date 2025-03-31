@@ -40,7 +40,7 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
       </div>
 
       <div className='flex w-full flex-col gap-2'>
-        <span className='self-start uppercase text-textPrimary typography-caption3'>
+        <span className='typography-caption3 self-start uppercase text-textPrimary'>
           Address
         </span>
         <div className='flex w-full items-center gap-2 rounded-xl bg-componentPrimary p-4'>
@@ -60,50 +60,50 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
         </div>
       </div>
 
-      {currentStatus.isRegistered ? (
-        <UiAccordion type={'single'} collapsible className='w-full'>
-          <UiAccordionItem value='item-1'>
-            <UiAccordionTrigger>
-              <div className='flex items-center gap-2'>
-                <span className='text-textPrimary typography-caption3'>
-                  Advanced
-                </span>
-              </div>
-            </UiAccordionTrigger>
-            <UiAccordionContent>
-              <UiTabs defaultValue='faucet' className='w-full'>
-                <UiTabsList>
-                  <UiTabsTrigger value='faucet'>
-                    Buy {selectedToken.symbol}
-                  </UiTabsTrigger>
-                  <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
-                </UiTabsList>
-                <UiTabsContent value='faucet'>
-                  <DepositMint onSubmit={onSubmit} />
-                </UiTabsContent>
-                <UiTabsContent value='manual'>
-                  <DepositManualForm onSubmit={onSubmit} />
-                </UiTabsContent>
-              </UiTabs>
-            </UiAccordionContent>
-          </UiAccordionItem>
-        </UiAccordion>
-      ) : (
-        <>
-          {currentStatus.fungibleAssetBalance && (
-            <span className='text-textSecondary typography-caption2'>
-              Public balance:{' '}
-              <span className='text-textPrimary'>
-                {formatUnits(
-                  currentStatus.fungibleAssetBalance,
-                  selectedToken.decimals,
-                )}{' '}
-                {selectedToken.symbol}
+      <UiAccordion type={'single'} collapsible className='w-full'>
+        <UiAccordionItem value='item-1'>
+          <UiAccordionTrigger>
+            <div className='flex items-center gap-2'>
+              <span className='typography-caption3 text-textPrimary'>
+                Advanced
               </span>
-            </span>
-          )}
-        </>
-      )}
+            </div>
+          </UiAccordionTrigger>
+          <UiAccordionContent>
+            <UiTabs defaultValue='faucet' className='w-full'>
+              <UiTabsList>
+                <UiTabsTrigger value='faucet'>
+                  Buy {selectedToken.symbol}
+                </UiTabsTrigger>
+                <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
+              </UiTabsList>
+              <UiTabsContent value='faucet'>
+                <DepositMint onSubmit={onSubmit} />
+              </UiTabsContent>
+              <UiTabsContent value='manual'>
+                <>
+                  {currentStatus.isRegistered ? (
+                    <DepositManualForm onSubmit={onSubmit} />
+                  ) : (
+                    <>
+                      <span className='typography-caption2 text-textSecondary'>
+                        Public balance:{' '}
+                        <span className='text-textPrimary'>
+                          {formatUnits(
+                            currentStatus.fungibleAssetBalance || '0',
+                            selectedToken.decimals,
+                          )}{' '}
+                          {selectedToken.symbol}
+                        </span>
+                      </span>
+                    </>
+                  )}
+                </>
+              </UiTabsContent>
+            </UiTabs>
+          </UiAccordionContent>
+        </UiAccordionItem>
+      </UiAccordion>
     </div>
   )
 }

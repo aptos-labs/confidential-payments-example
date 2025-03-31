@@ -91,8 +91,8 @@ const config: Config = {
       }),
     ),
 
-    plugin(({ addUtilities }) => {
-      addUtilities(typography)
+    plugin(({ addComponents }) => {
+      addComponents(typography)
     }),
   ],
 }

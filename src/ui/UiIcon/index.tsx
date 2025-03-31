@@ -63,7 +63,6 @@ function CustomIcon({ name, ...rest }: CustomIconProps) {
         'pointer-events-none flex items-center justify-center',
         rest.className,
       )}
-      aria-hidden='true'
     >
       <use href={`#${name}-icon`} />
     </svg>

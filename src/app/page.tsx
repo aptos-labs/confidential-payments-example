@@ -1,6 +1,4 @@
-import Link from 'next/link'
-
-import { UiButton } from '@/ui/UiButton'
+import HomepageLink from './_components/HomepageLink'
 
 export default async function RootPage() {
   return (
@@ -14,15 +12,15 @@ export default async function RootPage() {
           Confidential Assets
         </span>
 
+        <span className='text-textPrimary typography-h3'>
+          Confidential Assets
+        </span>
+
         <span className='tex-textPrimary typography-subtitle3 md:typography-subtitle1'>
           Bringing innovative solutions to secure your digital world.
         </span>
 
-        <Link href='/sign-in' prefetch>
-          <UiButton className='mt-3 min-w-[200px] bg-textPrimary px-6 py-3 text-backgroundPrimary hover:cursor-pointer'>
-            Begin
-          </UiButton>
-        </Link>
+        <HomepageLink />
       </div>
     </div>
   )

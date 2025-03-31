@@ -192,12 +192,12 @@ export const getModuleMockedTokenAddr = async () => {
   return vec.inner
 }
 
-export const mintTokens = async (account: Account) => {
+export const mintTokens = async (account: Account, amount: bigint) => {
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
       function: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::mint_to`,
-      functionArguments: [10],
+      functionArguments: [amount],
     },
   })
 

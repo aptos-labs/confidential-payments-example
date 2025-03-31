@@ -31,7 +31,7 @@ import {
   transferConfidentialCoin,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
-import { tryCatch } from '@/helpers'
+import { ErrorHandler, tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { authStore } from '@/store/auth'
 import {
@@ -1033,29 +1033,17 @@ export const ConfidentialCoinContextProvider = ({
   > => {
     const amountToDeposit = parseUnits('10', selectedToken.decimals)
 
-    const mintTxReceipt = await mintTokens(selectedAccount)
-    const depositTxReceipt = await depositTo(
-      amountToDeposit,
-      selectedAccount.accountAddress.toString(),
+    const mintTxReceipt = await mintTokens(selectedAccount, amountToDeposit)
+    const [depositTxReceipt, depositError] = await tryCatch(
+      depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
     )
+    if (depositError) {
+      ErrorHandler.processWithoutFeedback(depositError)
+      return [mintTxReceipt]
+    }
 
-    const rolloverTxReceipt = await rolloverAccount()
-
-    const normalizeTxReceipt = await normalizeAccount()
-
-    return [
-      mintTxReceipt,
-      depositTxReceipt,
-      ...rolloverTxReceipt,
-      normalizeTxReceipt,
-    ]
-  }, [
-    depositTo,
-    normalizeAccount,
-    rolloverAccount,
-    selectedAccount,
-    selectedToken.decimals,
-  ])
+    return [mintTxReceipt, depositTxReceipt]
+  }, [depositTo, selectedAccount, selectedToken.decimals])
 
   return (
     <confidentialCoinContext.Provider

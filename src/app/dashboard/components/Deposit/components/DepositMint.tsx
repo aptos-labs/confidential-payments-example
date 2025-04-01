@@ -21,9 +21,14 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     reloadAptBalance,
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
+    perTokenStatuses,
   } = useConfidentialCoinContext()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const currTokenStatus = perTokenStatuses[selectedToken?.address]
+
+  const isRegistered = currTokenStatus?.isRegistered
 
   const {
     data: { moduleMockedTokenAddr },
@@ -71,37 +76,47 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       return
     }
 
-    const [faOnlyBalance] = await getFABalance(
-      selectedAccount,
-      selectedToken.address,
-    )
+    if (isRegistered) {
+      const [faOnlyBalance] = await getFABalance(
+        selectedAccount,
+        selectedToken.address,
+      )
 
-    const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
-      faOnlyBalance?.amount || '0',
-    ).lt(FixedNumber.fromValue(amountToDeposit))
+      const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+        faOnlyBalance?.amount || '0',
+      ).lt(FixedNumber.fromValue(amountToDeposit))
 
-    const [depositTxReceipt, depositError] = await tryCatch(
-      isInsufficientFAOnlyBalance
-        ? depositCoinTo(
-            amountToDeposit,
-            selectedAccount.accountAddress.toString(),
-          )
-        : depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
-    )
-    if (depositError) {
-      ErrorHandler.processWithoutFeedback(depositError)
-      setIsSubmitting(false)
-      return
+      const [depositTxReceipt, depositError] = await tryCatch(
+        isInsufficientFAOnlyBalance
+          ? depositCoinTo(
+              amountToDeposit,
+              selectedAccount.accountAddress.toString(),
+            )
+          : depositTo(
+              amountToDeposit,
+              selectedAccount.accountAddress.toString(),
+            ),
+      )
+      if (depositError) {
+        ErrorHandler.processWithoutFeedback(depositError)
+        setIsSubmitting(false)
+        return
+      }
+
+      addTxHistoryItem({
+        txHash: depositTxReceipt.hash,
+        txType: 'deposit',
+        createdAt: time().timestamp,
+      })
     }
 
-    addTxHistoryItem({
-      txHash: depositTxReceipt.hash,
-      txType: 'deposit',
-      createdAt: time().timestamp,
-    })
-
     await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
-    bus.emit(BusEvents.Success, 'Successfully funded your balance with 1 APT')
+    bus.emit(
+      BusEvents.Success,
+      isRegistered
+        ? 'Successfully funded your balance with 1 APT'
+        : 'Successfully funded your public balance with 1 APT',
+    )
     setIsSubmitting(false)
   }
 

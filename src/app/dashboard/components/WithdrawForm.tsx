@@ -164,8 +164,8 @@ export default function WithdrawForm({
           Withdraw to public balance
         </h4>
         <p className='text-sm text-textSecondary'>
-          After withdrawing from your confidential balance, the funds will
-          appear in your public balance.
+          After withdrawal from your confidential balance, the funds will appear
+          in your public balance.
         </p>
       </div>
 

@@ -2,7 +2,7 @@
 
 import { time } from '@distributedlab/tools'
 import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
-import { formatUnits, parseUnits } from 'ethers'
+import { formatUnits, isHexString, parseUnits } from 'ethers'
 import {
   ComponentProps,
   forwardRef,
@@ -13,9 +13,9 @@ import {
   useRef,
   useState,
 } from 'react'
-import { Control, Controller, useFieldArray } from 'react-hook-form'
+import { Control, useFieldArray } from 'react-hook-form'
 
-import { validateEncryptionKeyHex } from '@/api/modules/aptos'
+import { getEkByAddr } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -23,7 +23,7 @@ import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
-import { ControlledUiInput, UiInput } from '@/ui/UiInput'
+import { ControlledUiInput } from '@/ui/UiInput'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
   UiSheet,
@@ -96,7 +96,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       {
         receiverAddressHex: '',
         amount: '',
-        auditorsEncryptionKeysHex: [] as string[],
+        auditorsAddresses: [] as string[],
       },
       yup =>
         yup.object().shape({
@@ -115,12 +115,23 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             .min(+formatUnits('1', token.decimals))
             .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
             .required('Enter amount'),
-          auditorsEncryptionKeysHex: yup.array().of(
-            yup.string().test('Invalid encryption key', v => {
-              if (!v) return false
+          auditorsAddresses: yup.array().of(
+            yup
+              .string()
+              .test('Invalid address', v => {
+                if (!v) return false
 
-              return validateEncryptionKeyHex(v)
-            }),
+                return isHexString(v)
+              })
+              .test("Auditor's address not exist", async v => {
+                if (!v) return false
+
+                const [ek, ekError] = await tryCatch(
+                  getEkByAddr(v, token.address),
+                )
+                if (ekError) return false
+                return Boolean(ek)
+              }),
           ),
         }),
     )
@@ -169,14 +180,19 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             })
           }
 
+          const auditorsEncryptionKeyHexList = await Promise.all(
+            formData.auditorsAddresses.map(async addr => {
+              return getEkByAddr(addr, token.address)
+            }),
+          )
+
           const [transferTx, transferError] = await tryCatch(
             transfer(
               formData.receiverAddressHex,
               parseUnits(String(formData.amount), token.decimals).toString(),
               {
                 isSyncFirst: true,
-                auditorsEncryptionKeyHexList:
-                  formData.auditorsEncryptionKeysHex,
+                auditorsEncryptionKeyHexList,
               },
             ),
           )
@@ -216,6 +232,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         onSubmit,
         reloadAptBalance,
         rolloverAccount,
+        token.address,
         token.decimals,
         transfer,
       ],
@@ -293,14 +310,14 @@ const AuditorsList = ({
   control: Control<{
     receiverAddressHex: string
     amount: string
-    auditorsEncryptionKeysHex: string[]
+    auditorsAddresses: string[]
   }>
 } & HTMLAttributes<HTMLDivElement>) => {
   const { fields, append, remove } = useFieldArray({
     control: control!,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    name: 'auditorsEncryptionKeysHex',
+    name: 'auditorsAddresses',
   })
 
   const addAuditor = () => {
@@ -329,12 +346,10 @@ const AuditorsList = ({
         {fields.map((field, index) => (
           <div key={field.id} className='flex items-center gap-2'>
             <div className='flex-1'>
-              <Controller
+              <ControlledUiInput
                 control={control}
-                name={`auditorsEncryptionKeysHex.${index}`}
-                render={({ field }) => (
-                  <UiInput {...field} placeholder={`Auditor ${index + 1}`} />
-                )}
+                name={`auditorsAddresses.${index}`}
+                placeholder={`Auditor ${index + 1}`}
               />
             </div>
             <button

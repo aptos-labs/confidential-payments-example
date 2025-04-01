@@ -237,6 +237,13 @@ export const withdrawConfidentialBalance = async (
   return sendAndWaitTx(withdrawTx, account)
 }
 
+export const getEkByAddr = async (addrHex: string, tokenAddress: string) => {
+  return aptos.confidentialCoin.getEncryptionByAddr({
+    accountAddress: AccountAddress.from(addrHex),
+    tokenAddress,
+  })
+}
+
 export const transferConfidentialCoin = async (
   account: Account,
   decryptionKeyHex: string,
@@ -248,11 +255,10 @@ export const transferConfidentialCoin = async (
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
-  const recipientEncryptionKeyHex =
-    await aptos.confidentialCoin.getEncryptionByAddr({
-      accountAddress: AccountAddress.from(recipientAddressHex),
-      tokenAddress,
-    })
+  const recipientEncryptionKeyHex = await getEkByAddr(
+    recipientAddressHex,
+    tokenAddress,
+  )
 
   const transferTx = await aptos.confidentialCoin.transferCoin({
     senderDecryptionKey: decryptionKey,

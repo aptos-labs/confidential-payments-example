@@ -147,3 +147,20 @@
     @apply absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2;
   }
 }
+
+@keyframes slideDown {
+  from {
+    @apply h-0;
+  }
+  to {
+    @apply h-[var(--radix-collapsible-content-height)];
+  }
+}
+@keyframes slideUp {
+  from {
+    @apply h-[var(--radix-collapsible-content-height)];
+  }
+  to {
+    @apply h-0;
+  }
+}

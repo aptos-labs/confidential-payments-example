@@ -10,6 +10,7 @@ import { ErrorHandler, formatBalance } from '@/helpers'
 import { useForm } from '@/hooks'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
+import { UiCollapsible, UiCollapsibleContent } from '@/ui/UiCollapsible'
 import { ControlledUiInput } from '@/ui/UiInput'
 import { UiLabel } from '@/ui/UiLabel'
 import { UiSwitch } from '@/ui/UiSwitch'
@@ -102,14 +103,21 @@ export default function DepositManualForm({
 
   return (
     <form className='flex flex-col gap-3' onSubmit={handleSubmit(submit)}>
-      {isOtherRecipient && (
-        <ControlledUiInput
-          control={control}
-          name='recipient'
-          label='Recipient'
-          placeholder='recipient'
-        />
-      )}
+      <UiCollapsible
+        className='w-full'
+        open={isOtherRecipient}
+        defaultOpen={isOtherRecipient}
+      >
+        <UiCollapsibleContent className='overflow-hidden data-[state=closed]:animate-[slideUp_300ms_ease-out] data-[state=open]:animate-[slideDown_300ms_ease-out]'>
+          <ControlledUiInput
+            control={control}
+            name='recipient'
+            label='Recipient'
+            placeholder='recipient'
+          />
+        </UiCollapsibleContent>
+      </UiCollapsible>
+
       <ControlledUiInput
         control={control}
         name='amount'

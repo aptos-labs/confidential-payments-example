@@ -747,3 +747,9 @@ export const validateKeylessAccount = (
     ? account
     : undefined
 }
+
+export const getTxExplorerUrl = (txHash: string) => {
+  const network = aptos.config.network
+
+  return `https://explorer.aptoslabs.com/txn/${txHash}?network=${network}`
+}

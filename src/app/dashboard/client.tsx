@@ -4,9 +4,8 @@ import {
   ArrowDownIcon,
   ArrowRightIcon,
   ArrowUpIcon,
-  CheckIcon,
-  CopyIcon,
   EditIcon,
+  ExternalLinkIcon,
   FolderOpenIcon,
   FolderSyncIcon,
   HandCoinsIcon,
@@ -15,6 +14,7 @@ import {
   LockIcon,
   UnlockIcon,
 } from 'lucide-react'
+import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import {
   ButtonHTMLAttributes,
@@ -26,6 +26,7 @@ import {
 } from 'react'
 import { useMeasure } from 'react-use'
 
+import { getTxExplorerUrl } from '@/api/modules/aptos'
 import AddTokenForm from '@/app/dashboard/components/AddTokenForm'
 import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard'
 import DashboardHeader from '@/app/dashboard/components/DashboardHeader'
@@ -33,7 +34,6 @@ import TokenInfo from '@/app/dashboard/components/TokenInfo'
 import WithdrawForm from '@/app/dashboard/components/WithdrawForm'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers'
-import { useCopyToClipboard } from '@/hooks'
 import { TxHistoryItem } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
@@ -436,8 +436,6 @@ function TxItem({
     mint: <HandCoinsIcon size={24} className={cn('text-textPrimary')} />,
   }[txType]
 
-  const { isCopied, copy } = useCopyToClipboard()
-
   return (
     <div
       {...rest}
@@ -453,13 +451,13 @@ function TxItem({
         <span className='text-textPrimary'>{message}</span>
       </div>
 
-      <button className='ml-auto p-4' onClick={() => copy(txHash)}>
-        {isCopied ? (
-          <CheckIcon size={18} className={'text-textSecondary'} />
-        ) : (
-          <CopyIcon size={18} className={'text-textSecondary'} />
-        )}
-      </button>
+      <Link
+        href={getTxExplorerUrl(txHash)}
+        target='_blank'
+        className='ml-auto p-4'
+      >
+        <ExternalLinkIcon size={18} className='text-textSecondary' />
+      </Link>
     </div>
   )
 }

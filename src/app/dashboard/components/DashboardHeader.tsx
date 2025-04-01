@@ -87,7 +87,7 @@ export default function DashboardHeader({
         <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
 
         <div className='max-w-[200px] overflow-hidden text-ellipsis'>
-          <span className='w-full whitespace-nowrap uppercase text-textPrimary typography-subtitle4'>
+          <span className='typography-subtitle4 w-full whitespace-nowrap uppercase text-textPrimary'>
             {abbrCenter(selectedAccount.accountAddress.toString())}
           </span>
         </div>
@@ -140,14 +140,14 @@ export default function DashboardHeader({
             <UiSeparator className='my-4' />
 
             <div className='flex flex-col gap-3'>
-              <UiButton
+              {/* <UiButton
                 onClick={() => {
                   setIsAccountsBottomSheet(false)
                   setIsAddAccountBottomSheet(true)
                 }}
               >
                 Add Account
-              </UiButton>
+              </UiButton> */}
 
               {!isMobileDevice && (
                 <UiButton
@@ -214,7 +214,7 @@ function AccountListItem({
       <Avatar name={accountAddress} size={40} />
 
       <button onClick={onSelect} className='overflow-hidden text-ellipsis'>
-        <span className='text-center uppercase text-textPrimary typography-caption2'>
+        <span className='typography-caption2 text-center uppercase text-textPrimary'>
           {accountAddress}
         </span>
       </button>

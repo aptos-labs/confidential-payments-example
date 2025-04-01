@@ -319,12 +319,8 @@ export default function DashboardClient() {
               ))}
             </div>
           ) : (
-            <div className='my-auto flex flex-col items-center gap-4 self-center'>
-              <FolderOpenIcon size={128} className='text-componentDisabled' />
-
-              <span className='typography-subtitle2 text-textSecondary'>
-                No transactions yet.
-              </span>
+            <div className='flex w-full flex-col items-center gap-4 self-center'>
+              <TxEmptyComponent />
             </div>
           )}
         </div>
@@ -464,6 +460,45 @@ function TxItem({
           <CopyIcon size={18} className={'text-textSecondary'} />
         )}
       </button>
+    </div>
+  )
+}
+
+function TxEmptyComponent({
+  className,
+  ...rest
+}: HTMLAttributes<HTMLDivElement>) {
+  return (
+    <div
+      {...rest}
+      className={cn('relative isolate flex w-full flex-col gap-4', className)}
+    >
+      {Array(5)
+        .fill(0)
+        .map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              'flex flex-row items-center gap-4 py-3 opacity-20',
+              className,
+            )}
+          >
+            <div className='size-[48px] rounded-full bg-muted' />
+            <div className='flex flex-1 flex-col gap-2'>
+              <div className='h-4 w-[120px] bg-muted' />
+              <div className='h-4 w-[80px] bg-muted' />
+            </div>
+            <div className='size-6 rounded-full bg-muted' />
+          </div>
+        ))}
+
+      <div className='absolute-center flex flex-col items-center'>
+        <FolderOpenIcon size={128} className='text-componentDisabled' />
+
+        <span className='typography-subtitle2 text-textSecondary'>
+          No transactions yet.
+        </span>
+      </div>
     </div>
   )
 }

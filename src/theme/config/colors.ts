@@ -58,6 +58,10 @@ export const lightPalette = {
   backgroundContainer: '#ffffff',
   backgroundPure: '#ffffff',
 
+  backgroundMaskGradient:
+    'linear-gradient(244.19deg, #000000 1.57%, rgba(102, 102, 102, 0) 99.44%)',
+  gradientEnd: '#FFFFFF',
+
   additionalLayerBorder: '#ffffff',
   additionalPureDark: '#000000',
   additionalInverted: '#ffffff',
@@ -113,6 +117,10 @@ export const darkPalette: BaseTheme = {
   backgroundPrimary: '#111111',
   backgroundContainer: '#272727',
   backgroundPure: '#272727',
+
+  backgroundMaskGradient:
+    'linear-gradient(112.57deg, rgba(0, 0, 0, 0) 0%, #666666 98.71%);',
+  gradientEnd: '#0D0D0D',
 
   additionalLayerBorder: getRgba('#FFFFFF', 0.05),
   additionalPureDark: getRgba('#FFFFFF', 0.1),
@@ -184,6 +192,9 @@ export const colorsScheme: BaseTheme = {
   backgroundPrimary: 'var(--background-primary)',
   backgroundContainer: 'var(--background-container)',
   backgroundPure: 'var(--background-pure)',
+
+  gradientEnd: 'var(--gradient-end)',
+  backgroundMaskGradient: 'var(--background-mask-gradient)',
 
   additionalLayerBorder: 'var(--additional-layer-border)',
   additionalPureDark: 'var(--additional-pure-dark)',

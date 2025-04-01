@@ -1,7 +1,13 @@
 import { Config } from 'tailwindcss'
 import plugin from 'tailwindcss/plugin'
 
-import { colors, cssVars, fontFamily, typography } from './src/theme/config'
+import {
+  colors,
+  cssVars,
+  fontFamily,
+  typography,
+  gradients,
+} from './src/theme/config'
 
 import twAnimatePlugin from 'tailwindcss-animate'
 
@@ -93,6 +99,10 @@ const config: Config = {
 
     plugin(({ addComponents }) => {
       addComponents(typography)
+    }),
+
+    plugin(({ addComponents }) => {
+      addComponents(gradients)
     }),
   ],
 }

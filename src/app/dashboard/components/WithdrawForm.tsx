@@ -53,6 +53,7 @@ export default function WithdrawForm({
       yup.object().shape({
         amount: yup
           .number()
+          .min(+formatUnits('1', token.decimals))
           .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
           .required('Enter amount'),
       }),

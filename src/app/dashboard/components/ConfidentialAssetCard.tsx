@@ -150,15 +150,18 @@ export default function ConfidentialAssetCard({
 
                     <UiTooltipProvider delayDuration={0}>
                       <UiTooltip>
-                        <UiTooltipTrigger className='flex items-center gap-2'>
+                        <div className='flex items-center gap-2'>
                           <span className='typography-caption1 text-textPrimary'>
                             Let's register this token as your private balance
                           </span>
-                          <UiIcon
-                            name='InfoIcon'
-                            className='size-4 text-textPrimary'
-                          />
-                        </UiTooltipTrigger>
+                          <UiTooltipTrigger>
+                            <UiIcon
+                              name='InfoIcon'
+                              className='size-4 text-textPrimary'
+                            />
+                          </UiTooltipTrigger>
+                        </div>
+
                         <UiTooltipContent className='overflow-hidden text-ellipsis'>
                           <span className='typography-caption1 text-textSecondary'>
                             make sure you have anough APT to send transactions,

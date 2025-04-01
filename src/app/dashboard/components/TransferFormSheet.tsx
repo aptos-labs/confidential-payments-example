@@ -112,6 +112,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             .required('Enter receiver'),
           amount: yup
             .number()
+            .min(+formatUnits('1', token.decimals))
             .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
             .required('Enter amount'),
           auditorsEncryptionKeysHex: yup.array().of(

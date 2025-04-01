@@ -3,14 +3,13 @@
 import { time } from '@distributedlab/tools'
 import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
-import { Controller } from 'react-hook-form'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { UiButton } from '@/ui/UiButton'
-import { UiInput } from '@/ui/UiInput'
+import { ControlledUiInput } from '@/ui/UiInput'
 import { UiSeparator } from '@/ui/UiSeparator'
 
 export default function WithdrawForm({
@@ -151,18 +150,22 @@ export default function WithdrawForm({
   return (
     <div className='flex flex-col'>
       <div className='flex flex-col justify-between gap-4'>
-        <Controller
+        <ControlledUiInput
           control={control}
-          name={'amount'}
-          render={({ field }) => (
-            <UiInput
-              {...field}
-              placeholder='Enter amount'
-              type='number'
-              disabled={isFormDisabled}
-            />
-          )}
+          name='amount'
+          placeholder='Enter amount'
+          disabled={isFormDisabled}
         />
+      </div>
+
+      <div className='mt-4 rounded-md bg-componentPrimary p-4'>
+        <h4 className='font-semibold text-textPrimary'>
+          Withdraw to public balance
+        </h4>
+        <p className='text-sm text-textSecondary'>
+          After withdrawing from your confidential balance, the funds will
+          appear in your public balance.
+        </p>
       </div>
 
       <div className='pt-4'>

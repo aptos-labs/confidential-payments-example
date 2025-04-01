@@ -198,7 +198,8 @@ export const mintTokens = async (account: Account, amount: bigint) => {
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
-      function: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::mint_to`,
+      // FIXME: remove hardcoded address when mock token changes
+      function: `0x33c6f1c080cffdb8bc57dbd93bf2e4f10420f729bedb430ffd79c788518e0f86::mock_token::mint_to`,
       functionArguments: [amount],
     },
   })
@@ -208,11 +209,11 @@ export const mintTokens = async (account: Account, amount: bigint) => {
 
 export const mintAptCoin = async (
   account: Account,
-  fundAmount = 1 * 10 ** 8,
+  fundAmount = BigInt(1 * 10 ** 8),
 ) => {
   await aptos.fundAccount({
     accountAddress: account.accountAddress,
-    amount: fundAmount,
+    amount: +fundAmount.toString(),
   })
 }
 

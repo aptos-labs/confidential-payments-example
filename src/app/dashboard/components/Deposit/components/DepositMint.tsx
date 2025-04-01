@@ -1,9 +1,12 @@
+import { time } from '@distributedlab/tools'
 import { APTOS_FA } from '@lukachi/aptos-labs-ts-sdk'
+import { FixedNumber, parseUnits } from 'ethers'
 import { useState } from 'react'
 
-import { getModuleMockedTokenAddr, mintAptCoin } from '@/api/modules/aptos'
+import { getFABalance, mintAptCoin } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { bus, BusEvents, ErrorHandler } from '@/helpers'
+import { config } from '@/config'
+import { bus, BusEvents, ErrorHandler, tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
@@ -12,9 +15,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
     selectedAccount,
     selectedToken,
+    depositTo,
+    depositCoinTo,
     testMintTokens,
     reloadAptBalance,
     loadSelectedDecryptionKeyState,
+    addTxHistoryItem,
   } = useConfidentialCoinContext()
 
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -27,16 +33,17 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       moduleMockedTokenAddr: '',
     },
     async () => {
-      const moduleMockedTokenAddr = await getModuleMockedTokenAddr()
+      // TODO: rollback once mocked token and module token are ready
+      // const moduleMockedTokenAddr = await getModuleMockedTokenAddr()
 
       return {
-        moduleMockedTokenAddr,
+        moduleMockedTokenAddr: config.DEFAULT_TOKEN_ADRESSES[1],
       }
     },
   )
 
   const isCurrTokenIsModuleMockedOne =
-    moduleMockedTokenAddr === selectedToken?.address
+    moduleMockedTokenAddr.toLowerCase() === selectedToken?.address.toLowerCase()
 
   const isAptosFA = selectedToken?.address === APTOS_FA
 
@@ -53,13 +60,48 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
   const tryFundAptBalance = async () => {
     setIsSubmitting(true)
-    try {
-      await mintAptCoin(selectedAccount)
-      await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
-      bus.emit(BusEvents.Success, 'Successfully funded your balance with 1 APT')
-    } catch (error) {
-      ErrorHandler.process(error)
+    const amountToDeposit = parseUnits('1', selectedToken.decimals)
+
+    const [, mintError] = await tryCatch(
+      mintAptCoin(selectedAccount, amountToDeposit),
+    )
+    if (mintError) {
+      ErrorHandler.processWithoutFeedback(mintError)
+      setIsSubmitting(false)
+      return
     }
+
+    const [faOnlyBalance] = await getFABalance(
+      selectedAccount,
+      selectedToken.address,
+    )
+
+    const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+      faOnlyBalance?.amount || '0',
+    ).lt(FixedNumber.fromValue(amountToDeposit))
+
+    const [depositTxReceipt, depositError] = await tryCatch(
+      isInsufficientFAOnlyBalance
+        ? depositCoinTo(
+            amountToDeposit,
+            selectedAccount.accountAddress.toString(),
+          )
+        : depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
+    )
+    if (depositError) {
+      ErrorHandler.processWithoutFeedback(depositError)
+      setIsSubmitting(false)
+      return
+    }
+
+    addTxHistoryItem({
+      txHash: depositTxReceipt.hash,
+      txType: 'deposit',
+      createdAt: time().timestamp,
+    })
+
+    await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
+    bus.emit(BusEvents.Success, 'Successfully funded your balance with 1 APT')
     setIsSubmitting(false)
   }
 

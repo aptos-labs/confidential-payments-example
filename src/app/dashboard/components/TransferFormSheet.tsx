@@ -313,7 +313,7 @@ const AuditorsList = ({
   return (
     <div {...rest} className={cn('flex flex-col gap-2', rest.className)}>
       <div className='flex items-center gap-2'>
-        <span className='uppercase text-textPrimary typography-caption2'>
+        <span className='typography-caption2 uppercase text-textPrimary'>
           Add auditors
         </span>
         <button

@@ -73,7 +73,9 @@ export default function HomepageLink() {
             fill='currentColor'
           />
         </svg>
-        <span className=''>Login with Google</span>
+        <span>
+          {isLoading ? 'Wait... Signing with google' : 'Login with Google'}
+        </span>
       </UiButton>
     </Link>
   )

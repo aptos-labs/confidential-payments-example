@@ -303,7 +303,7 @@ const useEnsureConfidentialRegistered = () => {
       const aptBalance = await getAptBalance(keylessAccount)
 
       if (!aptBalance) {
-        await mintAptCoin(keylessAccount, BigInt(1 * 10 ** 8))
+        await mintAptCoin(keylessAccount, BigInt(10 * 10 ** 8))
       }
 
       await sleep(500)

@@ -17,7 +17,11 @@ export default function HomepageLink() {
   const [isLoading, setIsLoading] = useState(false)
 
   const { getGoogleRequestLoginUrl, loginWithGoogle, loginWithApple } =
-    authStore.useLogin()
+    authStore.useLogin({
+      onSuccess: () => {
+        router.push('/dashboard')
+      },
+    })
 
   const fragmentParams = new URLSearchParams(window.location.hash.substring(1))
   const googleIdToken = fragmentParams.get('id_token')
@@ -45,8 +49,6 @@ export default function HomepageLink() {
         ErrorHandler.process(error)
         router.push('/')
       }
-
-      router.push('/dashboard')
     }
 
     loginWithSocial()

@@ -27,6 +27,7 @@ import {
   validateIdToken,
   validateKeylessAccount,
 } from '@/api/modules/aptos'
+import { sleep, tryCatch } from '@/helpers'
 import { authClient } from '@/lib/auth-client'
 import { walletStore } from '@/store/wallet'
 
@@ -285,11 +286,47 @@ const useEphemeralKeyPair = () => {
   }, [commitEphemeralKeyPair, getEphemeralKeyPair])
 }
 
+const useEnsureConfidentialRegistered = () => {
+  return async (keylessAccount: KeylessAccount) => {
+    if (!keylessAccount?.pepper) throw new Error('No pepper found')
+
+    const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper)
+
+    let attempts = 0
+
+    do {
+      const isConfidentialAccountRegistered =
+        await getIsAccountRegisteredWithToken(keylessAccount)
+
+      if (isConfidentialAccountRegistered) break
+
+      const aptBalance = await getAptBalance(keylessAccount)
+
+      if (!aptBalance) {
+        await mintAptCoin(keylessAccount, BigInt(0.3 * 10 ** 8))
+      }
+
+      await sleep(500)
+
+      await tryCatch(
+        registerConfidentialBalance(
+          keylessAccount,
+          keylessAccountDK.publicKey().toString(),
+        ),
+      )
+
+      attempts++
+      await sleep(500)
+    } while (attempts < 3)
+  }
+}
+
 const useLogin = (opts?: {
   onRequest?: () => void
   onSuccess?: () => void
   onError?: () => void
 }) => {
+  const ensureConfidentialRegistered = useEnsureConfidentialRegistered()
   const ephemeralKeyPair = useEphemeralKeyPair()
   const switchKeylessAccount = useAuthStore(state => state.switchKeylessAccount)
 
@@ -355,25 +392,9 @@ const useLogin = (opts?: {
   const loginWithGoogle = async (idToken: string) => {
     const keylessAccount = await switchKeylessAccount(idToken)
 
-    if (!keylessAccount?.pepper) throw new Error('No pepper found')
+    if (!keylessAccount) throw new Error('Keyless account not derived')
 
-    const keylessAccountDK = decryptionKeyFromPepper(keylessAccount?.pepper)
-
-    const isConfidentialAccountRegistered =
-      await getIsAccountRegisteredWithToken(keylessAccount)
-
-    if (!isConfidentialAccountRegistered) {
-      const aptBalance = await getAptBalance(keylessAccount)
-
-      if (!aptBalance) {
-        await mintAptCoin(keylessAccount, BigInt(0.3 * 10 ** 8))
-      }
-
-      registerConfidentialBalance(
-        keylessAccount,
-        keylessAccountDK.publicKey().toString(),
-      )
-    }
+    await ensureConfidentialRegistered(keylessAccount)
 
     opts?.onSuccess?.()
   }

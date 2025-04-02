@@ -2,9 +2,10 @@
 
 import { time } from '@distributedlab/tools'
 import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
-import { formatUnits, parseUnits } from 'ethers'
+import { FixedNumber, formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
 
+import { getFABalance } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -22,6 +23,8 @@ export default function WithdrawForm({
 }) {
   const {
     selectedAccount,
+    depositTo,
+    depositCoinTo,
     withdrawTo,
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
@@ -32,13 +35,21 @@ export default function WithdrawForm({
 
   const currentTokenStatus = perTokenStatuses[token.address]
 
+  const publicBalanceBN = BigInt(
+    perTokenStatuses[token.address].fungibleAssetBalance || 0,
+  )
+
   const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0)
 
   const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0)
 
-  const amountsSumBN = useMemo(() => {
+  const confidentialAmountsSumBN = useMemo(() => {
     return pendingAmountBN + actualAmountBN
   }, [actualAmountBN, pendingAmountBN])
+
+  const totalBalanceBN = useMemo(() => {
+    return publicBalanceBN + pendingAmountBN + actualAmountBN
+  }, [actualAmountBN, pendingAmountBN, publicBalanceBN])
 
   const {
     isFormDisabled,
@@ -75,7 +86,9 @@ export default function WithdrawForm({
         amount: yup
           .number()
           .min(+formatUnits('1', token.decimals))
-          .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
+          .max(
+            totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0,
+          )
           .required('Enter amount'),
       }),
   )
@@ -90,6 +103,38 @@ export default function WithdrawForm({
         disableForm()
 
         const formAmountBN = parseUnits(String(formData.amount), token.decimals)
+
+        const isConfidentialBalanceEnough =
+          confidentialAmountsSumBN - formAmountBN >= 0
+
+        if (!isConfidentialBalanceEnough) {
+          const amountToDeposit = formAmountBN - confidentialAmountsSumBN
+
+          const [faOnlyBalance] = await getFABalance(
+            selectedAccount,
+            token.address,
+          )
+
+          const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+            faOnlyBalance?.amount || '0',
+          ).lt(FixedNumber.fromValue(amountToDeposit))
+
+          const depositTxReceipt = isInsufficientFAOnlyBalance
+            ? await depositCoinTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              )
+            : await depositTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              )
+
+          addTxHistoryItem({
+            txHash: depositTxReceipt.hash,
+            txType: 'deposit',
+            createdAt: time().timestamp,
+          })
+        }
 
         if (actualAmountBN < formAmountBN) {
           const [rolloverTxs, rolloverError] = await tryCatch(rolloverAccount())
@@ -158,6 +203,9 @@ export default function WithdrawForm({
       actualAmountBN,
       addTxHistoryItem,
       clearForm,
+      confidentialAmountsSumBN,
+      depositCoinTo,
+      depositTo,
       disableForm,
       enableForm,
       handleSubmit,
@@ -165,6 +213,8 @@ export default function WithdrawForm({
       onSubmit,
       reloadAptBalance,
       rolloverAccount,
+      selectedAccount,
+      token.address,
       token.decimals,
       withdrawTo,
     ],

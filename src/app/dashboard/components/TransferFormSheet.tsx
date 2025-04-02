@@ -3,7 +3,7 @@
 
 import { time } from '@distributedlab/tools'
 import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
-import { formatUnits, isHexString, parseUnits } from 'ethers'
+import { FixedNumber, formatUnits, isHexString, parseUnits } from 'ethers'
 import {
   ComponentProps,
   forwardRef,
@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { Control, useFieldArray } from 'react-hook-form'
 
-import { getEkByAddr } from '@/api/modules/aptos'
+import { getEkByAddr, getFABalance } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -73,17 +73,27 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       reloadAptBalance,
       perTokenStatuses,
       rolloverAccount,
+      depositCoinTo,
+      depositTo,
     } = useConfidentialCoinContext()
 
     const currTokenStatus = perTokenStatuses[token.address]
+
+    const publicBalanceBN = BigInt(
+      perTokenStatuses[token.address].fungibleAssetBalance || 0,
+    )
 
     const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0)
 
     const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0)
 
-    const amountsSumBN = useMemo(() => {
+    const confidentialAmountSumBN = useMemo(() => {
       return pendingAmountBN + actualAmountBN
     }, [actualAmountBN, pendingAmountBN])
+
+    const totalBalanceBN = useMemo(() => {
+      return publicBalanceBN + pendingAmountBN + actualAmountBN
+    }, [actualAmountBN, pendingAmountBN, publicBalanceBN])
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
 
@@ -123,7 +133,9 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           amount: yup
             .number()
             .min(+formatUnits('1', token.decimals))
-            .max(amountsSumBN ? +formatUnits(amountsSumBN, token.decimals) : 0)
+            .max(
+              totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0,
+            )
             .required('Enter amount'),
           auditorsAddresses: yup.array().of(
             yup
@@ -160,6 +172,39 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             String(formData.amount),
             token.decimals,
           )
+
+          const isConfidentialBalanceEnough =
+            confidentialAmountSumBN - formAmountBN >= 0
+
+          if (!isConfidentialBalanceEnough) {
+            const amountToDeposit = formAmountBN - confidentialAmountSumBN
+
+            const [faOnlyBalance] = await getFABalance(
+              selectedAccount,
+              token.address,
+            )
+
+            const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+              faOnlyBalance?.amount || '0',
+            ).lt(FixedNumber.fromValue(amountToDeposit))
+
+            const depositTxReceipt = isInsufficientFAOnlyBalance
+              ? await depositCoinTo(
+                  amountToDeposit,
+                  selectedAccount.accountAddress.toString(),
+                )
+              : await depositTo(
+                  amountToDeposit,
+                  selectedAccount.accountAddress.toString(),
+                )
+
+            addTxHistoryItem({
+              txHash: depositTxReceipt.hash,
+              txType: 'deposit',
+              createdAt: time().timestamp,
+            })
+          }
+
           if (actualAmountBN < formAmountBN) {
             const [rolloverTxs, rolloverError] =
               await tryCatch(rolloverAccount())
@@ -235,6 +280,9 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         actualAmountBN,
         addTxHistoryItem,
         clearForm,
+        confidentialAmountSumBN,
+        depositCoinTo,
+        depositTo,
         disableForm,
         enableForm,
         handleSubmit,
@@ -242,6 +290,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         onSubmit,
         reloadAptBalance,
         rolloverAccount,
+        selectedAccount,
         token.address,
         token.decimals,
         transfer,

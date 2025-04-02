@@ -119,6 +119,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         : 'Successfully funded your public balance with 1 APT',
     )
     setIsSubmitting(false)
+    onSubmit?.()
   }
 
   return (

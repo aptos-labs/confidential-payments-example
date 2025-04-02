@@ -1,12 +1,11 @@
 'use client'
 
 import Avatar from 'boring-avatars'
-import { formatUnits } from 'ethers'
 import { Check, Copy } from 'lucide-react'
 import { HTMLAttributes, useMemo, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler } from '@/helpers'
+import { ErrorHandler, formatBalance } from '@/helpers'
 import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -58,8 +57,12 @@ export default function ConfidentialAssetCard({
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const amountsSumBN = useMemo(() => {
-    return BigInt(pendingAmount || 0) + BigInt(actualAmount || 0)
-  }, [actualAmount, pendingAmount])
+    return (
+      BigInt(pendingAmount || 0) +
+      BigInt(actualAmount || 0) +
+      BigInt(perTokenStatuses[token.address].fungibleAssetBalance || 0)
+    )
+  }, [actualAmount, pendingAmount, perTokenStatuses, token.address])
 
   const tryRegister = async () => {
     setIsSubmitting(true)
@@ -131,7 +134,7 @@ export default function ConfidentialAssetCard({
                       <div className='typography-h2 text-textPrimary'>
                         {actualAmount &&
                           pendingAmount &&
-                          formatUnits(amountsSumBN, token.decimals)}
+                          formatBalance(amountsSumBN, token.decimals)}
                       </div>
                       <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
                         {token.symbol}

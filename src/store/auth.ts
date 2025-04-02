@@ -262,6 +262,7 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
 
       partialize: ({ activeAccount, ephemeralKeyPair, ...state }) => ({
         ...state,
+        accounts: state.accounts,
         activeAccount: activeAccount && validateKeylessAccount(activeAccount),
         ephemeralKeyPair:
           ephemeralKeyPair && validateEphemeralKeyPair(ephemeralKeyPair),

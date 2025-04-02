@@ -130,6 +130,16 @@ export default function DashboardHeader({
                   isRemovable={accountsList.length > 1}
                   onRemove={() => removeAccount(el.accountAddress.toString())}
                   onSelect={async () => {
+                    if (
+                      selectedAccount.accountAddress
+                        .toString()
+                        .toLowerCase() ===
+                      el.accountAddress.toString().toLowerCase()
+                    ) {
+                      setIsAccountsBottomSheet(false)
+                      return
+                    }
+
                     await setSelectedAccount(el.accountAddress.toString())
                     setIsAccountsBottomSheet(false)
                   }}
@@ -213,7 +223,11 @@ function AccountListItem({
     >
       <Avatar name={accountAddress} size={40} />
 
-      <button onClick={onSelect} className='overflow-hidden text-ellipsis'>
+      <button
+        type='button'
+        onClick={onSelect}
+        className='overflow-hidden text-ellipsis'
+      >
         <span className='typography-caption2 text-center uppercase text-textPrimary'>
           {accountAddress}
         </span>

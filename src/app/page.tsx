@@ -4,7 +4,7 @@ import HomepageLink from './_components/HomepageLink'
 
 export default async function RootPage() {
   return (
-    <div className='isolate size-full max-w-[100vw] overflow-hidden bg-backgroundPrimary'>
+    <div className='relative isolate size-full max-w-[100vw] overflow-hidden bg-backgroundPrimary'>
       <div className='absolute left-1/2 top-1/2 z-20 flex -translate-x-1/2 -translate-y-1/2 flex-col items-center justify-center gap-4 text-center'>
         <span className='typography-h3 text-textPrimary sm:typography-h2 md:typography-h1'>
           Confidential Assets

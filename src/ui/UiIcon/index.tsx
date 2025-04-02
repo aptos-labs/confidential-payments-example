@@ -12,10 +12,12 @@ import {
   ChevronDownIcon,
   ChevronRightIcon,
   ChevronsUpDownIcon,
+  CircleDollarSignIcon,
   CircleUserIcon,
   CommandIcon,
   CopyIcon,
   CreditCardIcon,
+  EarthIcon,
   EditIcon,
   FolderIcon,
   FolderOpenIcon,
@@ -115,6 +117,8 @@ const LIB_ICONS = {
   UserPlusIcon: UserPlusIcon,
   RefreshCwIcon: RefreshCwIcon,
   WandSparklesIcon: WandSparklesIcon,
+  CircleDollarSignIcon: CircleDollarSignIcon,
+  EarthIcon: EarthIcon,
 }
 
 type LibIconProps = {

@@ -141,7 +141,7 @@ type ConfidentialCoinContextType = {
   decryptionKeyStatusLoadingState: LoadingState
   loadSelectedDecryptionKeyState: () => Promise<void>
 
-  testMintTokens: () => Promise<CommittedTransactionResponse[]>
+  testMintTokens: (amount: string) => Promise<CommittedTransactionResponse[]>
 }
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
@@ -1031,22 +1031,23 @@ export const ConfidentialCoinContextProvider = ({
     [selectedAccount, selectedToken.address],
   )
 
-  const testMintTokens = useCallback(async (): Promise<
-    CommittedTransactionResponse[]
-  > => {
-    const amountToDeposit = parseUnits('10', selectedToken.decimals)
+  const testMintTokens = useCallback(
+    async (mintAmount = '10'): Promise<CommittedTransactionResponse[]> => {
+      const amountToDeposit = parseUnits(mintAmount, selectedToken.decimals)
 
-    const mintTxReceipt = await mintTokens(selectedAccount, amountToDeposit)
-    const [depositTxReceipt, depositError] = await tryCatch(
-      depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
-    )
-    if (depositError) {
-      ErrorHandler.processWithoutFeedback(depositError)
-      return [mintTxReceipt]
-    }
+      const mintTxReceipt = await mintTokens(selectedAccount, amountToDeposit)
+      const [depositTxReceipt, depositError] = await tryCatch(
+        depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
+      )
+      if (depositError) {
+        ErrorHandler.processWithoutFeedback(depositError)
+        return [mintTxReceipt]
+      }
 
-    return [mintTxReceipt, depositTxReceipt]
-  }, [depositTo, selectedAccount, selectedToken.decimals])
+      return [mintTxReceipt, depositTxReceipt]
+    },
+    [depositTo, selectedAccount, selectedToken.decimals],
+  )
 
   return (
     <confidentialCoinContext.Provider

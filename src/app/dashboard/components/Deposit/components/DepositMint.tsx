@@ -11,6 +11,8 @@ import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
 
+const MINT_AMOUNT = 10
+
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
     selectedAccount,
@@ -56,7 +58,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const tryTestMintTokens = async () => {
     setIsSubmitting(true)
     try {
-      await testMintTokens()
+      await testMintTokens(`${MINT_AMOUNT}`)
       onSubmit?.()
     } catch (error) {
       ErrorHandler.process(error)
@@ -66,7 +68,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
   const tryFundAptBalance = async () => {
     setIsSubmitting(true)
-    const amountToDeposit = parseUnits('1', selectedToken.decimals)
+    const amountToDeposit = parseUnits(`${MINT_AMOUNT}`, selectedToken.decimals)
 
     const [, mintError] = await tryCatch(
       mintAptCoin(selectedAccount, amountToDeposit),
@@ -132,17 +134,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         if (isCurrTokenIsModuleMockedOne) {
           return (
             <>
-              <span className='typography-caption2 text-textPrimary'>
-                Mint tokens from the faucet to use within the application.
-                Ensure you have sufficient permissions to access the feature.
-              </span>
-
               <UiButton
                 className='w-full'
                 onClick={tryTestMintTokens}
                 disabled={isSubmitting}
               >
-                Buy
+                Get {MINT_AMOUNT} free {selectedToken?.symbol} tokens!
               </UiButton>
             </>
           )
@@ -151,17 +148,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         if (isAptosFA) {
           return (
             <>
-              <span className='typography-caption2 text-textPrimary'>
-                This is an Aptos Fungible Asset, you can get them in aptos
-                faucets or by trading with other users.
-              </span>
-
               <UiButton
                 className='w-full'
                 onClick={tryFundAptBalance}
                 disabled={isSubmitting}
               >
-                Buy
+                Get {MINT_AMOUNT} free {selectedToken?.symbol} tokens!
               </UiButton>
             </>
           )

@@ -24,7 +24,7 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
           <UiTabsTrigger value='faucet'>
             Buy {selectedToken.symbol}
           </UiTabsTrigger>
-          <UiTabsTrigger value='manual'>Manual</UiTabsTrigger>
+          <UiTabsTrigger value='manual'>Receive from others</UiTabsTrigger>
         </UiTabsList>
         <UiTabsContent value='faucet'>
           <DepositMint onSubmit={onSubmit} />
@@ -61,6 +61,21 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
                 />
               </button>
             </div>
+          </div>
+
+          <div className='mt-4 rounded-md bg-componentPrimary p-4'>
+            <h4 className='font-semibold text-textPrimary'>
+              Send APT to yourself
+            </h4>
+            <p className='text-sm text-textSecondary'>
+              By sending to either the QR code or the address displayed below.
+            </p>
+          </div>
+          <div className='mt-4 rounded-md bg-componentPrimary p-4'>
+            <p className='text-sm text-textSecondary'>
+              Note: This is the blockchain address associated with your Google
+              account in this dapp.
+            </p>
           </div>
         </UiTabsContent>
       </UiTabs>

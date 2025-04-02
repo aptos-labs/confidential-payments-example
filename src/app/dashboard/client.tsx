@@ -237,11 +237,12 @@ export default function DashboardClient() {
           />
         </div>
 
-        <div className='flex w-full flex-row items-center justify-center gap-8'>
+        <div className='flex w-full flex-row items-center justify-center gap-8 self-center md:max-w-[50%]'>
           <CircleButton
+            className='flex-1'
             caption={'Deposit'}
             iconProps={{
-              name: 'ArrowDownIcon',
+              name: 'CircleDollarSignIcon',
             }}
             onClick={() => {
               setIsDepositSheetOpen(true)
@@ -259,9 +260,10 @@ export default function DashboardClient() {
           /> */}
 
           <CircleButton
-            caption={'Withdraw'}
+            className='flex-1 text-errorMain'
+            caption={'Publicly Withdraw'}
             iconProps={{
-              name: 'ArrowUpIcon',
+              name: 'EarthIcon',
             }}
             onClick={() => {
               setIsWithdrawSheetOpen(true)
@@ -270,7 +272,8 @@ export default function DashboardClient() {
           />
 
           <CircleButton
-            caption={'Send'}
+            className='flex-1 text-successMain'
+            caption={'Send Confidentially'}
             iconProps={{
               name: 'ArrowRightIcon',
             }}
@@ -330,7 +333,14 @@ export default function DashboardClient() {
           className={'max-h-[80dvh] overflow-y-scroll md:max-h-none'}
         >
           <UiSheetHeader>
-            <UiSheetTitle>Deposit {selectedToken.name}</UiSheetTitle>
+            <UiSheetTitle className='flex items-center gap-2'>
+              <UiIcon
+                name='CircleDollarSignIcon'
+                size={18}
+                className='text-textPrimary'
+              />
+              Deposit {selectedToken.name}
+            </UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
           <Deposit
@@ -358,7 +368,7 @@ export default function DashboardClient() {
       <UiSheet open={isWithdrawSheetOpen} onOpenChange={setIsWithdrawSheetOpen}>
         <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
           <UiSheetHeader>
-            <UiSheetTitle>Withdraw</UiSheetTitle>
+            <UiSheetTitle>Publicly Withdraw</UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
           <WithdrawForm
@@ -514,7 +524,7 @@ function CircleButton({
     <button
       {...rest}
       className={cn(
-        'flex flex-col items-center gap-2 text-center disabled:opacity-50',
+        'flex flex-col items-center gap-2 text-center text-textSecondary disabled:opacity-50',
         className,
       )}
     >
@@ -524,9 +534,7 @@ function CircleButton({
           className={cn('size-4 text-textPrimary', iconProps.className)}
         />
       </span>
-      <span className='typography-caption3 uppercase text-textSecondary'>
-        {caption}
-      </span>
+      <span className='typography-caption3 uppercase'>{caption}</span>
     </button>
   )
 }

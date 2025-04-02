@@ -129,6 +129,15 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 selectedAccount.accountAddress.toString().toLowerCase()
               )
             })
+            .test('NoReceiverAddr', 'Receiver not found', async v => {
+              if (!v) return false
+
+              const [ek, ekError] = await tryCatch(
+                getEkByAddr(v, token.address),
+              )
+              if (ekError) return false
+              return Boolean(ek)
+            })
             .required('Enter receiver'),
           amount: yup
             .number()
@@ -177,7 +186,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             confidentialAmountSumBN - formAmountBN >= 0
 
           if (!isConfidentialBalanceEnough) {
-            const amountToDeposit = formAmountBN - confidentialAmountSumBN
+            // const amountToDeposit = formAmountBN - confidentialAmountSumBN
+            const amountToDeposit = publicBalanceBN
 
             const [faOnlyBalance] = await getFABalance(
               selectedAccount,
@@ -288,6 +298,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         handleSubmit,
         loadSelectedDecryptionKeyState,
         onSubmit,
+        publicBalanceBN,
         reloadAptBalance,
         rolloverAccount,
         selectedAccount,
@@ -318,7 +329,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
         >
           <UiSheetHeader>
-            <UiSheetTitle>Send</UiSheetTitle>
+            <UiSheetTitle>Send Confidentially</UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
           <div className='flex flex-col'>
@@ -350,7 +361,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 onClick={submit}
                 disabled={isFormDisabled}
               >
-                Send
+                Send privately
               </UiButton>
             </div>
           </div>

@@ -108,7 +108,8 @@ export default function WithdrawForm({
           confidentialAmountsSumBN - formAmountBN >= 0
 
         if (!isConfidentialBalanceEnough) {
-          const amountToDeposit = formAmountBN - confidentialAmountsSumBN
+          // const amountToDeposit = formAmountBN - confidentialAmountsSumBN
+          const amountToDeposit = publicBalanceBN
 
           const [faOnlyBalance] = await getFABalance(
             selectedAccount,
@@ -211,6 +212,7 @@ export default function WithdrawForm({
       handleSubmit,
       loadSelectedDecryptionKeyState,
       onSubmit,
+      publicBalanceBN,
       reloadAptBalance,
       rolloverAccount,
       selectedAccount,
@@ -250,7 +252,7 @@ export default function WithdrawForm({
       <div className='pt-4'>
         <UiSeparator className='mb-4' />
         <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
-          Withdraw
+          Withdraw publicly
         </UiButton>
       </div>
     </div>

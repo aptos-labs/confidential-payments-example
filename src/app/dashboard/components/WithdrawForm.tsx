@@ -22,7 +22,7 @@ export default function WithdrawForm({
 }) {
   const {
     selectedAccount,
-    withdraw,
+    withdrawTo,
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
     reloadAptBalance,
@@ -121,8 +121,9 @@ export default function WithdrawForm({
         }
 
         const [withdrawTx, withdrawError] = await tryCatch(
-          withdraw(
+          withdrawTo(
             parseUnits(String(formData.amount), token.decimals).toString(),
+            formData.recipient,
             {
               isSyncFirst: true,
             },
@@ -165,7 +166,7 @@ export default function WithdrawForm({
       reloadAptBalance,
       rolloverAccount,
       token.decimals,
-      withdraw,
+      withdrawTo,
     ],
   )
 

@@ -121,8 +121,9 @@ type ConfidentialCoinContextType = {
       auditorsEncryptionKeyHexList?: string[]
     },
   ) => Promise<CommittedTransactionResponse>
-  withdraw: (
+  withdrawTo: (
     amount: string,
+    receiver: string,
     opts?: {
       isSyncFirst?: boolean
     },
@@ -182,7 +183,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
   rolloverAccount: async () => [] as CommittedTransactionResponse[],
   transfer: async () => ({}) as CommittedTransactionResponse,
-  withdraw: async () => ({}) as CommittedTransactionResponse,
+  withdrawTo: async () => ({}) as CommittedTransactionResponse,
   depositTo: async () => ({}) as CommittedTransactionResponse,
   depositCoinTo: async () => ({}) as CommittedTransactionResponse,
 
@@ -960,9 +961,10 @@ export const ConfidentialCoinContextProvider = ({
     ],
   )
 
-  const withdraw = useCallback(
+  const withdrawTo = useCallback(
     async (
       amount: string,
+      receiver: string,
       opts?: {
         isSyncFirst?: boolean
       },
@@ -986,6 +988,7 @@ export const ConfidentialCoinContextProvider = ({
 
       return withdrawConfidentialBalance(
         selectedAccount,
+        receiver,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
         amountEncrypted,
@@ -1080,7 +1083,7 @@ export const ConfidentialCoinContextProvider = ({
 
         rolloverAccount,
         transfer,
-        withdraw,
+        withdrawTo,
         depositTo,
         depositCoinTo,
 

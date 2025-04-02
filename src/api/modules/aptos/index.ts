@@ -219,6 +219,7 @@ export const mintAptCoin = async (
 
 export const withdrawConfidentialBalance = async (
   account: Account,
+  receiver: string,
   decryptionKeyHex: string,
   withdrawAmount: bigint,
   encryptedActualBalance: TwistedElGamalCiphertext[],
@@ -228,6 +229,7 @@ export const withdrawConfidentialBalance = async (
 
   const withdrawTx = await aptos.confidentialCoin.withdraw({
     sender: account.accountAddress,
+    to: receiver,
     tokenAddress,
     decryptionKey: decryptionKey,
     encryptedActualBalance,

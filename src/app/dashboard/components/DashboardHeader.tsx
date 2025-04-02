@@ -288,7 +288,7 @@ function AddNewAccountBottomSheet({
         privateKeyHex: yup
           .string()
           .required('Enter private key')
-          .test('The key is not valid', value => {
+          .test('twistedEd25519Key', 'The key is not valid', value => {
             return validatePrivateKeyHex(value)
           }),
       }),

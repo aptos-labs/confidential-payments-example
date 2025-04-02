@@ -1,6 +1,7 @@
 'use client'
 
 import { time } from '@distributedlab/tools'
+import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
 import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
 
@@ -20,6 +21,7 @@ export default function WithdrawForm({
   onSubmit: () => void
 }) {
   const {
+    selectedAccount,
     withdraw,
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
@@ -47,10 +49,29 @@ export default function WithdrawForm({
     setValue,
   } = useForm(
     {
+      recipient: '',
       amount: '',
     },
     yup =>
       yup.object().shape({
+        recipient: yup
+          .string()
+          .required('Enter recipient address')
+          .test('aptAddr', 'Invalid address', v => {
+            if (!v) return false
+
+            return AccountAddress.isValid({
+              input: v,
+            }).valid
+          })
+          .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
+            if (!v) return false
+
+            return (
+              v.toLowerCase() !==
+              selectedAccount.accountAddress.toString().toLowerCase()
+            )
+          }),
         amount: yup
           .number()
           .min(+formatUnits('1', token.decimals))
@@ -151,6 +172,12 @@ export default function WithdrawForm({
   return (
     <div className='flex flex-col'>
       <div className='flex flex-col justify-between gap-4'>
+        <ControlledUiInput
+          control={control}
+          name='recipient'
+          placeholder='Enter recipient address'
+          disabled={isFormDisabled}
+        />
         <ControlledUiInput
           control={control}
           name='amount'

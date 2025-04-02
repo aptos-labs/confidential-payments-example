@@ -42,13 +42,14 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       // const moduleMockedTokenAddr = await getModuleMockedTokenAddr()
 
       return {
-        moduleMockedTokenAddr: config.DEFAULT_TOKEN_ADRESSES[1],
+        moduleMockedTokenAddr: config.DEFAULT_TOKEN_ADRESSES?.[1],
       }
     },
   )
 
   const isCurrTokenIsModuleMockedOne =
-    moduleMockedTokenAddr.toLowerCase() === selectedToken?.address.toLowerCase()
+    moduleMockedTokenAddr?.toLowerCase() ===
+    selectedToken?.address.toLowerCase()
 
   const isAptosFA = selectedToken?.address === APTOS_FA
 

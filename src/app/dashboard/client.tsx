@@ -80,8 +80,6 @@ export default function DashboardClient() {
     loadSelectedDecryptionKeyState,
     decryptionKeyStatusLoadingState,
 
-    txHistory,
-
     reloadAptBalance,
 
     perTokenStatuses,
@@ -250,7 +248,7 @@ export default function DashboardClient() {
             }}
           />
 
-          <CircleButton
+          {/* <CircleButton
             caption={'Token Info'}
             iconProps={{
               name: 'InfoIcon',
@@ -258,7 +256,7 @@ export default function DashboardClient() {
             onClick={() => {
               setIsTokenInfoSheetOpen(true)
             }}
-          />
+          /> */}
 
           <CircleButton
             caption={'Withdraw'}
@@ -306,7 +304,7 @@ export default function DashboardClient() {
           </div>
         )} */}
 
-        <div
+        {/* <div
           className={cn(
             'mt-12 flex w-full flex-1 flex-col p-4',
             'md:mx-auto md:max-w-[500px]',
@@ -323,7 +321,7 @@ export default function DashboardClient() {
               <TxEmptyComponent />
             </div>
           )}
-        </div>
+        </div> */}
       </div>
 
       <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
@@ -400,6 +398,7 @@ export default function DashboardClient() {
   )
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function TxItem({
   createdAt,
   txType,
@@ -462,6 +461,7 @@ function TxItem({
   )
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 function TxEmptyComponent({
   className,
   ...rest

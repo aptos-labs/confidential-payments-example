@@ -1,6 +1,7 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo'
 import { NextResponse } from 'next/server'
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
   // const sessionCookie = getSessionCookie(request, {
   //   // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
@@ -27,6 +28,7 @@ const appGuard = async ({ request }: MiddlewareFunctionProps) => {
   return NextResponse.next()
 }
 
+// eslint-disable-next-line unused-imports/no-unused-vars
 const authGuard = async ({ request }: MiddlewareFunctionProps) => {
   // const sessionCookie = getSessionCookie(request, {
   //   // Optionally pass config if cookie name, prefix or useSecureCookies option is customized in auth config.
@@ -54,9 +56,7 @@ const authGuard = async ({ request }: MiddlewareFunctionProps) => {
 }
 
 const middlewares = {
-  '/dashboard': [appGuard],
-  '/sign-in': [authGuard],
-  '/sign-up': [authGuard],
+  '/dashboard': [],
 }
 
 export const middleware = createMiddleware(middlewares)

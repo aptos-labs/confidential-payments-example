@@ -1,3 +1,4 @@
+/* eslint-disable unused-imports/no-unused-vars */
 'use client'
 
 import { time } from '@distributedlab/tools'
@@ -65,6 +66,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     const isMobileDevice = isMobile()
 
     const {
+      selectedAccount,
       transfer,
       loadSelectedDecryptionKeyState,
       addTxHistoryItem,
@@ -102,12 +104,20 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         yup.object().shape({
           receiverAddressHex: yup
             .string()
-            .test('Invalid address', v => {
+            .test('aptAddr', 'Invalid address', v => {
               if (!v) return false
 
               return AccountAddress.isValid({
                 input: v,
               }).valid
+            })
+            .test('DRYAptAddr', 'You cannot send to yourself', v => {
+              if (!v) return false
+
+              return (
+                v.toLowerCase() !==
+                selectedAccount.accountAddress.toString().toLowerCase()
+              )
             })
             .required('Enter receiver'),
           amount: yup
@@ -118,12 +128,12 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           auditorsAddresses: yup.array().of(
             yup
               .string()
-              .test('Invalid address', v => {
+              .test('aptAddr', 'Invalid address', v => {
                 if (!v) return false
 
                 return isHexString(v)
               })
-              .test("Auditor's address not exist", async v => {
+              .test('audAddr', "Auditor's address not exist", async v => {
                 if (!v) return false
 
                 const [ek, ekError] = await tryCatch(
@@ -259,7 +269,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
         >
           <UiSheetHeader>
-            <UiSheetTitle>Transfer</UiSheetTitle>
+            <UiSheetTitle>Send</UiSheetTitle>
           </UiSheetHeader>
           <UiSeparator className='mb-4 mt-2' />
           <div className='flex flex-col'>
@@ -282,7 +292,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               />
             </div>
 
-            <AuditorsList className='mt-3 flex-1' control={control} />
+            {/* <AuditorsList className='mt-3 flex-1' control={control} /> */}
 
             <div className='mt-auto pt-4'>
               <UiSeparator className='mb-4' />

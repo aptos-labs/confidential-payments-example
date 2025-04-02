@@ -19,7 +19,7 @@ export default function Loading() {
 
         {/* Action buttons skeleton */}
         <div className='flex w-full flex-row items-center justify-center gap-8'>
-          {Array(4)
+          {Array(3)
             .fill(0)
             .map((_, i) => (
               <div key={i} className='flex flex-col items-center gap-2'>
@@ -30,7 +30,7 @@ export default function Loading() {
         </div>
 
         {/* Transaction history skeleton */}
-        <div className='mt-12 flex w-full flex-1 flex-col p-4 md:mx-auto md:max-w-[500px]'>
+        {/* <div className='mt-12 flex w-full flex-1 flex-col p-4 md:mx-auto md:max-w-[500px]'>
           {Array(5)
             .fill(0)
             .map((_, i) => (
@@ -43,7 +43,7 @@ export default function Loading() {
                 <UiSkeleton className='size-6 rounded-full' />
               </div>
             ))}
-        </div>
+        </div> */}
       </div>
     </div>
   )

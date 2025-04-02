@@ -65,7 +65,7 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
 
           <div className='mt-4 rounded-md bg-componentPrimary p-4'>
             <h4 className='font-semibold text-textPrimary'>
-              Send APT to yourself
+              Send {selectedToken?.symbol} to yourself
             </h4>
             <p className='text-sm text-textSecondary'>
               By sending to either the QR code or the address displayed below.

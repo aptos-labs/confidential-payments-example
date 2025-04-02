@@ -22,6 +22,7 @@ export default function WithdrawForm({
   onSubmit: () => void
 }) {
   const {
+    selectedToken,
     selectedAccount,
     depositTo,
     depositCoinTo,
@@ -241,12 +242,9 @@ export default function WithdrawForm({
 
       <div className='mt-4 rounded-md bg-componentPrimary p-4'>
         <h4 className='font-semibold text-textPrimary'>
-          Withdraw to public balance
+          Withdraw {selectedToken?.symbol} to public account
         </h4>
-        <p className='text-sm text-textSecondary'>
-          After withdrawal from your confidential balance, the funds will appear
-          in your public balance.
-        </p>
+        <p className='text-sm text-textSecondary'>By sending to the address.</p>
       </div>
 
       <div className='pt-4'>

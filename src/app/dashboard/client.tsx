@@ -275,7 +275,7 @@ export default function DashboardClient() {
             className='flex-1 text-successMain'
             caption={'Send Confidentially'}
             iconProps={{
-              name: 'ArrowRightIcon',
+              name: 'EarthLockIcon',
             }}
             onClick={() => {
               transferFormSheet.open()

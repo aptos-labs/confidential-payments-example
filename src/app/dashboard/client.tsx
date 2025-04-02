@@ -37,7 +37,6 @@ import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers'
 import { TxHistoryItem } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
-import UiCarousel from '@/ui/UiCarousel'
 import { UiSeparator } from '@/ui/UiSeparator'
 import {
   UiSheet,
@@ -119,7 +118,7 @@ export default function DashboardClient() {
   //   setIsSubmitting(false)
   // }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
 
-  const [carouselWrpRef, { width: carouselWidth }] = useMeasure()
+  const [carouselWrpRef] = useMeasure()
 
   const clearAllParams = useCallback(() => {
     router.replace(`${pathname}?`)
@@ -183,7 +182,28 @@ export default function DashboardClient() {
           ref={carouselWrpRef}
           className='w-full self-center py-6'
         >
-          <UiCarousel
+          {tokens.map((token, idx) => {
+            const currTokenStatuses = perTokenStatuses[token.address]
+
+            return (
+              <ConfidentialAssetCard
+                key={idx}
+                className='w-full'
+                token={token}
+                isLoading={[
+                  decryptionKeyStatusLoadingState,
+                  accountsLoadingState,
+                  tokensLoadingState,
+                ].includes('loading')}
+                pendingAmount={currTokenStatuses.pendingAmount}
+                actualAmount={currTokenStatuses.actualAmount}
+                isNormalized={currTokenStatuses.isNormalized}
+                isFrozen={currTokenStatuses.isFrozen}
+                isRegistered={currTokenStatuses.isRegistered}
+              />
+            )
+          })}
+          {/* <UiCarousel
             baseWidth={carouselWidth}
             items={[
               ...tokens.map((token, idx) => {
@@ -234,7 +254,7 @@ export default function DashboardClient() {
             startIndex={
               tokens.findIndex(el => el.address === selectedToken.address) ?? 0
             }
-          />
+          /> */}
         </div>
 
         <div className='flex w-full flex-row items-center justify-center gap-8 self-center md:max-w-[50%]'>

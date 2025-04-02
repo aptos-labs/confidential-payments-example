@@ -1,7 +1,6 @@
 'use client'
 
 import Avatar from 'boring-avatars'
-import { Check, Copy } from 'lucide-react'
 import { HTMLAttributes, useMemo, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
@@ -115,7 +114,7 @@ export default function ConfidentialAssetCard({
                   {token.name}
                 </span>
 
-                <button
+                {/* <button
                   className='absolute left-full top-1/2 -translate-y-1/2'
                   onClick={() => copy(token.address)}
                 >
@@ -124,7 +123,7 @@ export default function ConfidentialAssetCard({
                   ) : (
                     <Copy size={24} className={'pl-2 text-textSecondary'} />
                   )}
-                </button>
+                </button> */}
               </div>
 
               <div className='flex items-center'>

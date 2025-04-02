@@ -1,4 +1,4 @@
-import { BN } from '@distributedlab/tools'
+import { BN, time } from '@distributedlab/tools'
 import {
   Account,
   AccountAddress,
@@ -651,7 +651,7 @@ export const isValidEphemeralKeyPair = (keyPair: EphemeralKeyPair): boolean => {
  * @param params Additional parameters for the ephemeral key pair
  */
 export const createEphemeralKeyPair = ({
-  expiryDateSecs = Math.floor(Date.now() / 1000) + 24 * 60 * 60,
+  expiryDateSecs = time().add(1, 'day').timestamp,
   privateKey = Ed25519PrivateKey.generate(),
   ...options
 }: Partial<ConstructorParameters<typeof EphemeralKeyPair>[0]> = {}) =>

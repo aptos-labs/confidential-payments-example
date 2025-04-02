@@ -48,7 +48,7 @@ export default function DashboardHeader({
 
   const logout = authStore.useLogout({
     onSuccess: () => {
-      router.push('/sign-in')
+      router.push('/')
     },
   })
 

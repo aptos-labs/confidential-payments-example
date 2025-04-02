@@ -13,11 +13,16 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   aptos,
   createEphemeralKeyPair,
+  decryptionKeyFromPepper,
   deriveEd25519PrivateKey,
   EncryptedScopedIdToken,
   EphemeralKeyPairEncoding,
+  getAptBalance,
+  getIsAccountRegisteredWithToken,
   isValidEphemeralKeyPair,
   KeylessAccountEncoding,
+  mintAptCoin,
+  registerConfidentialBalance,
   validateEphemeralKeyPair,
   validateIdToken,
   validateKeylessAccount,
@@ -334,7 +339,7 @@ const useLogin = (opts?: {
        *
        * window.location.origin == http://localhost:5173
        */
-      redirect_uri: `${window.location.origin}/sign-in`,
+      redirect_uri: `${window.location.origin}`,
       /**
        * This uses the OpenID Connect implicit flow to return an id_token.
        */
@@ -348,36 +353,29 @@ const useLogin = (opts?: {
   }, [ephemeralKeyPair.nonce])
 
   const loginWithGoogle = async (idToken: string) => {
-    await switchKeylessAccount(idToken)
+    const keylessAccount = await switchKeylessAccount(idToken)
 
-    return new Promise((resolve, reject) => {
-      try {
-        authClient.signIn.social(
-          {
-            provider: 'google',
-            idToken: {
-              token: idToken,
-              nonce: ephemeralKeyPair.nonce,
-            },
-          },
-          {
-            onSuccess: ctx => {
-              opts?.onSuccess?.()
-              resolve(ctx.data)
-            },
-            onError: ctxError => {
-              opts?.onError?.()
-              reject(ctxError)
-            },
-            onRequest: () => {
-              opts?.onRequest?.()
-            },
-          },
-        )
-      } catch (error) {
-        reject(error)
+    if (!keylessAccount?.pepper) throw new Error('No pepper found')
+
+    const keylessAccountDK = decryptionKeyFromPepper(keylessAccount?.pepper)
+
+    const isConfidentialAccountRegistered =
+      await getIsAccountRegisteredWithToken(keylessAccount)
+
+    if (!isConfidentialAccountRegistered) {
+      const aptBalance = await getAptBalance(keylessAccount)
+
+      if (!aptBalance) {
+        await mintAptCoin(keylessAccount, BigInt(0.3 * 10 ** 8))
       }
-    })
+
+      registerConfidentialBalance(
+        keylessAccount,
+        keylessAccountDK.publicKey().toString(),
+      )
+    }
+
+    opts?.onSuccess?.()
   }
 
   const getAppleRequestLoginUrl = useMemo(() => {
@@ -393,7 +391,7 @@ const useLogin = (opts?: {
        *
        * window.location.origin == http://localhost:5173
        */
-      redirect_uri: `${window.location.origin}/sign-in`,
+      redirect_uri: `${window.location.origin}`,
       /**
        * This uses the OpenID Connect implicit flow to return an id_token.
        */
@@ -442,7 +440,7 @@ const useLogin = (opts?: {
   return {
     loginWithEmailPassword,
     getGoogleRequestLoginUrl,
-    loginWithGoogle,
+    loginWithGoogle: loginWithGoogle,
     getAppleRequestLoginUrl,
     loginWithApple,
   }
@@ -498,21 +496,9 @@ const useLogout = (opts?: {
   )
 
   return async () => {
-    await authClient.signOut({
-      fetchOptions: {
-        onSuccess: () => {
-          opts?.onSuccess?.()
-          clearAuthStore()
-          clearWalletStore()
-        },
-        onError: () => {
-          opts?.onError?.()
-        },
-        onRequest: () => {
-          opts?.onRequest?.()
-        },
-      },
-    })
+    clearAuthStore()
+    clearWalletStore()
+    opts?.onSuccess?.()
   }
 }
 

@@ -444,7 +444,7 @@ export function NavUser({
   const tryLogout = async () => {
     try {
       await logout()
-      router.push('/sign-in')
+      router.push('/')
     } catch (error) {
       ErrorHandler.process(error)
     }

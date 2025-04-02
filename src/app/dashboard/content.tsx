@@ -65,7 +65,7 @@ export default function DashboardPageContent() {
 function LogoutFallback() {
   const router = useRouter()
   const logout = authStore.useLogout({
-    onSuccess: () => router.push('/sign-in'),
+    onSuccess: () => router.push('/'),
   })
 
   useTimeoutFn(async () => {

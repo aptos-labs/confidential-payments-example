@@ -5,7 +5,7 @@ import { useState } from 'react'
 
 import { getFABalance, mintAptCoin } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { config } from '@/config'
+import { USDC_MOCKED_TOKEN_ADDR } from '@/config'
 import { bus, BusEvents, ErrorHandler, tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
@@ -42,7 +42,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       // const moduleMockedTokenAddr = await getModuleMockedTokenAddr()
 
       return {
-        moduleMockedTokenAddr: config.DEFAULT_TOKEN_ADRESSES?.[1],
+        moduleMockedTokenAddr: USDC_MOCKED_TOKEN_ADDR,
       }
     },
   )

@@ -11,7 +11,7 @@ import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
 
-const MINT_AMOUNT = 10
+const MINT_AMOUNT = 1
 
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
@@ -101,7 +101,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
             ),
       )
       if (depositError) {
-        ErrorHandler.processWithoutFeedback(depositError)
+        ErrorHandler.process(depositError)
         setIsSubmitting(false)
         return
       }

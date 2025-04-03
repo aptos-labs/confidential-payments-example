@@ -3,7 +3,7 @@
 
 import { time } from '@distributedlab/tools'
 import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
-import { FixedNumber, formatUnits, isHexString, parseUnits } from 'ethers'
+import { formatUnits, isHexString, parseUnits } from 'ethers'
 import {
   ComponentProps,
   forwardRef,
@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { Control, useFieldArray } from 'react-hook-form'
 
-import { getEkByAddr, getFABalance } from '@/api/modules/aptos'
+import { getEkByAddr } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -72,24 +72,16 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       addTxHistoryItem,
       reloadAptBalance,
       perTokenStatuses,
-      rolloverAccount,
-      depositCoinTo,
-      depositTo,
+      ensureConfidentialBalanceReadyBeforeOp,
     } = useConfidentialCoinContext()
 
     const currTokenStatus = perTokenStatuses[token.address]
 
-    const publicBalanceBN = BigInt(
-      perTokenStatuses[token.address].fungibleAssetBalance || 0,
-    )
+    const publicBalanceBN = BigInt(currTokenStatus.fungibleAssetBalance || 0)
 
     const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0)
 
     const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0)
-
-    const confidentialAmountSumBN = useMemo(() => {
-      return pendingAmountBN + actualAmountBN
-    }, [actualAmountBN, pendingAmountBN])
 
     const totalBalanceBN = useMemo(() => {
       return publicBalanceBN + pendingAmountBN + actualAmountBN
@@ -177,73 +169,15 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         handleSubmit(async formData => {
           disableForm()
 
-          const formAmountBN = parseUnits(
-            String(formData.amount),
-            token.decimals,
-          )
-
-          const isConfidentialBalanceEnough =
-            confidentialAmountSumBN - formAmountBN >= 0
-
-          if (!isConfidentialBalanceEnough) {
-            // const amountToDeposit = formAmountBN - confidentialAmountSumBN
-            const amountToDeposit = publicBalanceBN
-
-            const [faOnlyBalance] = await getFABalance(
-              selectedAccount,
-              token.address,
-            )
-
-            const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
-              faOnlyBalance?.amount || '0',
-            ).lt(FixedNumber.fromValue(amountToDeposit))
-
-            const depositTxReceipt = isInsufficientFAOnlyBalance
-              ? await depositCoinTo(
-                  amountToDeposit,
-                  selectedAccount.accountAddress.toString(),
-                )
-              : await depositTo(
-                  amountToDeposit,
-                  selectedAccount.accountAddress.toString(),
-                )
-
-            addTxHistoryItem({
-              txHash: depositTxReceipt.hash,
-              txType: 'deposit',
-              createdAt: time().timestamp,
-            })
-          }
-
-          if (actualAmountBN < formAmountBN) {
-            const [rolloverTxs, rolloverError] =
-              await tryCatch(rolloverAccount())
-            if (rolloverError) {
-              ErrorHandler.process(rolloverError)
+          await ensureConfidentialBalanceReadyBeforeOp({
+            amountToEnsure: String(formData.amount),
+            token: token,
+            currentTokenStatus: currTokenStatus,
+            onError: error => {
+              ErrorHandler.process(error)
               enableForm()
-              return
-            }
-
-            rolloverTxs.forEach(el => {
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              if (el.payload.function.includes('rollover')) {
-                addTxHistoryItem({
-                  txHash: el.hash,
-                  txType: 'rollover',
-                  createdAt: time().timestamp,
-                })
-
-                return
-              }
-
-              addTxHistoryItem({
-                txHash: el.hash,
-                txType: 'normalize',
-                createdAt: time().timestamp,
-              })
-            })
-          }
+            },
+          })
 
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
@@ -287,23 +221,17 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           enableForm()
         })(),
       [
-        actualAmountBN,
         addTxHistoryItem,
         clearForm,
-        confidentialAmountSumBN,
-        depositCoinTo,
-        depositTo,
+        currTokenStatus,
         disableForm,
         enableForm,
+        ensureConfidentialBalanceReadyBeforeOp,
         handleSubmit,
         loadSelectedDecryptionKeyState,
         onSubmit,
-        publicBalanceBN,
         reloadAptBalance,
-        rolloverAccount,
-        selectedAccount,
-        token.address,
-        token.decimals,
+        token,
         transfer,
       ],
     )

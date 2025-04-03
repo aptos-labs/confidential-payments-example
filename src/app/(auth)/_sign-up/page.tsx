@@ -1,6 +1,6 @@
 import Image from 'next/image'
 
-import RegisterForm from '@/app/(auth)/sign-up/components/RegisterForm'
+import RegisterForm from '@/app/(auth)/_sign-up/components/RegisterForm'
 import { cn } from '@/theme/utils'
 import { UiCard, UiCardContent } from '@/ui/UiCard'
 

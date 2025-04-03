@@ -5,12 +5,10 @@ import { HTMLAttributes, useMemo, useState } from 'react'
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, formatBalance } from '@/helpers'
-import { useCopyToClipboard } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
 import { UiIcon } from '@/ui'
 import { UiButton } from '@/ui/UiButton'
-import { UiSkeleton } from '@/ui/UiSkeleton'
 import {
   UiTooltip,
   UiTooltipContent,
@@ -24,8 +22,6 @@ export default function ConfidentialAssetCard({
   pendingAmount,
   actualAmount,
 
-  isLoading,
-
   /* eslint-disable unused-imports/no-unused-vars */
   isNormalized,
   isFrozen,
@@ -35,8 +31,6 @@ export default function ConfidentialAssetCard({
 
   ...rest
 }: {
-  isLoading: boolean
-
   token: TokenBaseInfo
 
   pendingAmount: string
@@ -84,37 +78,18 @@ export default function ConfidentialAssetCard({
     setIsSubmitting(false)
   }
 
-  const { copy, isCopied } = useCopyToClipboard()
-
   return (
     <div {...rest} className={cn('relative overflow-hidden', className)}>
-      {isLoading ? (
-        <div className={cn('relative isolate')}>
-          <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
-            <div className='relative flex items-center gap-2'>
-              <UiSkeleton className='size-5 rounded-full' />
-              <UiSkeleton className='h-3 w-32' />
-              <UiSkeleton className='size-6' />
-            </div>
+      <div className={cn('relative isolate')}>
+        <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
+          <div className='relative flex items-center gap-2'>
+            <Avatar name={token.address} size={20} variant='pixel' />
 
-            <div className='flex items-end gap-1'>
-              <UiSkeleton className='h-16 w-24' />
-              <UiSkeleton className='h-8 w-12' />
-            </div>
-          </div>
-        </div>
-      ) : (
-        <>
-          <div className={cn('relative isolate')}>
-            <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
-              <div className='relative flex items-center gap-2'>
-                <Avatar name={token.address} size={20} variant='pixel' />
+            <span className='typography-subtitle1 text-textPrimary'>
+              {token.name}
+            </span>
 
-                <span className='typography-subtitle1 text-textPrimary'>
-                  {token.name}
-                </span>
-
-                {/* <button
+            {/* <button
                   className='absolute left-full top-1/2 -translate-y-1/2'
                   onClick={() => copy(token.address)}
                 >
@@ -124,61 +99,59 @@ export default function ConfidentialAssetCard({
                     <Copy size={24} className={'pl-2 text-textSecondary'} />
                   )}
                 </button> */}
-              </div>
-
-              <div className='flex items-center'>
-                {isRegistered ? (
-                  <>
-                    <div className='flex items-end gap-1'>
-                      <div className='typography-h2 text-textPrimary'>
-                        {actualAmount &&
-                          pendingAmount &&
-                          formatBalance(amountsSumBN, token.decimals)}
-                      </div>
-                      <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
-                        {token.symbol}
-                      </span>
-                    </div>
-                  </>
-                ) : (
-                  <div className='flex flex-col items-center gap-2'>
-                    <UiButton
-                      className='min-w-[300px]'
-                      onClick={tryRegister}
-                      disabled={isSubmitting}
-                    >
-                      Start
-                    </UiButton>
-
-                    <UiTooltipProvider delayDuration={0}>
-                      <UiTooltip>
-                        <div className='flex items-center gap-2'>
-                          <span className='typography-caption1 text-textPrimary'>
-                            Let's register this token as your private balance
-                          </span>
-                          <UiTooltipTrigger>
-                            <UiIcon
-                              name='InfoIcon'
-                              className='size-4 text-textPrimary'
-                            />
-                          </UiTooltipTrigger>
-                        </div>
-
-                        <UiTooltipContent className='overflow-hidden text-ellipsis'>
-                          <span className='typography-caption1 text-textSecondary'>
-                            make sure you have anough APT to send transactions,
-                            or you can buy some in deposit modal
-                          </span>
-                        </UiTooltipContent>
-                      </UiTooltip>
-                    </UiTooltipProvider>
-                  </div>
-                )}
-              </div>
-            </div>
           </div>
-        </>
-      )}
+
+          <div className='flex items-center'>
+            {isRegistered ? (
+              <>
+                <div className='flex items-end gap-1'>
+                  <div className='typography-h2 text-textPrimary'>
+                    {actualAmount &&
+                      pendingAmount &&
+                      formatBalance(amountsSumBN, token.decimals)}
+                  </div>
+                  <span className='typography-subtitle2 -translate-y-[7px] text-textSecondary'>
+                    {token.symbol}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <div className='flex flex-col items-center gap-2'>
+                <UiButton
+                  className='min-w-[300px]'
+                  onClick={tryRegister}
+                  disabled={isSubmitting}
+                >
+                  Start
+                </UiButton>
+
+                <UiTooltipProvider delayDuration={0}>
+                  <UiTooltip>
+                    <div className='flex items-center gap-2'>
+                      <span className='typography-caption1 text-textPrimary'>
+                        Let's register this token as your private balance
+                      </span>
+                      <UiTooltipTrigger>
+                        <UiIcon
+                          name='InfoIcon'
+                          className='size-4 text-textPrimary'
+                        />
+                      </UiTooltipTrigger>
+                    </div>
+
+                    <UiTooltipContent className='overflow-hidden text-ellipsis'>
+                      <span className='typography-caption1 text-textSecondary'>
+                        make sure you have anough APT to send transactions, or
+                        you can buy some in deposit modal
+                      </span>
+                    </UiTooltipContent>
+                  </UiTooltip>
+                </UiTooltipProvider>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
     </div>
   )
 }

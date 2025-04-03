@@ -45,6 +45,7 @@ import {
   UiSheetTitle,
 } from '@/ui/UiSheet'
 
+import ConfidentialAssetCardLoader from './components/ConfidentialAssetCardLoader'
 import Deposit from './components/Deposit'
 import {
   TransferFormSheet,
@@ -84,6 +85,12 @@ export default function DashboardClient() {
     perTokenStatuses,
     tokens,
   } = useConfidentialCoinContext()
+
+  const isLoading = [
+    decryptionKeyStatusLoadingState,
+    accountsLoadingState,
+    tokensLoadingState,
+  ].includes('loading')
 
   const isActionsDisabled =
     !selectedAccountDecryptionKeyStatus.isRegistered || isSubmitting
@@ -182,27 +189,29 @@ export default function DashboardClient() {
           ref={carouselWrpRef}
           className='w-full self-center py-6'
         >
-          {tokens.map((token, idx) => {
-            const currTokenStatuses = perTokenStatuses[token.address]
+          {(() => {
+            if (isLoading) {
+              return <ConfidentialAssetCardLoader />
+            }
 
-            return (
-              <ConfidentialAssetCard
-                key={idx}
-                className='w-full'
-                token={token}
-                isLoading={[
-                  decryptionKeyStatusLoadingState,
-                  accountsLoadingState,
-                  tokensLoadingState,
-                ].includes('loading')}
-                pendingAmount={currTokenStatuses.pendingAmount}
-                actualAmount={currTokenStatuses.actualAmount}
-                isNormalized={currTokenStatuses.isNormalized}
-                isFrozen={currTokenStatuses.isFrozen}
-                isRegistered={currTokenStatuses.isRegistered}
-              />
-            )
-          })}
+            return tokens.map((token, idx) => {
+              const currTokenStatuses = perTokenStatuses[token.address]
+
+              return (
+                <ConfidentialAssetCard
+                  key={idx}
+                  className='w-full'
+                  token={token}
+                  pendingAmount={currTokenStatuses.pendingAmount}
+                  actualAmount={currTokenStatuses.actualAmount}
+                  isNormalized={currTokenStatuses.isNormalized}
+                  isFrozen={currTokenStatuses.isFrozen}
+                  isRegistered={currTokenStatuses.isRegistered}
+                />
+              )
+            })
+          })()}
+
           {/* <UiCarousel
             baseWidth={carouselWidth}
             items={[

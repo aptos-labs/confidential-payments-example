@@ -1,7 +1,7 @@
 import Image from 'next/image'
 import { Suspense } from 'react'
 
-import LoginForm from '@/app/(auth)/sign-in/components/LoginForm'
+import LoginForm from '@/app/(auth)/_sign-in/components/LoginForm'
 import { cn } from '@/theme/utils'
 import { UiCard, UiCardContent } from '@/ui/UiCard'
 

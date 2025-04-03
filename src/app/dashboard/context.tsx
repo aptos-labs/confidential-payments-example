@@ -1,13 +1,14 @@
 'use client'
 
 import { config } from '@config'
+import { time } from '@distributedlab/tools'
 import {
   Account,
   CommittedTransactionResponse,
   ConfidentialAmount,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
-import { parseUnits } from 'ethers'
+import { FixedNumber, parseUnits } from 'ethers'
 import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
@@ -23,6 +24,7 @@ import {
   getIsAccountRegisteredWithToken,
   getIsBalanceFrozen,
   getIsBalanceNormalized,
+  mintAptCoin,
   mintTokens,
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
@@ -142,6 +144,12 @@ type ConfidentialCoinContextType = {
   loadSelectedDecryptionKeyState: () => Promise<void>
 
   testMintTokens: (amount: string) => Promise<CommittedTransactionResponse[]>
+  ensureConfidentialBalanceReadyBeforeOp: (args: {
+    amountToEnsure: string
+    token: TokenBaseInfo
+    currentTokenStatus: AccountDecryptionKeyStatus
+    onError: (error: Error) => void
+  }) => Promise<void>
 }
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
@@ -191,6 +199,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   loadSelectedDecryptionKeyState: async () => {},
 
   testMintTokens: async () => [] as CommittedTransactionResponse[],
+  ensureConfidentialBalanceReadyBeforeOp: async () => {},
 })
 
 export const useConfidentialCoinContext = () => {
@@ -245,7 +254,7 @@ const useAccounts = () => {
         rawKeylessAccounts.map(async el => {
           const derivedKeylessAccountData = await authStore.useAuthStore
             .getState()
-            .deriveKeylessAccount(el.idToken.raw) // TODO: tokens addresses?
+            .deriveKeylessAccount(el.idToken.raw) // TODO: tokens addresses? persist this
 
           const derivedAccount = derivedKeylessAccountData.derivedAccount
 
@@ -1049,6 +1058,120 @@ export const ConfidentialCoinContextProvider = ({
     [depositTo, selectedAccount, selectedToken.decimals],
   )
 
+  /**
+   * Ensures that the confidential balance is ready before performing an operation.
+   *
+   * 1. Checks if the confidential balance is enough for the operation
+   * 2. Implement "emulating-a-fee-payer-via-devnet-faucet" logic
+   * 3. Deposit whole public balance except the fee, that was emulated
+   * 4. Rollover the account if there is not enough "actual" amount in user's balance
+   */
+  const ensureConfidentialBalanceReadyBeforeOp = useCallback<
+    ConfidentialCoinContextType['ensureConfidentialBalanceReadyBeforeOp']
+  >(
+    async args => {
+      const publicBalanceBN = BigInt(
+        perTokenStatuses[args.token.address].fungibleAssetBalance || 0,
+      )
+
+      const pendingAmountBN = BigInt(args.currentTokenStatus.pendingAmount || 0)
+
+      const actualAmountBN = BigInt(args.currentTokenStatus?.actualAmount || 0)
+
+      const confidentialAmountsSumBN = pendingAmountBN + actualAmountBN
+
+      const formAmountBN = parseUnits(args.amountToEnsure, args.token.decimals)
+
+      const isConfidentialBalanceEnough =
+        confidentialAmountsSumBN - formAmountBN >= 0
+
+      if (!isConfidentialBalanceEnough) {
+        // const amountToDeposit = formAmountBN - confidentialAmountsSumBN
+        const amountToDeposit = publicBalanceBN
+
+        /* emulating-a-fee-payer-via-devnet-faucet */
+        const [, mintError] = await tryCatch(
+          mintAptCoin(selectedAccount, parseUnits('0.3', args.token.decimals)),
+        )
+        if (mintError) {
+          args.onError(mintError)
+          return
+        }
+
+        const [faOnlyBalanceResponse, getFAError] = await tryCatch(
+          getFABalance(selectedAccount, args.token.address),
+        )
+        if (getFAError) {
+          args.onError(getFAError)
+          return
+        }
+        const [faOnlyBalance] = faOnlyBalanceResponse
+
+        const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+          faOnlyBalance?.amount || '0',
+        ).lt(FixedNumber.fromValue(amountToDeposit))
+
+        const [depositTxReceipt, depositError] = await tryCatch(
+          isInsufficientFAOnlyBalance
+            ? depositCoinTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              )
+            : depositTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              ),
+        )
+        if (depositError) {
+          args.onError(depositError)
+          return
+        }
+
+        addTxHistoryItem({
+          txHash: depositTxReceipt.hash,
+          txType: 'deposit',
+          createdAt: time().timestamp,
+        })
+      }
+
+      if (actualAmountBN < formAmountBN) {
+        const [rolloverTxs, rolloverError] = await tryCatch(rolloverAccount())
+        if (rolloverError) {
+          args.onError(rolloverError)
+          return
+        }
+
+        rolloverTxs.forEach(el => {
+          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+          // @ts-ignore
+          if (el.payload.function.includes('rollover')) {
+            addTxHistoryItem({
+              txHash: el.hash,
+              txType: 'rollover',
+              createdAt: time().timestamp,
+            })
+
+            return
+          }
+
+          addTxHistoryItem({
+            txHash: el.hash,
+            txType: 'normalize',
+            createdAt: time().timestamp,
+          })
+        })
+      }
+    },
+    [
+      addTxHistoryItem,
+      depositCoinTo,
+      depositTo,
+      perTokenStatuses,
+      rolloverAccount,
+      selectedAccount,
+    ],
+  )
+
   return (
     <confidentialCoinContext.Provider
       value={{
@@ -1093,6 +1216,7 @@ export const ConfidentialCoinContextProvider = ({
         loadSelectedDecryptionKeyState,
 
         testMintTokens,
+        ensureConfidentialBalanceReadyBeforeOp,
       }}
     >
       {children}

@@ -120,7 +120,7 @@ export default function RegisterFormContent() {
         />
 
         {authError && (
-          <p className='self-center text-balance text-errorMain typography-caption3'>
+          <p className='typography-caption3 self-center text-balance text-errorMain'>
             {authError?.message}
           </p>
         )}

@@ -5,7 +5,7 @@ import dynamic from 'next/dynamic'
 import { UiSkeleton } from '@/ui/UiSkeleton'
 
 const LoginFormContent = dynamic(
-  () => import('@/app/(auth)/sign-in/components/LoginFormContent'),
+  () => import('@/app/(auth)/_sign-in/components/LoginFormContent'),
   {
     ssr: false,
     loading: () => (

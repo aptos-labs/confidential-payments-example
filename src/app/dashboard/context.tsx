@@ -6,6 +6,7 @@ import {
   Account,
   CommittedTransactionResponse,
   ConfidentialAmount,
+  KeylessAccount,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
 import { FixedNumber, parseUnits } from 'ethers'
@@ -90,7 +91,7 @@ type KeylessAccountPublic = {
 type ConfidentialCoinContextType = {
   accountsList: (Account | KeylessAccountPublic)[]
 
-  selectedAccount: Account
+  selectedAccount: Account | KeylessAccount
 
   accountsLoadingState: LoadingState
 

@@ -3,6 +3,7 @@
 import { BN, time } from '@distributedlab/tools'
 import { Account } from '@lukachi/aptos-labs-ts-sdk'
 import Avatar from 'boring-avatars'
+import { jwtDecode } from 'jwt-decode'
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'
 import Image from 'next/image'
 import { useRouter } from 'next/navigation'
@@ -10,6 +11,7 @@ import {
   type ComponentProps,
   HTMLAttributes,
   useCallback,
+  useMemo,
   useState,
 } from 'react'
 import { Controller } from 'react-hook-form'
@@ -40,6 +42,7 @@ import {
   UiSheetHeader,
   UiSheetTitle,
 } from '@/ui/UiSheet'
+import UiThemeSwitcher from '@/ui/UiThemeSwitcher'
 
 export default function DashboardHeader({
   className,
@@ -67,6 +70,25 @@ export default function DashboardHeader({
   const [isTransferNativeBottomSheet, setIsTransferNativeBottomSheet] =
     useState(false)
 
+  const keylessPubAcc = useMemo(() => {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (!selectedAccount.jwt) return
+
+    const decodedJwt = jwtDecode<{
+      name: string
+      picture: string
+
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      // @ts-ignore
+    }>(selectedAccount.jwt)
+
+    return {
+      name: decodedJwt.name,
+      avatarUrl: decodedJwt.picture,
+    }
+  }, [selectedAccount])
+
   const handleAddNewAccount = useCallback(
     (privateKeyHex: string) => {
       addNewAccount(privateKeyHex)
@@ -81,21 +103,63 @@ export default function DashboardHeader({
   }, [])
 
   return (
-    <div {...rest} className={cn('flex w-full items-center', className)}>
-      <button
-        className='mr-auto flex flex-row items-center gap-2'
-        onClick={() => setIsAccountsBottomSheet(true)}
-      >
-        <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
+    <div {...rest} className={cn('flex items-center', className)}>
+      <UiDropdownMenu>
+        <UiDropdownMenuTrigger asChild>
+          <button className='flex flex-row items-center gap-2'>
+            {keylessPubAcc ? (
+              <Image
+                src={keylessPubAcc.avatarUrl}
+                alt={keylessPubAcc.name}
+                width={24}
+                height={24}
+                className='rounded-full'
+              />
+            ) : (
+              <Avatar
+                name={selectedAccount.accountAddress.toString()}
+                size={24}
+              />
+            )}
 
-        <div className='max-w-[200px] overflow-hidden text-ellipsis'>
-          <span className='typography-subtitle4 w-full whitespace-nowrap uppercase text-textPrimary'>
-            {abbrCenter(selectedAccount.accountAddress.toString())}
-          </span>
-        </div>
+            <div className='max-w-[200px] overflow-hidden text-ellipsis'>
+              <span
+                className={cn(
+                  'typography-subtitle4 w-full whitespace-nowrap text-textPrimary',
+                  !keylessPubAcc && 'uppercase',
+                )}
+              >
+                {keylessPubAcc
+                  ? keylessPubAcc.name
+                  : abbrCenter(selectedAccount.accountAddress.toString())}
+              </span>
+            </div>
 
-        <UiIcon name='ChevronsUpDownIcon' className='size-4 text-textPrimary' />
-      </button>
+            <UiIcon
+              name='ChevronDownIcon'
+              className='hidden size-4 text-textPrimary md:block'
+            />
+            <UiIcon
+              name='ChevronUpIcon'
+              className='block size-4 text-textPrimary md:hidden'
+            />
+          </button>
+        </UiDropdownMenuTrigger>
+        <UiDropdownMenuContent>
+          <UiDropdownMenuItem>
+            <div className='mx-auto'>
+              <UiThemeSwitcher />
+            </div>
+          </UiDropdownMenuItem>
+          <UiDropdownMenuItem onClick={logout}>
+            Logout
+            <UiIcon
+              name='LogOutIcon'
+              className='ml-auto size-4 -scale-x-100 text-errorMain'
+            />
+          </UiDropdownMenuItem>
+        </UiDropdownMenuContent>
+      </UiDropdownMenu>
 
       <UiSheet
         open={isAccountsBottomSheet}

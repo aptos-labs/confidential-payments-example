@@ -176,43 +176,44 @@ export default function DashboardClient() {
   ])
 
   return (
-    <div className='size-full'>
-      <header className='flex h-16 shrink-0 items-center gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12'>
-        <DashboardHeader className='' />
+    <div className='flex size-full flex-col'>
+      <header className='order-2 flex h-16 shrink-0 items-center justify-end gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:order-1'>
+        <DashboardHeader />
       </header>
-      <UiSeparator />
-      <div className='flex size-full flex-1 flex-col'>
-        <div
-          key={tokens.length}
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          ref={carouselWrpRef}
-          className='w-full self-center py-6'
-        >
-          {(() => {
-            if (isLoading) {
-              return <ConfidentialAssetCardLoader />
-            }
+      <div className='order-1 flex flex-1 flex-col md:order-2'>
+        <UiSeparator />
+        <div className='flex size-full flex-1 flex-col'>
+          <div
+            key={tokens.length}
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore
+            ref={carouselWrpRef}
+            className='w-full self-center py-6'
+          >
+            {(() => {
+              if (isLoading) {
+                return <ConfidentialAssetCardLoader />
+              }
 
-            return tokens.map((token, idx) => {
-              const currTokenStatuses = perTokenStatuses[token.address]
+              return tokens.map((token, idx) => {
+                const currTokenStatuses = perTokenStatuses[token.address]
 
-              return (
-                <ConfidentialAssetCard
-                  key={idx}
-                  className='w-full'
-                  token={token}
-                  pendingAmount={currTokenStatuses.pendingAmount}
-                  actualAmount={currTokenStatuses.actualAmount}
-                  isNormalized={currTokenStatuses.isNormalized}
-                  isFrozen={currTokenStatuses.isFrozen}
-                  isRegistered={currTokenStatuses.isRegistered}
-                />
-              )
-            })
-          })()}
+                return (
+                  <ConfidentialAssetCard
+                    key={idx}
+                    className='w-full'
+                    token={token}
+                    pendingAmount={currTokenStatuses.pendingAmount}
+                    actualAmount={currTokenStatuses.actualAmount}
+                    isNormalized={currTokenStatuses.isNormalized}
+                    isFrozen={currTokenStatuses.isFrozen}
+                    isRegistered={currTokenStatuses.isRegistered}
+                  />
+                )
+              })
+            })()}
 
-          {/* <UiCarousel
+            {/* <UiCarousel
             baseWidth={carouselWidth}
             items={[
               ...tokens.map((token, idx) => {
@@ -264,21 +265,21 @@ export default function DashboardClient() {
               tokens.findIndex(el => el.address === selectedToken.address) ?? 0
             }
           /> */}
-        </div>
+          </div>
 
-        <div className='flex w-full flex-row items-center justify-center gap-8 self-center md:max-w-[50%]'>
-          <CircleButton
-            className='flex-1'
-            caption={'Deposit'}
-            iconProps={{
-              name: 'CircleDollarSignIcon',
-            }}
-            onClick={() => {
-              setIsDepositSheetOpen(true)
-            }}
-          />
+          <div className='flex w-full flex-row items-center justify-center gap-8 self-center px-4 md:max-w-[50%]'>
+            <CircleButton
+              className='flex-1'
+              caption={'Deposit'}
+              iconProps={{
+                name: 'CircleDollarSignIcon',
+              }}
+              onClick={() => {
+                setIsDepositSheetOpen(true)
+              }}
+            />
 
-          {/* <CircleButton
+            {/* <CircleButton
             caption={'Token Info'}
             iconProps={{
               name: 'InfoIcon',
@@ -288,32 +289,32 @@ export default function DashboardClient() {
             }}
           /> */}
 
-          <CircleButton
-            className='flex-1 text-errorMain'
-            caption={'Publicly Withdraw'}
-            iconProps={{
-              name: 'EarthIcon',
-            }}
-            onClick={() => {
-              setIsWithdrawSheetOpen(true)
-            }}
-            disabled={isActionsDisabled}
-          />
+            <CircleButton
+              className='flex-1 text-errorMain'
+              caption={'Publicly Withdraw'}
+              iconProps={{
+                name: 'EarthIcon',
+              }}
+              onClick={() => {
+                setIsWithdrawSheetOpen(true)
+              }}
+              disabled={isActionsDisabled}
+            />
 
-          <CircleButton
-            className='flex-1 text-successMain'
-            caption={'Send Confidentially'}
-            iconProps={{
-              name: 'EarthLockIcon',
-            }}
-            onClick={() => {
-              transferFormSheet.open()
-            }}
-            disabled={isActionsDisabled}
-          />
-        </div>
+            <CircleButton
+              className='flex-1 text-successMain'
+              caption={'Send Confidentially'}
+              iconProps={{
+                name: 'EarthLockIcon',
+              }}
+              onClick={() => {
+                transferFormSheet.open()
+              }}
+              disabled={isActionsDisabled}
+            />
+          </div>
 
-        {/* {[decryptionKeyStatusLoadingState, accountsLoadingState, tokensLoadingState].every(
+          {/* {[decryptionKeyStatusLoadingState, accountsLoadingState, tokensLoadingState].every(
           el => el === 'success',
         ) && (
           <div className='flex flex-col gap-4 p-4'>
@@ -336,7 +337,7 @@ export default function DashboardClient() {
           </div>
         )} */}
 
-        {/* <div
+          {/* <div
           className={cn(
             'mt-12 flex w-full flex-1 flex-col p-4',
             'md:mx-auto md:max-w-[500px]',
@@ -354,85 +355,92 @@ export default function DashboardClient() {
             </div>
           )}
         </div> */}
+        </div>
+
+        <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
+          <UiSheetContent
+            side={isMobileDevice ? 'bottom' : 'right'}
+            className={'max-h-[80dvh] overflow-y-scroll md:max-h-none'}
+          >
+            <UiSheetHeader>
+              <UiSheetTitle className='flex items-center gap-2'>
+                <UiIcon
+                  name='CircleDollarSignIcon'
+                  size={18}
+                  className='text-textPrimary'
+                />
+                Deposit {selectedToken.name}
+              </UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <Deposit
+              onSubmit={() => {
+                setIsDepositSheetOpen(false)
+                tryRefresh()
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
+        <UiSheet
+          open={isTokenInfoSheetOpen}
+          onOpenChange={setIsTokenInfoSheetOpen}
+        >
+          <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
+            <UiSheetHeader>
+              <UiSheetTitle>Token Info</UiSheetTitle>
+            </UiSheetHeader>
+
+            <UiSeparator className='mb-4 mt-2' />
+
+            <TokenInfo token={selectedToken} />
+          </UiSheetContent>
+        </UiSheet>
+        <UiSheet
+          open={isWithdrawSheetOpen}
+          onOpenChange={setIsWithdrawSheetOpen}
+        >
+          <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
+            <UiSheetHeader>
+              <UiSheetTitle>Publicly Withdraw</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <WithdrawForm
+              token={selectedToken}
+              onSubmit={() => {
+                setIsWithdrawSheetOpen(false)
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
+
+        <TransferFormSheet
+          ref={transferFormSheet.ref}
+          token={selectedToken}
+          onSubmit={() => {
+            transferFormSheet.close()
+          }}
+        />
+
+        <UiSheet
+          open={isAddTokenSheetOpen}
+          onOpenChange={setIsAddTokenSheetOpen}
+        >
+          <UiSheetContent
+            side={isMobileDevice ? 'bottom' : 'right'}
+            className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
+          >
+            <UiSheetHeader>
+              <UiSheetTitle>Add Token</UiSheetTitle>
+            </UiSheetHeader>
+            <UiSeparator className='mb-4 mt-2' />
+            <AddTokenForm
+              onSubmit={() => {
+                setIsAddTokenSheetOpen(false)
+              }}
+            />
+          </UiSheetContent>
+        </UiSheet>
       </div>
-
-      <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
-        <UiSheetContent
-          side={isMobileDevice ? 'bottom' : 'right'}
-          className={'max-h-[80dvh] overflow-y-scroll md:max-h-none'}
-        >
-          <UiSheetHeader>
-            <UiSheetTitle className='flex items-center gap-2'>
-              <UiIcon
-                name='CircleDollarSignIcon'
-                size={18}
-                className='text-textPrimary'
-              />
-              Deposit {selectedToken.name}
-            </UiSheetTitle>
-          </UiSheetHeader>
-          <UiSeparator className='mb-4 mt-2' />
-          <Deposit
-            onSubmit={() => {
-              setIsDepositSheetOpen(false)
-              tryRefresh()
-            }}
-          />
-        </UiSheetContent>
-      </UiSheet>
-      <UiSheet
-        open={isTokenInfoSheetOpen}
-        onOpenChange={setIsTokenInfoSheetOpen}
-      >
-        <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
-          <UiSheetHeader>
-            <UiSheetTitle>Token Info</UiSheetTitle>
-          </UiSheetHeader>
-
-          <UiSeparator className='mb-4 mt-2' />
-
-          <TokenInfo token={selectedToken} />
-        </UiSheetContent>
-      </UiSheet>
-      <UiSheet open={isWithdrawSheetOpen} onOpenChange={setIsWithdrawSheetOpen}>
-        <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
-          <UiSheetHeader>
-            <UiSheetTitle>Publicly Withdraw</UiSheetTitle>
-          </UiSheetHeader>
-          <UiSeparator className='mb-4 mt-2' />
-          <WithdrawForm
-            token={selectedToken}
-            onSubmit={() => {
-              setIsWithdrawSheetOpen(false)
-            }}
-          />
-        </UiSheetContent>
-      </UiSheet>
-
-      <TransferFormSheet
-        ref={transferFormSheet.ref}
-        token={selectedToken}
-        onSubmit={() => {
-          transferFormSheet.close()
-        }}
-      />
-
-      <UiSheet open={isAddTokenSheetOpen} onOpenChange={setIsAddTokenSheetOpen}>
-        <UiSheetContent
-          side={isMobileDevice ? 'bottom' : 'right'}
-          className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
-        >
-          <UiSheetHeader>
-            <UiSheetTitle>Add Token</UiSheetTitle>
-          </UiSheetHeader>
-          <UiSeparator className='mb-4 mt-2' />
-          <AddTokenForm
-            onSubmit={() => {
-              setIsAddTokenSheetOpen(false)
-            }}
-          />
-        </UiSheetContent>
-      </UiSheet>
     </div>
   )
 }

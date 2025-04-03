@@ -1,8 +1,10 @@
 'use client'
 
 import { BN, time } from '@distributedlab/tools'
+import { Account } from '@lukachi/aptos-labs-ts-sdk'
 import Avatar from 'boring-avatars'
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'
+import Image from 'next/image'
 import { useRouter } from 'next/navigation'
 import {
   type ComponentProps,
@@ -118,33 +120,52 @@ export default function DashboardHeader({
             <UiSeparator className='my-4' />
 
             <div className='flex flex-1 flex-col gap-3'>
-              {accountsList.map(el => (
-                <AccountListItem
-                  key={el.accountAddress.toString()}
-                  // privateKeyHex={el.privateKey.toString()}
-                  accountAddress={el.accountAddress.toString()}
-                  isActive={
-                    selectedAccount.accountAddress.toString().toLowerCase() ===
-                    el.accountAddress.toString().toLowerCase()
-                  }
-                  isRemovable={accountsList.length > 1}
-                  onRemove={() => removeAccount(el.accountAddress.toString())}
-                  onSelect={async () => {
-                    if (
-                      selectedAccount.accountAddress
-                        .toString()
-                        .toLowerCase() ===
-                      el.accountAddress.toString().toLowerCase()
-                    ) {
-                      setIsAccountsBottomSheet(false)
-                      return
-                    }
+              {accountsList.map(el => {
+                const isAptAccount = el instanceof Account
 
-                    await setSelectedAccount(el.accountAddress.toString())
-                    setIsAccountsBottomSheet(false)
-                  }}
-                />
-              ))}
+                const nameOrAddr = isAptAccount
+                  ? el.accountAddress.toString()
+                  : el.name
+
+                return (
+                  <AccountListItem
+                    key={nameOrAddr}
+                    // privateKeyHex={el.privateKey.toString()}
+                    avatarUrl={!isAptAccount ? el.avatarUrl : undefined}
+                    accountAddress={nameOrAddr}
+                    isActive={
+                      isAptAccount
+                        ? selectedAccount.accountAddress
+                            .toString()
+                            .toLowerCase() ===
+                          el.accountAddress.toString().toLowerCase()
+                        : true
+                    }
+                    isRemovable={accountsList.length > 1}
+                    onRemove={() => removeAccount(nameOrAddr)}
+                    onSelect={async () => {
+                      if (
+                        isAptAccount
+                          ? selectedAccount.accountAddress
+                              .toString()
+                              .toLowerCase() ===
+                            el.accountAddress.toString().toLowerCase()
+                          : true
+                      ) {
+                        setIsAccountsBottomSheet(false)
+                        return
+                      }
+
+                      await setSelectedAccount(
+                        isAptAccount
+                          ? { accountAddressHex: el.accountAddress.toString() }
+                          : { pubKeylessAcc: el },
+                      )
+                      setIsAccountsBottomSheet(false)
+                    }}
+                  />
+                )
+              })}
             </div>
 
             <UiSeparator className='my-4' />
@@ -193,6 +214,7 @@ export default function DashboardHeader({
 }
 
 type AccountListItemProps = {
+  avatarUrl?: string
   accountAddress: string
   isActive: boolean
   isRemovable: boolean
@@ -201,6 +223,7 @@ type AccountListItemProps = {
 } & HTMLAttributes<HTMLDivElement>
 
 function AccountListItem({
+  avatarUrl,
   accountAddress,
   className,
   isActive,
@@ -221,7 +244,17 @@ function AccountListItem({
         className,
       )}
     >
-      <Avatar name={accountAddress} size={40} />
+      {avatarUrl ? (
+        <Image
+          src={avatarUrl}
+          alt={accountAddress}
+          width={40}
+          height={40}
+          className={'rounded-full'}
+        />
+      ) : (
+        <Avatar name={accountAddress} size={40} />
+      )}
 
       <button
         type='button'

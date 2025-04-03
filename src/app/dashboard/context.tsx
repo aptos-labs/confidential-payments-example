@@ -9,6 +9,7 @@ import {
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
 import { FixedNumber, parseUnits } from 'ethers'
+import { jwtDecode, JwtPayload } from 'jwt-decode'
 import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
@@ -80,8 +81,14 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error'
 
+type KeylessAccountPublic = {
+  idToken: string
+  name: string
+  avatarUrl: string
+}
+
 type ConfidentialCoinContextType = {
-  accountsList: Account[]
+  accountsList: (Account | KeylessAccountPublic)[]
 
   selectedAccount: Account
 
@@ -89,7 +96,11 @@ type ConfidentialCoinContextType = {
 
   addNewAccount: (privateKeyHex?: string) => void
   removeAccount: (accountAddress: string) => void
-  setSelectedAccount: (accountAddressHex: string) => Promise<void>
+  setSelectedAccount: (
+    args:
+      | { accountAddressHex: string; pubKeylessAcc?: never }
+      | { accountAddressHex?: never; pubKeylessAcc: KeylessAccountPublic },
+  ) => Promise<void>
 
   aptBalance: number
   reloadAptBalance: () => Promise<void>
@@ -238,46 +249,37 @@ const useAccounts = () => {
   const selectedAccount = useSelectedAccount()
 
   const {
-    data: { accountsList, keylessAccAddrToIdTokens },
+    data: { accountsList },
     isLoading: isAccountsLoading,
     isLoadingError: isAccountsLoadingError,
   } = useLoading<{
-    accountsList: Account[]
-    keylessAccAddrToIdTokens: Record<string, string>
+    accountsList: ConfidentialCoinContextType['accountsList']
   }>(
     {
       accountsList: [],
-      keylessAccAddrToIdTokens: {},
     },
     async () => {
       const keylessAccountsData = await Promise.all(
         rawKeylessAccounts.map(async el => {
-          const derivedKeylessAccountData = await authStore.useAuthStore
-            .getState()
-            .deriveKeylessAccount(el.idToken.raw) // TODO: tokens addresses? persist this
+          const decodedIdToken = jwtDecode<
+            JwtPayload & {
+              name: string
+              picture: string
+            }
+          >(el.idToken.raw)
 
-          const derivedAccount = derivedKeylessAccountData.derivedAccount
-
-          return {
-            derivedAccount,
+          const keylessAccountPub: KeylessAccountPublic = {
             idToken: el.idToken.raw,
+            name: decodedIdToken.name,
+            avatarUrl: decodedIdToken.picture,
           }
+
+          return keylessAccountPub
         }),
       )
 
       return {
-        accountsList: [
-          ...walletAccounts,
-          ...keylessAccountsData.map(el => el.derivedAccount),
-        ],
-        keylessAccAddrToIdTokens: keylessAccountsData.reduce(
-          (acc, curr) => {
-            acc[curr.derivedAccount.accountAddress.toString()] = curr.idToken
-
-            return acc
-          },
-          {} as Record<string, string>,
-        ),
+        accountsList: [...walletAccounts, ...keylessAccountsData],
       }
     },
     { loadArgs: [] },
@@ -320,13 +322,25 @@ const useAccounts = () => {
     [addAndSetPrivateKey],
   )
 
-  const setSelectedAccount = useCallback(
-    async (accountAddressHex: string) => {
-      const accountToSet = accountsList.find(
-        el =>
-          el.accountAddress.toString().toLowerCase() ===
-          accountAddressHex.toLowerCase(),
-      )
+  const setSelectedAccount = useCallback<
+    ConfidentialCoinContextType['setSelectedAccount']
+  >(
+    async args => {
+      if (args.pubKeylessAcc) {
+        await switchActiveKeylessAccount(args.pubKeylessAcc.idToken)
+        setSelectedAccountAddr('')
+
+        return
+      }
+
+      const accountToSet = accountsList
+        .filter(el => el instanceof Account)
+        .find(el => {
+          return (
+            el.accountAddress.toString().toLowerCase() ===
+            args.accountAddressHex.toLowerCase()
+          )
+        })
 
       if (!accountToSet?.accountAddress)
         throw new TypeError('Account not found')
@@ -342,18 +356,9 @@ const useAccounts = () => {
 
         return
       }
-
-      const idToken =
-        keylessAccAddrToIdTokens[accountToSet.accountAddress.toString()]
-
-      if (!idToken) throw new TypeError('Account not found')
-
-      await switchActiveKeylessAccount(idToken)
-      setSelectedAccountAddr('')
     },
     [
       accountsList,
-      keylessAccAddrToIdTokens,
       setSelectedAccountAddr,
       switchActiveKeylessAccount,
       walletAccounts,
@@ -363,9 +368,11 @@ const useAccounts = () => {
   // TODO: implement removing keyless accounts
   const removeAccount = useCallback(
     (accountAddressHex: string) => {
+      const aptAccount = accountsList.filter(el => el instanceof Account)
+
       const currentAccountsListLength = accountsList.length
 
-      const filteredAccountsList = accountsList.filter(
+      const filteredAccountsList = aptAccount.filter(
         el =>
           el.accountAddress.toString().toLowerCase() !==
           accountAddressHex.toLowerCase(),
@@ -375,7 +382,7 @@ const useAccounts = () => {
         currentAccountsListLength !== filteredAccountsList.length &&
         filteredAccountsList.length > 0
       ) {
-        const accountToRemove = accountsList.find(
+        const accountToRemove = aptAccount.find(
           el =>
             el.accountAddress.toString().toLowerCase() ===
             accountAddressHex.toLowerCase(),
@@ -394,7 +401,7 @@ const useAccounts = () => {
   )
 
   return {
-    accountsList,
+    accountsList: accountsList,
 
     selectedAccount,
 

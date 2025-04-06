@@ -21,6 +21,7 @@ import {
   EarthIcon,
   EarthLockIcon,
   EditIcon,
+  ExternalLinkIcon,
   FolderIcon,
   FolderOpenIcon,
   FolderSyncIcon,
@@ -123,6 +124,7 @@ const LIB_ICONS = {
   CircleDollarSignIcon: CircleDollarSignIcon,
   EarthIcon: EarthIcon,
   EarthLockIcon: EarthLockIcon,
+  ExternalLinkIcon: ExternalLinkIcon,
 }
 
 type LibIconProps = {

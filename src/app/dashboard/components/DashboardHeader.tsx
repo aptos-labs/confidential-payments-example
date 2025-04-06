@@ -6,6 +6,7 @@ import Avatar from 'boring-avatars'
 import { jwtDecode } from 'jwt-decode'
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'
 import Image from 'next/image'
+import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import {
   type ComponentProps,
@@ -18,6 +19,7 @@ import { Controller } from 'react-hook-form'
 
 import {
   generatePrivateKeyHex,
+  getAccountExplorerUrl,
   sendApt,
   validatePrivateKeyHex,
 } from '@/api/modules/aptos'
@@ -102,6 +104,8 @@ export default function DashboardHeader({
     setIsTransferNativeBottomSheet(false)
   }, [])
 
+  const { copy, isCopied } = useCopyToClipboard()
+
   return (
     <div {...rest} className={cn('flex items-center', className)}>
       <UiDropdownMenu>
@@ -146,6 +150,40 @@ export default function DashboardHeader({
           </button>
         </UiDropdownMenuTrigger>
         <UiDropdownMenuContent>
+          <UiDropdownMenuItem>
+            <Link
+              className='flex w-full items-center gap-2'
+              href={getAccountExplorerUrl(
+                selectedAccount.accountAddress.toString(),
+              )}
+            >
+              <button
+                className=''
+                onClick={() => copy(selectedAccount.accountAddress.toString())}
+              >
+                <UiIcon name='ExternalLinkIcon' className='size-4' />
+              </button>
+              <span className='typography-caption1 text-textPrimary'>
+                Account
+              </span>
+            </Link>
+          </UiDropdownMenuItem>
+          <UiDropdownMenuItem>
+            <button
+              className='flex w-full items-center justify-between gap-2'
+              onClick={() => copy(selectedAccount.accountAddress.toString())}
+            >
+              <span className='typography-caption1 text-textPrimary'>
+                {abbrCenter(selectedAccount.accountAddress.toString())}
+              </span>
+
+              {isCopied ? (
+                <UiIcon name='CheckIcon' className='size-4' />
+              ) : (
+                <UiIcon name='CopyIcon' className='size-4' />
+              )}
+            </button>
+          </UiDropdownMenuItem>
           <UiDropdownMenuItem>
             <div className='mx-auto'>
               <UiThemeSwitcher />

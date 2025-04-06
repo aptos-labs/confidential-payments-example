@@ -761,3 +761,9 @@ export const getTxExplorerUrl = (txHash: string) => {
 
   return `https://explorer.aptoslabs.com/txn/${txHash}?network=${network}`
 }
+
+export const getAccountExplorerUrl = (accountAddressHex: string) => {
+  const network = aptos.config.network
+
+  return `https://explorer.aptoslabs.com/account/${accountAddressHex}?network=${network}`
+}

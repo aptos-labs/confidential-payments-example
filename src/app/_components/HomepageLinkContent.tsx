@@ -35,6 +35,10 @@ export default function HomepageLinkContent() {
     if (isInitialing.current) return
     isInitialing.current = true
 
+    if (activeKeylessAccount) {
+      router.push('/dashboard')
+    }
+
     if (!googleIdToken && !appleIdToken) return
 
     const loginWithSocial = async () => {
@@ -56,7 +60,14 @@ export default function HomepageLinkContent() {
     }
 
     loginWithSocial()
-  }, [appleIdToken, googleIdToken, loginWithApple, loginWithGoogle, router])
+  }, [
+    activeKeylessAccount,
+    appleIdToken,
+    googleIdToken,
+    loginWithApple,
+    loginWithGoogle,
+    router,
+  ])
 
   return (
     <Link href={activeKeylessAccount ? '/dashboard' : getGoogleRequestLoginUrl}>
@@ -64,9 +75,9 @@ export default function HomepageLinkContent() {
         variant='outline'
         className={cn(
           'mt-3 min-w-[200px] bg-textPrimary px-6 py-3 text-backgroundPrimary hover:cursor-pointer',
-          isLoading && 'animate-pulse',
+          (isLoading || activeKeylessAccount) && 'animate-pulse',
         )}
-        disabled={isLoading}
+        disabled={Boolean(isLoading || activeKeylessAccount)}
         onClick={() => {
           setIsLoading(true)
         }}
@@ -80,11 +91,9 @@ export default function HomepageLinkContent() {
           </svg>
         )}
         <span>
-          {activeKeylessAccount
-            ? 'Go to dashboard'
-            : isLoading
-              ? 'Wait... Signing with google'
-              : 'Login with Google'}
+          {isLoading || activeKeylessAccount
+            ? 'Wait... Signing with google'
+            : 'Login with Google'}
         </span>
       </UiButton>
     </Link>

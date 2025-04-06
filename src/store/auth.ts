@@ -2,9 +2,11 @@
 
 import { config } from '@config'
 import {
+  Account,
   EphemeralKeyPair,
   KeylessAccount,
   ProofFetchStatus,
+  TwistedEd25519PrivateKey,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { useMemo } from 'react'
 import { create } from 'zustand'
@@ -14,6 +16,7 @@ import {
   aptos,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
+  decryptionKeyFromPrivateKey,
   deriveEd25519PrivateKey,
   EncryptedScopedIdToken,
   EphemeralKeyPairEncoding,
@@ -288,32 +291,25 @@ const useEphemeralKeyPair = () => {
 }
 
 const useEnsureConfidentialRegistered = () => {
-  return async (keylessAccount: KeylessAccount) => {
-    if (!keylessAccount?.pepper) throw new Error('No pepper found')
-
-    const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper)
-
+  return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0
 
     do {
       const isConfidentialAccountRegistered =
-        await getIsAccountRegisteredWithToken(keylessAccount)
+        await getIsAccountRegisteredWithToken(account)
 
       if (isConfidentialAccountRegistered) break
 
-      const aptBalance = await getAptBalance(keylessAccount)
+      const aptBalance = await getAptBalance(account)
 
       if (!aptBalance) {
-        await mintAptCoin(keylessAccount, BigInt(10 * 10 ** 8))
+        await mintAptCoin(account, BigInt(10 * 10 ** 8))
       }
 
       await sleep(500)
 
       await tryCatch(
-        registerConfidentialBalance(
-          keylessAccount,
-          keylessAccountDK.publicKey().toString(),
-        ),
+        registerConfidentialBalance(account, dk.publicKey().toString()),
       )
 
       attempts++
@@ -395,7 +391,11 @@ const useLogin = (opts?: {
 
     if (!keylessAccount) throw new Error('Keyless account not derived')
 
-    await ensureConfidentialRegistered(keylessAccount)
+    if (!keylessAccount?.pepper) throw new Error('No pepper found')
+
+    const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper)
+
+    await ensureConfidentialRegistered(keylessAccount, keylessAccountDK)
 
     opts?.onSuccess?.()
   }
@@ -459,12 +459,27 @@ const useLogin = (opts?: {
     })
   }
 
+  const loginTest = async () => {
+    const account = Account.generate()
+
+    const dk = await decryptionKeyFromPrivateKey(account)
+
+    await ensureConfidentialRegistered(account, dk)
+
+    walletStore.useWalletStore
+      .getState()
+      .addAndSetPrivateKey(account.privateKey.toString())
+
+    opts?.onSuccess?.()
+  }
+
   return {
     loginWithEmailPassword,
     getGoogleRequestLoginUrl,
     loginWithGoogle: loginWithGoogle,
     getAppleRequestLoginUrl,
     loginWithApple,
+    loginTest,
   }
 }
 

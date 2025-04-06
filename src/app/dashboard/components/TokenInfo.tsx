@@ -53,10 +53,10 @@ function TokenInfoItem({
       {...rest}
       className={cn('flex items-center justify-between', className)}
     >
-      <span className='uppercase text-textPrimary typography-caption2'>
+      <span className='typography-caption2 uppercase text-textPrimary'>
         {label}
       </span>
-      <span className='text-right text-textPrimary typography-body2'>
+      <span className='typography-body2 text-right text-textPrimary'>
         {value}
       </span>
     </div>

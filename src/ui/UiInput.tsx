@@ -59,7 +59,7 @@ function ControlledUiInput<T extends FieldValues>({
         value={field.value}
       />
       {fieldState.error?.message && (
-        <span className='text-errorMain typography-caption3'>
+        <span className='typography-caption3 text-errorMain'>
           {fieldState.error.message}
         </span>
       )}

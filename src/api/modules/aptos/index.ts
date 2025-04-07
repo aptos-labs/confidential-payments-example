@@ -136,10 +136,22 @@ export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
 export const sendAndWaitTx = async (
   transaction: AnyRawTransaction,
   signer: Account,
+  feePayerAccount?: Account,
 ): Promise<CommittedTransactionResponse> => {
+  const feePayerAuthenticator = feePayerAccount
+    ? aptos.transaction.signAsFeePayer({
+        signer: feePayerAccount,
+        transaction,
+      })
+    : undefined
+
   const pendingTxn = await aptos.signAndSubmitTransaction({
     signer,
     transaction,
+    ...(feePayerAuthenticator && {
+      feePayer: undefined,
+      feePayerAuthenticator,
+    }),
   })
   return aptos.waitForTransaction({ transactionHash: pendingTxn.hash })
 }
@@ -217,6 +229,28 @@ export const mintAptCoin = async (
   })
 }
 
+export const buildWithdrawConfidentialBalance = async (
+  account: Account,
+  receiver: string,
+  decryptionKeyHex: string,
+  withdrawAmount: bigint,
+  encryptedActualBalance: TwistedElGamalCiphertext[],
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
+) => {
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
+
+  return aptos.confidentialCoin.withdraw({
+    sender: account.accountAddress,
+    to: receiver,
+    tokenAddress,
+    decryptionKey: decryptionKey,
+    encryptedActualBalance,
+    amountToWithdraw: withdrawAmount,
+    feePayerAddress: feePayerAddress,
+  })
+}
+
 export const withdrawConfidentialBalance = async (
   account: Account,
   receiver: string,
@@ -224,17 +258,17 @@ export const withdrawConfidentialBalance = async (
   withdrawAmount: bigint,
   encryptedActualBalance: TwistedElGamalCiphertext[],
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
-
-  const withdrawTx = await aptos.confidentialCoin.withdraw({
-    sender: account.accountAddress,
-    to: receiver,
-    tokenAddress,
-    decryptionKey: decryptionKey,
+  const withdrawTx = await buildWithdrawConfidentialBalance(
+    account,
+    receiver,
+    decryptionKeyHex,
+    withdrawAmount,
     encryptedActualBalance,
-    amountToWithdraw: withdrawAmount,
-  })
+    tokenAddress,
+    feePayerAddress,
+  )
 
   return sendAndWaitTx(withdrawTx, account)
 }
@@ -246,7 +280,7 @@ export const getEkByAddr = async (addrHex: string, tokenAddress: string) => {
   })
 }
 
-export const transferConfidentialCoin = async (
+export const buildTransferConfidentialCoin = async (
   account: Account,
   decryptionKeyHex: string,
   encryptedActualBalance: TwistedElGamalCiphertext[],
@@ -254,6 +288,7 @@ export const transferConfidentialCoin = async (
   recipientAddressHex: string,
   auditorsEncryptionKeyHexList: string[],
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
@@ -262,7 +297,7 @@ export const transferConfidentialCoin = async (
     tokenAddress,
   )
 
-  const transferTx = await aptos.confidentialCoin.transferCoin({
+  return aptos.confidentialCoin.transferCoin({
     senderDecryptionKey: decryptionKey,
     recipientEncryptionKey: new TwistedEd25519PublicKey(
       recipientEncryptionKeyHex,
@@ -275,7 +310,30 @@ export const transferConfidentialCoin = async (
     auditorEncryptionKeys: auditorsEncryptionKeyHexList.map(
       hex => new TwistedEd25519PublicKey(hex),
     ),
+    feePayerAddress,
   })
+}
+
+export const transferConfidentialCoin = async (
+  account: Account,
+  decryptionKeyHex: string,
+  encryptedActualBalance: TwistedElGamalCiphertext[],
+  amountToTransfer: bigint,
+  recipientAddressHex: string,
+  auditorsEncryptionKeyHexList: string[],
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
+) => {
+  const transferTx = await buildTransferConfidentialCoin(
+    account,
+    decryptionKeyHex,
+    encryptedActualBalance,
+    amountToTransfer,
+    recipientAddressHex,
+    auditorsEncryptionKeyHexList,
+    tokenAddress,
+    feePayerAddress,
+  )
 
   return await sendAndWaitTx(transferTx, account)
 }
@@ -301,18 +359,32 @@ export const safelyRotateConfidentialBalance = async (
   })
 }
 
+export const buildSafelyRolloverConfidentialBalanceTx = async (
+  account: Account,
+  decryptionKeyHex: string,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
+) => {
+  return aptos.confidentialCoin.safeRolloverPendingCB({
+    sender: account.accountAddress,
+    tokenAddress,
+    withFreezeBalance: false,
+    decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
+    feePayerAddress: feePayerAddress,
+  })
+}
+
 export const safelyRolloverConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
 ) => {
-  const rolloverTxPayloads = await aptos.confidentialCoin.safeRolloverPendingCB(
-    {
-      sender: account.accountAddress,
-      tokenAddress,
-      withFreezeBalance: false,
-      decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
-    },
+  const rolloverTxPayloads = await buildSafelyRolloverConfidentialBalanceTx(
+    account,
+    decryptionKeyHex,
+    tokenAddress,
+    feePayerAddress,
   )
 
   return sendAndWaitBatchTxs(rolloverTxPayloads, account)
@@ -351,19 +423,55 @@ export const normalizeConfidentialBalance = async (
   return sendAndWaitTx(normalizeTx, account)
 }
 
+export const buildDepositConfidentialBalanceTx = async (
+  account: Account,
+  amount: bigint,
+  to: string,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
+) => {
+  return aptos.confidentialCoin.deposit({
+    sender: account.accountAddress,
+    to: AccountAddress.from(to),
+    tokenAddress: tokenAddress,
+    amount: amount,
+    feePayerAddress: feePayerAddress,
+  })
+}
+
 export const depositConfidentialBalance = async (
   account: Account,
   amount: bigint,
   to: string,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
 ) => {
-  const depositTx = await aptos.confidentialCoin.deposit({
-    sender: account.accountAddress,
-    to: AccountAddress.from(to),
-    tokenAddress: tokenAddress,
-    amount: amount,
-  })
+  const depositTx = await buildDepositConfidentialBalanceTx(
+    account,
+    amount,
+    to,
+    tokenAddress,
+    feePayerAddress,
+  )
   return sendAndWaitTx(depositTx, account)
+}
+
+export const buildDepositConfidentialBalanceCoinTx = async (
+  account: Account,
+  amount: bigint,
+  coinType: MoveStructId,
+  to?: string,
+  feePayerAddress?: string,
+) => {
+  const tx = await aptos.confidentialCoin.depositCoin({
+    sender: account.accountAddress,
+    coinType: coinType,
+    amount: amount,
+    to: to ? AccountAddress.from(to) : account.accountAddress,
+    feePayerAddress: feePayerAddress,
+  })
+
+  return tx
 }
 
 export const depositConfidentialBalanceCoin = async (
@@ -371,13 +479,15 @@ export const depositConfidentialBalanceCoin = async (
   amount: bigint,
   coinType: MoveStructId,
   to?: string,
+  feePayerAddress?: string,
 ) => {
-  const depositTx = await aptos.confidentialCoin.depositCoin({
-    sender: account.accountAddress,
-    coinType: coinType,
-    amount: amount,
-    to: to ? AccountAddress.from(to) : account.accountAddress,
-  })
+  const depositTx = await buildDepositConfidentialBalanceCoinTx(
+    account,
+    amount,
+    coinType,
+    to,
+    feePayerAddress,
+  )
   return sendAndWaitTx(depositTx, account)
 }
 

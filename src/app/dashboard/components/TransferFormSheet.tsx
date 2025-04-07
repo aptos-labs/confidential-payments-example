@@ -16,7 +16,7 @@ import {
 } from 'react'
 import { Control, useFieldArray } from 'react-hook-form'
 
-import { getEkByAddr } from '@/api/modules/aptos'
+import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -67,7 +67,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
     const {
       selectedAccount,
-      transfer,
+      feePayerAccount,
+      buildTransferTx,
       loadSelectedDecryptionKeyState,
       addTxHistoryItem,
       reloadAptBalance,
@@ -169,40 +170,48 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         handleSubmit(async formData => {
           disableForm()
 
-          await ensureConfidentialBalanceReadyBeforeOp({
-            amountToEnsure: String(formData.amount),
-            token: token,
-            currentTokenStatus: currTokenStatus,
-            onError: error => {
-              ErrorHandler.process(error)
-              enableForm()
-            },
-          })
-
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
               return getEkByAddr(addr, token.address)
             }),
           )
 
-          const [transferTx, transferError] = await tryCatch(
-            transfer(
+          const [transferTx, buildTransferTxError] = await tryCatch(
+            buildTransferTx(
               formData.receiverAddressHex,
               parseUnits(String(formData.amount), token.decimals).toString(),
               {
                 isSyncFirst: true,
                 auditorsEncryptionKeyHexList,
+                isWithFeePayer: true,
               },
             ),
           )
-          if (transferError) {
-            ErrorHandler.process(transferError)
+          if (buildTransferTxError) {
+            ErrorHandler.process(buildTransferTxError)
             enableForm()
             return
           }
 
+          const err = await ensureConfidentialBalanceReadyBeforeOp({
+            amountToEnsure: String(formData.amount),
+            token: token,
+            currentTokenStatus: currTokenStatus,
+            opTx: transferTx,
+          })
+          if (err) {
+            enableForm()
+            return
+          }
+
+          const txReceipt = await sendAndWaitTx(
+            transferTx,
+            selectedAccount,
+            feePayerAccount,
+          )
+
           addTxHistoryItem({
-            txHash: transferTx.hash,
+            txHash: txReceipt.hash,
             txType: 'transfer',
             createdAt: time().timestamp,
           })
@@ -222,17 +231,19 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         })(),
       [
         addTxHistoryItem,
+        buildTransferTx,
         clearForm,
         currTokenStatus,
         disableForm,
         enableForm,
         ensureConfidentialBalanceReadyBeforeOp,
+        feePayerAccount,
         handleSubmit,
         loadSelectedDecryptionKeyState,
         onSubmit,
         reloadAptBalance,
+        selectedAccount,
         token,
-        transfer,
       ],
     )
 
@@ -289,7 +300,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 onClick={submit}
                 disabled={isFormDisabled}
               >
-                Send privately
+                Send confidentially
               </UiButton>
             </div>
           </div>

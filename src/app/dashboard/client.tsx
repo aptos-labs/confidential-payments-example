@@ -84,6 +84,8 @@ export default function DashboardClient() {
 
     perTokenStatuses,
     tokens,
+
+    txHistory,
   } = useConfidentialCoinContext()
 
   const isLoading = [
@@ -337,24 +339,24 @@ export default function DashboardClient() {
           </div>
         )} */}
 
-          {/* <div
-          className={cn(
-            'mt-12 flex w-full flex-1 flex-col p-4',
-            'md:mx-auto md:max-w-[500px]',
-          )}
-        >
-          {txHistory.length ? (
-            <div className='flex flex-col gap-6'>
-              {txHistory.reverse().map((el, idx) => (
-                <TxItem key={idx} {...el} />
-              ))}
-            </div>
-          ) : (
-            <div className='flex w-full flex-col items-center gap-4 self-center'>
-              <TxEmptyComponent />
-            </div>
-          )}
-        </div> */}
+          <div
+            className={cn(
+              'mt-12 flex w-full flex-1 flex-col p-4',
+              'md:mx-auto md:max-w-[500px]',
+            )}
+          >
+            {txHistory.length ? (
+              <div className='flex flex-col gap-6'>
+                {txHistory.reverse().map((el, idx) => (
+                  <TxItem key={idx} {...el} />
+                ))}
+              </div>
+            ) : (
+              <div className='flex w-full flex-col items-center gap-4 self-center'>
+                <TxEmptyComponent />
+              </div>
+            )}
+          </div>
         </div>
 
         <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
@@ -445,7 +447,6 @@ export default function DashboardClient() {
   )
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function TxItem({
   createdAt,
   txType,
@@ -508,7 +509,6 @@ function TxItem({
   )
 }
 
-// eslint-disable-next-line unused-imports/no-unused-vars
 function TxEmptyComponent({
   className,
   ...rest

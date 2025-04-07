@@ -86,7 +86,7 @@ export default function ConfidentialAssetCard({
             <Avatar name={token.address} size={20} variant='pixel' />
 
             <span className='typography-subtitle1 text-textPrimary'>
-              {token.name}
+              {token.symbol} Balance
             </span>
 
             {/* <button

@@ -1,12 +1,13 @@
 'use client'
 
 import { config } from '@config'
-import { time } from '@distributedlab/tools'
 import {
   Account,
   CommittedTransactionResponse,
   ConfidentialAmount,
+  InputGenerateTransactionPayloadData,
   KeylessAccount,
+  SimpleTransaction,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
 import { FixedNumber, parseUnits } from 'ethers'
@@ -16,6 +17,12 @@ import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
 
 import {
+  aptos,
+  buildDepositConfidentialBalanceCoinTx,
+  buildDepositConfidentialBalanceTx,
+  buildSafelyRolloverConfidentialBalanceTx,
+  buildTransferConfidentialCoin,
+  buildWithdrawConfidentialBalance,
   depositConfidentialBalance,
   depositConfidentialBalanceCoin,
   getAptBalance,
@@ -26,12 +33,12 @@ import {
   getIsAccountRegisteredWithToken,
   getIsBalanceFrozen,
   getIsBalanceNormalized,
-  mintAptCoin,
   mintTokens,
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
   safelyRolloverConfidentialBalance,
+  sendAndWaitTx,
   transferConfidentialCoin,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
@@ -89,6 +96,8 @@ type KeylessAccountPublic = {
 }
 
 type ConfidentialCoinContextType = {
+  feePayerAccount: Account
+
   accountsList: (Account | KeylessAccountPublic)[]
 
   selectedAccount: Account | KeylessAccount
@@ -127,19 +136,38 @@ type ConfidentialCoinContextType = {
   normalizeAccount: () => Promise<CommittedTransactionResponse>
   unfreezeAccount: () => Promise<CommittedTransactionResponse>
   rolloverAccount: () => Promise<CommittedTransactionResponse[]>
+  buildTransferTx: (
+    receiverEncryptionKeyHex: string,
+    amount: string,
+    opts?: {
+      isSyncFirst?: boolean
+      isWithFeePayer?: boolean
+      auditorsEncryptionKeyHexList?: string[]
+    },
+  ) => Promise<SimpleTransaction>
   transfer: (
     receiverEncryptionKeyHex: string,
     amount: string,
     opts?: {
       isSyncFirst?: boolean
+      isWithFeePayer?: boolean
       auditorsEncryptionKeyHexList?: string[]
     },
   ) => Promise<CommittedTransactionResponse>
+  buildWithdrawToTx: (
+    amount: string,
+    receiver: string,
+    opts?: {
+      isSyncFirst?: boolean
+      isWithFeePayer?: boolean
+    },
+  ) => Promise<SimpleTransaction>
   withdrawTo: (
     amount: string,
     receiver: string,
     opts?: {
       isSyncFirst?: boolean
+      isWithFeePayer?: boolean
     },
   ) => Promise<CommittedTransactionResponse>
   depositTo: (
@@ -160,11 +188,12 @@ type ConfidentialCoinContextType = {
     amountToEnsure: string
     token: TokenBaseInfo
     currentTokenStatus: AccountDecryptionKeyStatus
-    onError: (error: Error) => void
-  }) => Promise<void>
+    opTx: SimpleTransaction
+  }) => Promise<Error | undefined>
 }
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
+  feePayerAccount: {} as Account,
   accountsList: [],
   selectedAccount: {} as Account,
   accountsLoadingState: 'idle',
@@ -202,7 +231,9 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   normalizeAccount: async () => ({}) as CommittedTransactionResponse,
   unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
   rolloverAccount: async () => [] as CommittedTransactionResponse[],
+  buildTransferTx: async () => ({}) as SimpleTransaction,
   transfer: async () => ({}) as CommittedTransactionResponse,
+  buildWithdrawToTx: async () => ({}) as SimpleTransaction,
   withdrawTo: async () => ({}) as CommittedTransactionResponse,
   depositTo: async () => ({}) as CommittedTransactionResponse,
   depositCoinTo: async () => ({}) as CommittedTransactionResponse,
@@ -211,7 +242,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   loadSelectedDecryptionKeyState: async () => {},
 
   testMintTokens: async () => [] as CommittedTransactionResponse[],
-  ensureConfidentialBalanceReadyBeforeOp: async () => {},
+  ensureConfidentialBalanceReadyBeforeOp: async () => undefined,
 })
 
 export const useConfidentialCoinContext = () => {
@@ -231,6 +262,7 @@ const useSelectedAccount = () => {
 }
 
 const useAccounts = () => {
+  const feePayerAccount = authStore.useFeePayerAccount()
   const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts)
   const walletAccounts = walletStore.useWalletAccounts()
   const switchActiveKeylessAccount = authStore.useAuthStore(
@@ -404,6 +436,7 @@ const useAccounts = () => {
   return {
     accountsList: accountsList,
 
+    feePayerAccount,
     selectedAccount,
 
     setSelectedAccount: setSelectedAccount,
@@ -611,6 +644,8 @@ const useTokens = (accountAddressHex: string | undefined) => {
 const useSelectedAccountDecryptionKeyStatus = (
   tokenAddress: string | undefined,
 ) => {
+  const feePayerAccount = authStore.useFeePayerAccount()
+
   const { selectedAccountDecryptionKey } = useSelectedAccountDecryptionKey()
 
   const selectedTokenAddress = walletStore.useSelectedTokenAddress()
@@ -867,16 +902,45 @@ const useSelectedAccountDecryptionKeyStatus = (
     // mb: rotate keys with unfreeze
   }, [selectedAccountDecryptionKey])
 
-  const rolloverAccount = useCallback(async () => {
-    if (!selectedAccountDecryptionKey)
-      throw new TypeError('Decryption key is not set')
+  const buildRolloverAccountTx = useCallback(
+    async (isWithFeePayer = false) => {
+      if (!selectedAccountDecryptionKey)
+        throw new TypeError('Decryption key is not set')
 
-    return safelyRolloverConfidentialBalance(
+      return buildSafelyRolloverConfidentialBalanceTx(
+        selectedAccount,
+        selectedAccountDecryptionKey.toString(),
+        tokenAddress,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
+      )
+    },
+    [
+      feePayerAccount.accountAddress,
       selectedAccount,
-      selectedAccountDecryptionKey.toString(),
+      selectedAccountDecryptionKey,
       tokenAddress,
-    )
-  }, [selectedAccountDecryptionKey, selectedAccount, tokenAddress])
+    ],
+  )
+
+  const rolloverAccount = useCallback(
+    async (isWithFeePayer = false) => {
+      if (!selectedAccountDecryptionKey)
+        throw new TypeError('Decryption key is not set')
+
+      return safelyRolloverConfidentialBalance(
+        selectedAccount,
+        selectedAccountDecryptionKey.toString(),
+        tokenAddress,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
+      )
+    },
+    [
+      selectedAccountDecryptionKey,
+      selectedAccount,
+      tokenAddress,
+      feePayerAccount.accountAddress,
+    ],
+  )
 
   return {
     perTokenStatusesRaw,
@@ -891,6 +955,8 @@ const useSelectedAccountDecryptionKeyStatus = (
 
     normalizeAccount,
     unfreezeAccount,
+
+    buildRolloverAccountTx,
     rolloverAccount,
   }
 }
@@ -899,6 +965,7 @@ export const ConfidentialCoinContextProvider = ({
   children,
 }: PropsWithChildren) => {
   const {
+    feePayerAccount,
     accountsList,
     selectedAccount,
     setSelectedAccount,
@@ -931,8 +998,56 @@ export const ConfidentialCoinContextProvider = ({
     loadSelectedDecryptionKeyState,
     normalizeAccount,
     unfreezeAccount,
+    buildRolloverAccountTx,
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address)
+
+  const buildTransferTx = useCallback(
+    async (
+      receiverAddressHex: string,
+      amount: string,
+      opts?: {
+        auditorsEncryptionKeyHexList?: string[]
+        isWithFeePayer?: boolean
+        isSyncFirst?: boolean
+      },
+    ) => {
+      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
+        throw new TypeError('actual amount not loaded')
+
+      const amountEncrypted = opts?.isSyncFirst
+        ? await (async () => {
+            const { actual } = await getConfidentialBalances(
+              selectedAccount,
+              selectedAccountDecryptionKey.toString(),
+              selectedToken.address,
+            )
+
+            return actual?.amountEncrypted
+          })()
+        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted
+
+      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
+
+      return buildTransferConfidentialCoin(
+        selectedAccount,
+        selectedAccountDecryptionKey.toString(),
+        amountEncrypted,
+        BigInt(amount),
+        receiverAddressHex,
+        opts?.auditorsEncryptionKeyHexList ?? [],
+        selectedToken.address,
+        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
+      )
+    },
+    [
+      feePayerAccount.accountAddress,
+      selectedAccount,
+      selectedAccountDecryptionKey,
+      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
+      selectedToken.address,
+    ],
+  )
 
   const transfer = useCallback(
     async (
@@ -940,6 +1055,7 @@ export const ConfidentialCoinContextProvider = ({
       amount: string,
       opts?: {
         auditorsEncryptionKeyHexList?: string[]
+        isWithFeePayer?: boolean
         isSyncFirst?: boolean
       },
     ) => {
@@ -968,9 +1084,56 @@ export const ConfidentialCoinContextProvider = ({
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
         selectedToken.address,
+        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       )
     },
     [
+      feePayerAccount.accountAddress,
+      selectedAccount,
+      selectedAccountDecryptionKey,
+      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
+      selectedToken.address,
+    ],
+  )
+
+  const buildWithdrawToTx = useCallback(
+    async (
+      amount: string,
+      receiver: string,
+      opts?: {
+        isSyncFirst?: boolean
+        isWithFeePayer?: boolean
+      },
+    ) => {
+      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
+        throw new TypeError('actual amount not loaded')
+
+      const amountEncrypted = opts?.isSyncFirst
+        ? await (async () => {
+            const { actual } = await getConfidentialBalances(
+              selectedAccount,
+              selectedAccountDecryptionKey.toString(),
+              selectedToken.address,
+            )
+
+            return actual?.amountEncrypted
+          })()
+        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted
+
+      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
+
+      return buildWithdrawConfidentialBalance(
+        selectedAccount,
+        receiver,
+        selectedAccountDecryptionKey.toString(),
+        BigInt(amount),
+        amountEncrypted,
+        selectedToken.address,
+        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
+      )
+    },
+    [
+      feePayerAccount.accountAddress,
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
@@ -984,6 +1147,7 @@ export const ConfidentialCoinContextProvider = ({
       receiver: string,
       opts?: {
         isSyncFirst?: boolean
+        isWithFeePayer?: boolean
       },
     ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
@@ -1010,6 +1174,7 @@ export const ConfidentialCoinContextProvider = ({
         BigInt(amount),
         amountEncrypted,
         selectedToken.address,
+        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       )
     },
     [
@@ -1017,11 +1182,27 @@ export const ConfidentialCoinContextProvider = ({
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedToken.address,
+      feePayerAccount.accountAddress,
     ],
   )
 
+  const buildDepositToTx = useCallback(
+    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+      if (!selectedToken) throw new TypeError('Token is not set')
+
+      return buildDepositConfidentialBalanceTx(
+        selectedAccount,
+        amount,
+        to,
+        selectedToken.address,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
+      )
+    },
+    [feePayerAccount.accountAddress, selectedAccount, selectedToken],
+  )
+
   const depositTo = useCallback(
-    async (amount: bigint, to: string) => {
+    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
       if (!selectedToken) throw new TypeError('Token is not set')
 
       return depositConfidentialBalance(
@@ -1029,13 +1210,29 @@ export const ConfidentialCoinContextProvider = ({
         amount,
         to,
         selectedToken.address,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       )
     },
-    [selectedAccount, selectedToken],
+    [feePayerAccount.accountAddress, selectedAccount, selectedToken],
+  )
+
+  const buildDepositCoinToTx = useCallback(
+    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+      const coinType = await getCoinByFaAddress(selectedToken.address)
+
+      return buildDepositConfidentialBalanceCoinTx(
+        selectedAccount,
+        amount,
+        parseCoinTypeFromCoinStruct(coinType),
+        to,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
+      )
+    },
+    [feePayerAccount.accountAddress, selectedAccount, selectedToken.address],
   )
 
   const depositCoinTo = useCallback(
-    async (amount: bigint, to: string) => {
+    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
       const coinType = await getCoinByFaAddress(selectedToken.address)
 
       return depositConfidentialBalanceCoin(
@@ -1043,9 +1240,10 @@ export const ConfidentialCoinContextProvider = ({
         amount,
         parseCoinTypeFromCoinStruct(coinType),
         to,
+        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       )
     },
-    [selectedAccount, selectedToken.address],
+    [feePayerAccount.accountAddress, selectedAccount, selectedToken.address],
   )
 
   const testMintTokens = useCallback(
@@ -1067,6 +1265,7 @@ export const ConfidentialCoinContextProvider = ({
   )
 
   /**
+   * emulating-a-fee-payer-via-devnet-faucet
    * Ensures that the confidential balance is ready before performing an operation.
    *
    * 1. Checks if the confidential balance is enough for the operation
@@ -1078,6 +1277,11 @@ export const ConfidentialCoinContextProvider = ({
     ConfidentialCoinContextType['ensureConfidentialBalanceReadyBeforeOp']
   >(
     async args => {
+      const txToExecute: SimpleTransaction[] = []
+      let depositTransactionToExecute: SimpleTransaction | undefined = undefined
+      let rolloverTransactionsToExecute: InputGenerateTransactionPayloadData[] =
+        []
+
       const publicBalanceBN = BigInt(
         perTokenStatuses[args.token.address].fungibleAssetBalance || 0,
       )
@@ -1097,21 +1301,11 @@ export const ConfidentialCoinContextProvider = ({
         // const amountToDeposit = formAmountBN - confidentialAmountsSumBN
         const amountToDeposit = publicBalanceBN
 
-        /* emulating-a-fee-payer-via-devnet-faucet */
-        const [, mintError] = await tryCatch(
-          mintAptCoin(selectedAccount, parseUnits('0.3', args.token.decimals)),
-        )
-        if (mintError) {
-          args.onError(mintError)
-          return
-        }
-
         const [faOnlyBalanceResponse, getFAError] = await tryCatch(
           getFABalance(selectedAccount, args.token.address),
         )
         if (getFAError) {
-          args.onError(getFAError)
-          return
+          return getFAError
         }
         const [faOnlyBalance] = faOnlyBalanceResponse
 
@@ -1119,63 +1313,139 @@ export const ConfidentialCoinContextProvider = ({
           faOnlyBalance?.amount || '0',
         ).lt(FixedNumber.fromValue(amountToDeposit))
 
-        const [depositTxReceipt, depositError] = await tryCatch(
+        const [depositTx, buildDepositTxError] = await tryCatch(
           isInsufficientFAOnlyBalance
-            ? depositCoinTo(
+            ? buildDepositCoinToTx(
                 amountToDeposit,
                 selectedAccount.accountAddress.toString(),
+                true,
               )
-            : depositTo(
+            : buildDepositToTx(
                 amountToDeposit,
                 selectedAccount.accountAddress.toString(),
+                true,
               ),
         )
-        if (depositError) {
-          args.onError(depositError)
-          return
+        if (buildDepositTxError) {
+          return buildDepositTxError
         }
+        depositTransactionToExecute = depositTx
+        txToExecute.push(depositTx)
 
-        addTxHistoryItem({
-          txHash: depositTxReceipt.hash,
-          txType: 'deposit',
-          createdAt: time().timestamp,
-        })
+        // addTxHistoryItem({
+        //   txHash: depositTxReceipt.hash,
+        //   txType: 'deposit',
+        //   createdAt: time().timestamp,
+        // })
       }
 
       if (actualAmountBN < formAmountBN) {
-        const [rolloverTxs, rolloverError] = await tryCatch(rolloverAccount())
-        if (rolloverError) {
-          args.onError(rolloverError)
-          return
+        const [rolloverTxx, buildRolloverTxError] = await tryCatch(
+          buildRolloverAccountTx(true),
+        )
+        if (buildRolloverTxError) {
+          return buildRolloverTxError
         }
+        rolloverTransactionsToExecute = rolloverTxx
+        txToExecute.push(
+          ...(await Promise.all(
+            rolloverTxx.map(async el => {
+              return aptos.transaction.build.simple({
+                sender: selectedAccount.accountAddress,
+                data: el,
+              })
+            }),
+          )),
+        )
 
-        rolloverTxs.forEach(el => {
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore
-          if (el.payload.function.includes('rollover')) {
-            addTxHistoryItem({
-              txHash: el.hash,
-              txType: 'rollover',
-              createdAt: time().timestamp,
-            })
+        // rolloverTxs.forEach(el => {
+        //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+        //   // @ts-ignore
+        //   if (el.payload.function.includes('rollover')) {
+        //     addTxHistoryItem({
+        //       txHash: el.hash,
+        //       txType: 'rollover',
+        //       createdAt: time().timestamp,
+        //     })
 
-            return
-          }
+        //     return
+        //   }
 
-          addTxHistoryItem({
-            txHash: el.hash,
-            txType: 'normalize',
-            createdAt: time().timestamp,
+        //   addTxHistoryItem({
+        //     txHash: el.hash,
+        //     txType: 'normalize',
+        //     createdAt: time().timestamp,
+        //   })
+        // })
+      }
+
+      // const estimatedGas = (
+      //   await Promise.all(
+      //     [...txToExecute, args.opTx].map(async el => {
+      //       const [simRes] = await aptos.transaction.simulate.simple({
+      //         signerPublicKey: selectedAccount.publicKey,
+      //         transaction: el,
+      //       })
+
+      //       const estGasUsed = simRes.gas_used
+      //       const estGasPrice = simRes.gas_unit_price
+
+      //       return BigInt(estGasUsed) * BigInt(estGasPrice)
+      //     }),
+      //   )
+      // ).reduce((acc, el) => acc + el, BigInt(0))
+
+      // const [, mintError] = await tryCatch(
+      //   mintAptCoin(selectedAccount, estimatedGas * 2n),
+      // )
+      // if (mintError) {
+      //   args.onError(mintError)
+      //   return
+      // }
+
+      if (depositTransactionToExecute) {
+        const [, error] = await tryCatch(
+          sendAndWaitTx(
+            depositTransactionToExecute,
+            selectedAccount,
+            feePayerAccount,
+          ),
+        )
+        if (error) {
+          return error
+        }
+      }
+
+      if (rolloverTransactionsToExecute.length) {
+        for await (const rolloverTx of rolloverTransactionsToExecute) {
+          const simpleRolloverTx = await aptos.transaction.build.simple({
+            sender: selectedAccount.accountAddress,
+            data: rolloverTx,
+            withFeePayer: true,
           })
-        })
+
+          const senderAuthenticator =
+            selectedAccount.signTransactionWithAuthenticator(simpleRolloverTx)
+
+          const [, error] = await tryCatch(
+            aptos.signAndSubmitAsFeePayer({
+              senderAuthenticator,
+              feePayer: feePayerAccount,
+              transaction: simpleRolloverTx,
+            }),
+          )
+          if (error) {
+            return error
+          }
+        }
       }
     },
     [
-      addTxHistoryItem,
-      depositCoinTo,
-      depositTo,
+      buildDepositCoinToTx,
+      buildDepositToTx,
+      buildRolloverAccountTx,
+      feePayerAccount,
       perTokenStatuses,
-      rolloverAccount,
       selectedAccount,
     ],
   )
@@ -1183,6 +1453,7 @@ export const ConfidentialCoinContextProvider = ({
   return (
     <confidentialCoinContext.Provider
       value={{
+        feePayerAccount,
         accountsList,
 
         selectedAccount,
@@ -1214,7 +1485,9 @@ export const ConfidentialCoinContextProvider = ({
         unfreezeAccount,
 
         rolloverAccount,
+        buildTransferTx,
         transfer,
+        buildWithdrawToTx,
         withdrawTo,
         depositTo,
         depositCoinTo,

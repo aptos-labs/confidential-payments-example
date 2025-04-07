@@ -108,7 +108,7 @@ export default function HomepageLinkContent() {
           )}
           <span>
             {isLoading || activeKeylessAccount
-              ? 'Wait... Signing with google'
+              ? 'Wait… Signing in with Google'
               : 'Login with Google'}
           </span>
         </UiButton>

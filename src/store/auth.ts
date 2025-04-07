@@ -8,11 +8,13 @@ import {
   ProofFetchStatus,
   TwistedEd25519PrivateKey,
 } from '@lukachi/aptos-labs-ts-sdk'
+import { parseUnits } from 'ethers'
 import { useMemo } from 'react'
 import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 import {
+  accountFromPrivateKey,
   aptos,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
@@ -40,6 +42,8 @@ type StoredAccount = {
 }
 
 type KeylessAccountsState = {
+  feePayerAccountHex: string
+
   accounts: StoredAccount[]
   activeAccount?: KeylessAccount
   ephemeralKeyPair?: EphemeralKeyPair
@@ -48,6 +52,7 @@ type KeylessAccountsState = {
 }
 
 type KeylessAccountsActions = {
+  setFeePayerAccountHex: (accountHex: string) => void
   /**
    * Add an Ephemeral key pair to the store. If the account is invalid, an error is thrown.
    *
@@ -113,6 +118,8 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
   persist(
     (set, get, store) => ({
       ...({
+        feePayerAccountHex: Account.generate().privateKey.toString(),
+
         accounts: [],
         activeAccount: undefined,
         ephemeralKeyPair: undefined,
@@ -121,6 +128,11 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
       } satisfies KeylessAccountsState),
 
       ...({
+        setFeePayerAccountHex: (accountHex: string) => {
+          set({
+            feePayerAccountHex: accountHex,
+          })
+        },
         commitEphemeralKeyPair: keyPair => {
           const valid = isValidEphemeralKeyPair(keyPair)
           if (!valid)
@@ -290,6 +302,41 @@ const useEphemeralKeyPair = () => {
   }, [commitEphemeralKeyPair, getEphemeralKeyPair])
 }
 
+const useFeePayerAccount = () => {
+  const feePayerAccountHex = useAuthStore(state => state.feePayerAccountHex)
+
+  return useMemo(() => {
+    if (!feePayerAccountHex) {
+      const newAccount = Account.generate()
+
+      useAuthStore
+        .getState()
+        .setFeePayerAccountHex(newAccount.privateKey.toString())
+
+      return newAccount
+    }
+
+    return accountFromPrivateKey(feePayerAccountHex)
+  }, [feePayerAccountHex])
+}
+
+const useEnsureFeePayerCanAfford = () => {
+  const feePayerAccount = useFeePayerAccount()
+
+  return async (amount: bigint) => {
+    let aptBalance = await getAptBalance(feePayerAccount)
+
+    if (!aptBalance) {
+      await mintAptCoin(feePayerAccount, parseUnits('10', 8))
+      aptBalance = await getAptBalance(feePayerAccount)
+    }
+
+    if (aptBalance < amount) {
+      throw new Error('Insufficient balance')
+    }
+  }
+}
+
 const useEnsureConfidentialRegistered = () => {
   return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0
@@ -323,6 +370,7 @@ const useLogin = (opts?: {
   onSuccess?: () => void
   onError?: () => void
 }) => {
+  const ensureFeePayerCanAfford = useEnsureFeePayerCanAfford()
   const ensureConfidentialRegistered = useEnsureConfidentialRegistered()
   const ephemeralKeyPair = useEphemeralKeyPair()
   const switchKeylessAccount = useAuthStore(state => state.switchKeylessAccount)
@@ -397,6 +445,8 @@ const useLogin = (opts?: {
 
     await ensureConfidentialRegistered(keylessAccount, keylessAccountDK)
 
+    await ensureFeePayerCanAfford(1n)
+
     opts?.onSuccess?.()
   }
 
@@ -465,6 +515,8 @@ const useLogin = (opts?: {
     const dk = await decryptionKeyFromPrivateKey(account)
 
     await ensureConfidentialRegistered(account, dk)
+
+    await await ensureFeePayerCanAfford(1n)
 
     walletStore.useWalletStore
       .getState()
@@ -542,6 +594,7 @@ const useLogout = (opts?: {
 export const authStore = {
   useAuthStore: useAuthStore,
 
+  useFeePayerAccount: useFeePayerAccount,
   useLogin: useLogin,
   useRegister: useRegister,
   useLogout: useLogout,

@@ -5,6 +5,7 @@ import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
 import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
 
+import { sendAndWaitTx } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -22,8 +23,9 @@ export default function WithdrawForm({
 }) {
   const {
     selectedToken,
+    feePayerAccount,
     selectedAccount,
-    withdrawTo,
+    buildWithdrawToTx,
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
     reloadAptBalance,
@@ -94,24 +96,36 @@ export default function WithdrawForm({
       handleSubmit(async formData => {
         disableForm()
 
-        await ensureConfidentialBalanceReadyBeforeOp({
-          amountToEnsure: String(formData.amount),
-          token: token,
-          currentTokenStatus,
-          onError: error => {
-            ErrorHandler.process(error)
-            enableForm()
-          },
-        })
-
-        const [withdrawTx, withdrawError] = await tryCatch(
-          withdrawTo(
+        const [withdrawTx, buildWithdrawError] = await tryCatch(
+          buildWithdrawToTx(
             parseUnits(String(formData.amount), token.decimals).toString(),
             formData.recipient,
             {
               isSyncFirst: true,
+              isWithFeePayer: true,
             },
           ),
+        )
+        if (buildWithdrawError) {
+          ErrorHandler.process(buildWithdrawError)
+          enableForm()
+          return
+        }
+
+        const err = await ensureConfidentialBalanceReadyBeforeOp({
+          amountToEnsure: String(formData.amount),
+          token: token,
+          currentTokenStatus,
+          opTx: withdrawTx,
+        })
+        if (err) {
+          ErrorHandler.process(err)
+          enableForm()
+          return
+        }
+
+        const [txReceipt, withdrawError] = await tryCatch(
+          sendAndWaitTx(withdrawTx, selectedAccount, feePayerAccount),
         )
         if (withdrawError) {
           ErrorHandler.process(withdrawError)
@@ -120,7 +134,7 @@ export default function WithdrawForm({
         }
 
         addTxHistoryItem({
-          txHash: withdrawTx.hash,
+          txHash: txReceipt.hash,
           txType: 'withdraw',
           createdAt: time().timestamp,
         })
@@ -140,17 +154,19 @@ export default function WithdrawForm({
       })(),
     [
       addTxHistoryItem,
+      buildWithdrawToTx,
       clearForm,
       currentTokenStatus,
       disableForm,
       enableForm,
       ensureConfidentialBalanceReadyBeforeOp,
+      feePayerAccount,
       handleSubmit,
       loadSelectedDecryptionKeyState,
       onSubmit,
       reloadAptBalance,
+      selectedAccount,
       token,
-      withdrawTo,
     ],
   )
 

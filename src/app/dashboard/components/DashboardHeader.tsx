@@ -156,13 +156,9 @@ export default function DashboardHeader({
               href={getAccountExplorerUrl(
                 selectedAccount.accountAddress.toString(),
               )}
+              target='_blank'
             >
-              <button
-                className=''
-                onClick={() => copy(selectedAccount.accountAddress.toString())}
-              >
-                <UiIcon name='ExternalLinkIcon' className='size-4' />
-              </button>
+              <UiIcon name='ExternalLinkIcon' className='size-4' />
               <span className='typography-caption1 text-textPrimary'>
                 Account
               </span>

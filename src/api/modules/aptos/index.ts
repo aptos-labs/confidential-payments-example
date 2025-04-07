@@ -390,16 +390,32 @@ export const safelyRolloverConfidentialBalance = async (
   return sendAndWaitBatchTxs(rolloverTxPayloads, account)
 }
 
+export const buildRegisterConfidentialBalanceTx = async (
+  account: Account,
+  publicKeyHex: string,
+  tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
+) => {
+  return aptos.confidentialCoin.registerBalance({
+    sender: account.accountAddress,
+    tokenAddress: tokenAddress,
+    publicKey: new TwistedEd25519PublicKey(publicKeyHex),
+    feePayerAddress,
+  })
+}
+
 export const registerConfidentialBalance = async (
   account: Account,
   publicKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
+  feePayerAddress?: string,
 ) => {
-  const registerVBTxBody = await aptos.confidentialCoin.registerBalance({
-    sender: account.accountAddress,
-    tokenAddress: tokenAddress,
-    publicKey: new TwistedEd25519PublicKey(publicKeyHex),
-  })
+  const registerVBTxBody = await buildRegisterConfidentialBalanceTx(
+    account,
+    publicKeyHex,
+    tokenAddress,
+    feePayerAddress,
+  )
 
   return sendAndWaitTx(registerVBTxBody, account)
 }

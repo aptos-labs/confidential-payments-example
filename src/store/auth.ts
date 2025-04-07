@@ -16,6 +16,7 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 import {
   accountFromPrivateKey,
   aptos,
+  buildRegisterConfidentialBalanceTx,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
@@ -27,7 +28,7 @@ import {
   isValidEphemeralKeyPair,
   KeylessAccountEncoding,
   mintAptCoin,
-  registerConfidentialBalance,
+  sendAndWaitTx,
   validateEphemeralKeyPair,
   validateIdToken,
   validateKeylessAccount,
@@ -338,6 +339,8 @@ const useEnsureFeePayerCanAfford = () => {
 }
 
 const useEnsureConfidentialRegistered = () => {
+  const feePayerAccount = useFeePayerAccount()
+
   return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0
 
@@ -345,7 +348,7 @@ const useEnsureConfidentialRegistered = () => {
       const isConfidentialAccountRegistered =
         await getIsAccountRegisteredWithToken(account)
 
-      if (isConfidentialAccountRegistered) break
+      if (isConfidentialAccountRegistered) return
 
       const aptBalance = await getAptBalance(account)
 
@@ -355,13 +358,26 @@ const useEnsureConfidentialRegistered = () => {
 
       await sleep(500)
 
-      await tryCatch(
-        registerConfidentialBalance(account, dk.publicKey().toString()),
+      const [tx] = await tryCatch(
+        buildRegisterConfidentialBalanceTx(
+          account,
+          dk.publicKey().toString(),
+          config.DEFAULT_TOKEN_ADRESSES[0],
+          feePayerAccount.accountAddress.toString(),
+        ),
       )
+
+      if (tx) {
+        await tryCatch(sendAndWaitTx(tx, account, feePayerAccount))
+      }
 
       attempts++
       await sleep(500)
     } while (attempts < 3)
+
+    throw new TypeError(
+      'Could not register confidential balance. Please try again.',
+    )
   }
 }
 
@@ -442,6 +458,8 @@ const useLogin = (opts?: {
     if (!keylessAccount?.pepper) throw new Error('No pepper found')
 
     const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper)
+
+    await await ensureFeePayerCanAfford(1n)
 
     await ensureConfidentialRegistered(keylessAccount, keylessAccountDK)
 

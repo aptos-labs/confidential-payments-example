@@ -7,6 +7,7 @@ import {
   BellIcon,
   BookOpenIcon,
   BotIcon,
+  CalendarIcon,
   CameraIcon,
   CheckIcon,
   ChevronDownIcon,
@@ -125,6 +126,7 @@ const LIB_ICONS = {
   EarthIcon: EarthIcon,
   EarthLockIcon: EarthLockIcon,
   ExternalLinkIcon: ExternalLinkIcon,
+  CalendarIcon: CalendarIcon,
 }
 
 type LibIconProps = {

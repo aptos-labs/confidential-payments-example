@@ -18,7 +18,7 @@ import { Control, useFieldArray } from 'react-hook-form'
 
 import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, isMobile, tryCatch } from '@/helpers'
+import { abbrCenter, ErrorHandler, isMobile, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { cn } from '@/theme/utils'
@@ -214,6 +214,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             txHash: txReceipt.hash,
             txType: 'transfer',
             createdAt: time().timestamp,
+            message: `Confidentially-sent ${formData.amount} ${token.symbol} to ${abbrCenter(formData.receiverAddressHex)}`,
           })
 
           const [, reloadError] = await tryCatch(

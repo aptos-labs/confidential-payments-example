@@ -7,7 +7,7 @@ import { useCallback, useMemo } from 'react'
 
 import { sendAndWaitTx } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, tryCatch } from '@/helpers'
+import { abbrCenter, ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
 import { TokenBaseInfo } from '@/store/wallet'
 import { UiButton } from '@/ui/UiButton'
@@ -137,6 +137,7 @@ export default function WithdrawForm({
           txHash: txReceipt.hash,
           txType: 'withdraw',
           createdAt: time().timestamp,
+          message: `Publicly-withdrew ${formData.amount} ${token.symbol} to ${abbrCenter(formData.recipient)}`,
         })
 
         const [, reloadError] = await tryCatch(

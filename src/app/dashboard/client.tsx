@@ -451,9 +451,10 @@ function TxItem({
   createdAt,
   txType,
   txHash,
+  message,
   ...rest
 }: HTMLAttributes<HTMLDivElement> & TxHistoryItem) {
-  const message = {
+  const title = {
     transfer: 'Transfer',
     ['transfer-native']: 'Send APT',
     deposit: 'Deposit',
@@ -492,10 +493,22 @@ function TxItem({
         {icon}
       </div>
       <div className='flex flex-col gap-2'>
-        {createdAt && (
-          <span className='text-textPrimary'>{formatDateDMYT(createdAt)}</span>
+        <span className='typography-subtitle3 text-textPrimary'>{title}</span>
+        {message && (
+          <span className='typography-body4 text-textSecondary'>{message}</span>
         )}
-        <span className='text-textPrimary'>{message}</span>
+        <div className='flex items-center gap-2'>
+          <UiIcon
+            name='CalendarIcon'
+            size={14}
+            className='text-textSecondary'
+          />
+          {createdAt && (
+            <span className='typography-caption3 text-textSecondary'>
+              {formatDateDMYT(createdAt)}
+            </span>
+          )}
+        </div>
       </div>
 
       <Link

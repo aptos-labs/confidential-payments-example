@@ -1,12 +1,14 @@
 'use client'
 
 import { QueryClientProvider } from '@tanstack/react-query'
+import { parseUnits } from 'ethers'
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary'
 import { useRouter } from 'next/navigation'
 import { useState } from 'react'
 import { useTimeoutFn } from 'react-use'
 
 import { queryClient } from '@/api/client'
+import { getAptBalance, mintAptCoin } from '@/api/modules/aptos'
 import { preloadTables } from '@/api/modules/aptos/wasmPollardKangaroo'
 import DashboardClient from '@/app/dashboard/client'
 import { ConfidentialCoinContextProvider } from '@/app/dashboard/context'
@@ -21,6 +23,8 @@ export default function DashboardPageContent() {
   const walletAccounts = walletStore.useWalletAccounts()
 
   const [isInitialized, setIsInitialized] = useState(false)
+
+  const feePayerAccount = authStore.useFeePayerAccount()
 
   const keylessAccounts = authStore.useAuthStore(state => state.accounts)
   const activeKeylessAccount = authStore.useAuthStore(
@@ -38,6 +42,12 @@ export default function DashboardPageContent() {
 
       if (!activeKeylessAccount && keylessAccounts.length) {
         await switchKeylessAccount(keylessAccounts[0].idToken.raw)
+      }
+
+      const feePayerBalance = await getAptBalance(feePayerAccount)
+
+      if (feePayerBalance < 0.2 * 10 ** 8) {
+        await mintAptCoin(feePayerAccount, parseUnits('0.8', 8))
       }
     } catch (error) {
       ErrorHandler.processWithoutFeedback(error)

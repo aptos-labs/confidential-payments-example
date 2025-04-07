@@ -110,6 +110,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         txHash: depositTxReceipt.hash,
         txType: 'deposit',
         createdAt: time().timestamp,
+        message: `Gifted ${MINT_AMOUNT} ${selectedToken.symbol} from the faucet`,
       })
     }
 

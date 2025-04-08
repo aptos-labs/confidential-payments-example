@@ -182,7 +182,7 @@ export default function DashboardClient() {
       <header className='order-2 flex h-16 shrink-0 items-center justify-end gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:order-1'>
         <DashboardHeader />
       </header>
-      <div className='order-1 flex flex-1 flex-col md:order-2'>
+      <div className='order-1 flex flex-1 flex-col overflow-y-auto md:order-2'>
         <UiSeparator />
         <div className='flex size-full flex-1 flex-col'>
           <div

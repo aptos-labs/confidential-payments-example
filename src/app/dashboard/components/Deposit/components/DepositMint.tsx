@@ -6,7 +6,7 @@ import { useState } from 'react'
 import { getFABalance, mintAptCoin } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { USDC_MOCKED_TOKEN_ADDR } from '@/config'
-import { bus, BusEvents, ErrorHandler, tryCatch } from '@/helpers'
+import { bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { UiButton } from '@/ui/UiButton'
 import { UiSkeleton } from '@/ui/UiSkeleton'
@@ -70,59 +70,98 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     setIsSubmitting(true)
     const amountToDeposit = parseUnits(`${MINT_AMOUNT}`, selectedToken.decimals)
 
-    const [, mintError] = await tryCatch(
-      mintAptCoin(selectedAccount, amountToDeposit),
-    )
-    if (mintError) {
-      ErrorHandler.processWithoutFeedback(mintError)
-      setIsSubmitting(false)
-      return
-    }
+    let mintAttempts = 0
 
-    if (isRegistered) {
-      const [faOnlyBalance] = await getFABalance(
-        selectedAccount,
-        selectedToken.address,
+    do {
+      const [, mintError] = await tryCatch(
+        mintAptCoin(selectedAccount, amountToDeposit),
       )
+      if (mintError) {
+        if (mintAttempts >= 5) {
+          ErrorHandler.process(mintError)
+          setIsSubmitting(false)
+          return
+        }
 
-      const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
-        faOnlyBalance?.amount || '0',
-      ).lt(FixedNumber.fromValue(amountToDeposit))
-
-      const [depositTxReceipt, depositError] = await tryCatch(
-        isInsufficientFAOnlyBalance
-          ? depositCoinTo(
-              amountToDeposit,
-              selectedAccount.accountAddress.toString(),
-            )
-          : depositTo(
-              amountToDeposit,
-              selectedAccount.accountAddress.toString(),
-            ),
-      )
-      if (depositError) {
-        ErrorHandler.process(depositError)
-        setIsSubmitting(false)
-        return
+        mintAttempts += 1
+        await sleep(200)
+        continue
       }
 
-      addTxHistoryItem({
-        txHash: depositTxReceipt.hash,
-        txType: 'deposit',
-        createdAt: time().timestamp,
-        message: `Gifted ${MINT_AMOUNT} ${selectedToken.symbol} from the faucet`,
-      })
-    }
+      break
+    } while (mintAttempts < 5)
 
-    await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()])
-    bus.emit(
-      BusEvents.Success,
-      isRegistered
-        ? 'Successfully funded your balance with 1 APT'
-        : 'Successfully funded your public balance with 1 APT',
-    )
-    setIsSubmitting(false)
-    onSubmit?.()
+    if (isRegistered) {
+      let depositAttempts = 0
+
+      do {
+        const [faOnlyBalanceResponse, getFAError] = await tryCatch(
+          getFABalance(selectedAccount, selectedToken.address),
+        )
+        if (getFAError) {
+          if (depositAttempts >= 5) {
+            ErrorHandler.process(getFAError)
+            setIsSubmitting(false)
+            return
+          }
+
+          depositAttempts += 1
+          await sleep(200)
+          continue
+        }
+
+        const [faOnlyBalance] = faOnlyBalanceResponse
+
+        const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
+          faOnlyBalance?.amount || '0',
+        ).lt(FixedNumber.fromValue(amountToDeposit))
+
+        const [depositTxReceipt, depositError] = await tryCatch(
+          isInsufficientFAOnlyBalance
+            ? depositCoinTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              )
+            : depositTo(
+                amountToDeposit,
+                selectedAccount.accountAddress.toString(),
+              ),
+        )
+        if (depositError) {
+          if (depositAttempts >= 5) {
+            ErrorHandler.process(depositError)
+            setIsSubmitting(false)
+            return
+          }
+
+          depositAttempts += 1
+          await sleep(200)
+          continue
+        }
+
+        addTxHistoryItem({
+          txHash: depositTxReceipt.hash,
+          txType: 'deposit',
+          createdAt: time().timestamp,
+          message: `Gifted ${MINT_AMOUNT} ${selectedToken.symbol} from the faucet`,
+        })
+
+        await Promise.all([
+          reloadAptBalance(),
+          loadSelectedDecryptionKeyState(),
+        ])
+        bus.emit(
+          BusEvents.Success,
+          isRegistered
+            ? 'Successfully funded your balance with 1 APT'
+            : 'Successfully funded your public balance with 1 APT',
+        )
+        setIsSubmitting(false)
+        onSubmit?.()
+
+        break
+      } while (depositAttempts < 5)
+    }
   }
 
   return (

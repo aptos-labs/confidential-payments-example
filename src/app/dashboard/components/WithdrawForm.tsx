@@ -5,7 +5,7 @@ import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
 import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
 
-import { sendAndWaitTx } from '@/api/modules/aptos'
+import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos'
 import { useConfidentialCoinContext } from '@/app/dashboard/context'
 import { abbrCenter, ErrorHandler, tryCatch } from '@/helpers'
 import { useForm } from '@/hooks'
@@ -68,6 +68,13 @@ export default function WithdrawForm({
             return AccountAddress.isValid({
               input: v,
             }).valid
+          })
+          .test('NoReceiverAddr', 'Receiver not found', async v => {
+            if (!v) return false
+
+            const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address))
+            if (ekError) return false
+            return Boolean(ek)
           })
           .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
             if (!v) return false

@@ -157,7 +157,7 @@ const useWalletStore = create(
             accountAddrHexToTokenAddrMap: {},
             _selectedTokenAddress: '',
 
-            accountAddrHexPerTokenTxHistory: {},
+            // accountAddrHexPerTokenTxHistory: {},
           })
         },
       }),

@@ -257,7 +257,7 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
     {
       storage: storage,
       name: 'auth-store',
-      version: 1,
+      version: 2,
 
       merge: (persistedState, currentState) => {
         const merged = { ...currentState, ...(persistedState as object) }

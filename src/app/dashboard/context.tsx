@@ -481,6 +481,17 @@ const useSelectedAccountDecryptionKey = () => {
     )
   }
 
+  try {
+    // eslint-disable-next-line no-console
+    console.log({
+      hex: selectedAccountDecryptionKey.publicKey().toString(),
+      arr: selectedAccountDecryptionKey.publicKey().toUint8Array(),
+    })
+  } catch (error) {
+    // eslint-disable-next-line no-console
+    console.log({ error })
+  }
+
   return {
     selectedAccountDecryptionKey,
 

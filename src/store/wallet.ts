@@ -164,7 +164,7 @@ const useWalletStore = create(
     ),
     {
       name: 'wallet',
-      version: 2,
+      version: 3,
 
       onRehydrateStorage: () => state => {
         state?.setHasHydrated(true)

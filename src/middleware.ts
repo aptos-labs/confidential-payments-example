@@ -1,9 +1,7 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo'
 import { NextResponse } from 'next/server'
 
-import { aptos } from './api/modules/aptos'
 import { config as appConfig } from './config'
-import { tryCatch } from './helpers'
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
@@ -60,24 +58,33 @@ const authGuard = async ({ request }: MiddlewareFunctionProps) => {
 }
 
 const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
-  const [, err] = await tryCatch(
-    aptos.getAccountModule({
-      accountAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-      moduleName: 'confidential_asset',
-    }),
+  const response = await fetch(
+    `https://api.devnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
   )
 
-  if (err) {
-    console.error('Error fetching module:', err)
+  if (!response.ok) {
+    console.error('Error fetching module:', response.statusText)
     return NextResponse.redirect(new URL('/maintenance', request.url))
   }
 
   return NextResponse.next()
 }
 
+const maintenanceGuard = async ({ request }: MiddlewareFunctionProps) => {
+  const response = await fetch(
+    `https://api.devnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+  )
+
+  if (response.ok) {
+    return NextResponse.redirect(new URL('/maintenance', request.url))
+  }
+  return NextResponse.next()
+}
+
 const middlewares = {
   '/dashboard': [moduleValidGuard],
   '/': [moduleValidGuard],
+  '/maintenance': [maintenanceGuard],
 }
 
 export const middleware = createMiddleware(middlewares)

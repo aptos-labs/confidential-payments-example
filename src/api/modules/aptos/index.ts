@@ -3,8 +3,6 @@ import {
   Account,
   AccountAddress,
   type AnyRawTransaction,
-  Aptos,
-  AptosConfig,
   type CommittedTransactionResponse,
   ConfidentialAmount,
   ConfidentialCoin,
@@ -15,8 +13,6 @@ import {
   KeylessAccount,
   MoveStructId,
   MoveValue,
-  Network,
-  NetworkToNetworkName,
   PrivateKey,
   PrivateKeyVariants,
   RangeProofExecutor,
@@ -39,6 +35,8 @@ import {
 import { config as appConfig } from '@/config'
 import { type TokenBaseInfo } from '@/store/wallet'
 
+import { aptos } from './client'
+
 if (appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR) {
   ConfidentialCoin.setConfidentialCoinModuleAddress(
     appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
@@ -49,11 +47,6 @@ RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP)
 RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP)
 RangeProofExecutor.setGenerateRangeZKP(generateRangeZKP)
 RangeProofExecutor.setVerifyRangeZKP(verifyRangeZKP)
-
-const config = new AptosConfig({
-  network: NetworkToNetworkName[Network.DEVNET],
-})
-export const aptos = new Aptos(config)
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')

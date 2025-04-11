@@ -17,7 +17,6 @@ import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
 
 import {
-  aptos,
   buildDepositConfidentialBalanceCoinTx,
   buildDepositConfidentialBalanceTx,
   buildSafelyRolloverConfidentialBalanceTx,
@@ -42,6 +41,7 @@ import {
   transferConfidentialCoin,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
+import { aptos } from '@/api/modules/aptos/client'
 import { ErrorHandler, tryCatch } from '@/helpers'
 import { useLoading } from '@/hooks'
 import { authStore } from '@/store/auth'

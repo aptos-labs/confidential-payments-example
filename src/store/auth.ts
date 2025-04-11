@@ -15,7 +15,6 @@ import { createJSONStorage, persist } from 'zustand/middleware'
 
 import {
   accountFromPrivateKey,
-  aptos,
   buildRegisterConfidentialBalanceTx,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
@@ -33,6 +32,7 @@ import {
   validateIdToken,
   validateKeylessAccount,
 } from '@/api/modules/aptos'
+import { aptos } from '@/api/modules/aptos/client'
 import { sleep, tryCatch } from '@/helpers'
 import { authClient } from '@/lib/auth-client'
 import { walletStore } from '@/store/wallet'
@@ -257,7 +257,7 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
     {
       storage: storage,
       name: 'auth-store',
-      version: 2,
+      version: 3,
 
       merge: (persistedState, currentState) => {
         const merged = { ...currentState, ...(persistedState as object) }

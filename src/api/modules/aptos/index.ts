@@ -614,9 +614,7 @@ export const getConfidentialBalances = async (
   try {
     const [confidentialAmountPending, confidentialAmountActual] =
       await Promise.all([
-        ConfidentialAmount.fromEncrypted(pending, decryptionKey, {
-          chunksCount: 4,
-        }),
+        ConfidentialAmount.fromEncrypted(pending, decryptionKey),
         ConfidentialAmount.fromEncrypted(actual, decryptionKey),
       ])
 

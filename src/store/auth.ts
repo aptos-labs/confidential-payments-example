@@ -459,7 +459,7 @@ const useLogin = (opts?: {
 
     const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper)
 
-    await await ensureFeePayerCanAfford(1n)
+    await ensureFeePayerCanAfford(1n)
 
     await ensureConfidentialRegistered(keylessAccount, keylessAccountDK)
 
@@ -532,9 +532,9 @@ const useLogin = (opts?: {
 
     const dk = await decryptionKeyFromPrivateKey(account)
 
-    await ensureConfidentialRegistered(account, dk)
+    await ensureFeePayerCanAfford(1n)
 
-    await await ensureFeePayerCanAfford(1n)
+    await ensureConfidentialRegistered(account, dk)
 
     walletStore.useWalletStore
       .getState()

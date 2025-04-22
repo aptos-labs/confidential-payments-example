@@ -1,6 +1,7 @@
 'use client'
 
 import { config } from '@config'
+import { time } from '@distributedlab/tools'
 import {
   Account,
   CommittedTransactionResponse,
@@ -8,13 +9,16 @@ import {
   InputGenerateTransactionPayloadData,
   KeylessAccount,
   SimpleTransaction,
+  TwistedElGamalCiphertext,
 } from '@lukachi/aptos-labs-ts-sdk'
 import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
-import { FixedNumber, parseUnits } from 'ethers'
+import { FixedNumber, formatUnits, getBytes, parseUnits } from 'ethers'
 import { jwtDecode, JwtPayload } from 'jwt-decode'
+import get from 'lodash/get'
 import { PropsWithChildren } from 'react'
 import { useCallback } from 'react'
 import { createContext, useContext, useMemo } from 'react'
+import { useHarmonicIntervalFn } from 'react-use'
 
 import {
   buildDepositConfidentialBalanceCoinTx,
@@ -479,17 +483,6 @@ const useSelectedAccountDecryptionKey = () => {
       selectedAccountDecryptionKey.publicKey().toString(),
       tokenAddress,
     )
-  }
-
-  try {
-    // eslint-disable-next-line no-console
-    console.log({
-      hex: selectedAccountDecryptionKey.publicKey().toString(),
-      arr: selectedAccountDecryptionKey.publicKey().toUint8Array(),
-    })
-  } catch (error) {
-    // eslint-disable-next-line no-console
-    console.log({ error })
   }
 
   return {
@@ -1460,6 +1453,84 @@ export const ConfidentialCoinContextProvider = ({
       selectedAccount,
     ],
   )
+
+  useHarmonicIntervalFn(async () => {
+    const eventType = `${config.CONFIDENTIAL_ASSET_MODULE_ADDR}::confidential_asset::Transferred`
+
+    const allEvents = await aptos.getEvents({
+      options: {
+        where: {
+          indexed_type: { _eq: eventType },
+          data: {
+            _contains: {
+              to: selectedAccount.accountAddress.toString(),
+            },
+          },
+        },
+      },
+    })
+
+    const txHistoryItems = await Promise.all(
+      allEvents.map(async el => {
+        const tx = await aptos.getTransactionByVersion({
+          ledgerVersion: el.transaction_version,
+        })
+
+        const serializedEncryptedAmountBytes = getBytes(
+          get(tx, 'payload.arguments', [])[3],
+        )
+
+        const chunkedBytes: Uint8Array[] = []
+        const chunkSize = Math.ceil(
+          serializedEncryptedAmountBytes.length /
+            (ConfidentialAmount.CHUNKS_COUNT / 2),
+        )
+
+        for (
+          let i = 0;
+          i < serializedEncryptedAmountBytes.length;
+          i += chunkSize
+        ) {
+          chunkedBytes.push(
+            serializedEncryptedAmountBytes.slice(i, i + chunkSize),
+          )
+        }
+
+        // Create encrypted amount from the serialized bytes
+        const encrypted = chunkedBytes.map(el => {
+          const C = el.slice(0, el.length / 2)
+          const D = el.slice(el.length / 2)
+          return new TwistedElGamalCiphertext(C, D)
+        })
+
+        const amount = await ConfidentialAmount.fromEncrypted(
+          encrypted,
+          selectedAccountDecryptionKey,
+        )
+
+        const txHash = tx.hash
+
+        const createdAt = time(Number(get(tx, 'timestamp', 0)) / 1000 / 1000)
+
+        return {
+          txHash: txHash,
+          createdAt: createdAt.timestamp,
+          message: `Received ${formatUnits(amount.amount, selectedToken.decimals)} ${selectedToken.symbol}`,
+          txType: 'receive' as TxHistoryItem['txType'],
+        }
+      }),
+    )
+
+    const txToAdd = txHistoryItems.filter(el => {
+      return !txHistory.some(item => item.txHash === el.txHash)
+    })
+
+    if (txToAdd.length) {
+      txToAdd.forEach(el => {
+        addTxHistoryItem(el)
+      })
+    }
+  }, 25_000)
 
   return (
     <confidentialCoinContext.Provider

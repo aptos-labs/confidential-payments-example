@@ -34,6 +34,7 @@ export type TxHistoryItem = {
     | 'register'
     | 'normalize'
     | 'mint'
+    | 'receive'
   message?: string
 }
 

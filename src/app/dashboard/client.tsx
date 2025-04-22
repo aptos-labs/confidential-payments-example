@@ -1,5 +1,6 @@
 'use client'
 
+import { time } from '@distributedlab/tools'
 import {
   ArrowDownIcon,
   ArrowRightIcon,
@@ -347,9 +348,13 @@ export default function DashboardClient() {
           >
             {txHistory.length ? (
               <div className='flex flex-col gap-6'>
-                {txHistory.reverse().map((el, idx) => (
-                  <TxItem key={idx} {...el} />
-                ))}
+                {txHistory
+                  .sort((a, b) => {
+                    return time(a.createdAt).isAfter(time(b.createdAt)) ? -1 : 1
+                  })
+                  .map((el, idx) => (
+                    <TxItem key={idx} {...el} />
+                  ))}
               </div>
             ) : (
               <div className='flex w-full flex-col items-center gap-4 self-center'>
@@ -466,6 +471,7 @@ function TxItem({
     register: 'Register',
     normalize: 'Normalize',
     mint: 'Mint',
+    receive: 'Receive',
   }[txType]
 
   const icon = {
@@ -482,6 +488,7 @@ function TxItem({
     register: <IdCardIcon size={24} className={cn('text-textPrimary')} />,
     normalize: <EditIcon size={24} className={cn('text-textPrimary')} />,
     mint: <HandCoinsIcon size={24} className={cn('text-textPrimary')} />,
+    receive: <ArrowDownIcon size={24} className={cn('text-textPrimary')} />,
   }[txType]
 
   return (

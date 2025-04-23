@@ -1,7 +1,7 @@
 'use client'
 
+import { Account } from '@aptos-labs/ts-sdk'
 import { BN, time } from '@distributedlab/tools'
-import { Account } from '@lukachi/aptos-labs-ts-sdk'
 import Avatar from 'boring-avatars'
 import { jwtDecode } from 'jwt-decode'
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'

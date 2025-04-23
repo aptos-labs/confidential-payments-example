@@ -1,8 +1,8 @@
 /* eslint-disable unused-imports/no-unused-vars */
 'use client'
 
+import { AccountAddress } from '@aptos-labs/ts-sdk'
 import { time } from '@distributedlab/tools'
-import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
 import { formatUnits, isHexString, parseUnits } from 'ethers'
 import {
   ComponentProps,

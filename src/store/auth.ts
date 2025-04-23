@@ -1,13 +1,13 @@
 'use client'
 
-import { config } from '@config'
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets'
 import {
   Account,
   EphemeralKeyPair,
   KeylessAccount,
   ProofFetchStatus,
-  TwistedEd25519PrivateKey,
-} from '@lukachi/aptos-labs-ts-sdk'
+} from '@aptos-labs/ts-sdk'
+import { config } from '@config'
 import { parseUnits } from 'ethers'
 import { useMemo } from 'react'
 import { create } from 'zustand'

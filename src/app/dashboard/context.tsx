@@ -1,17 +1,19 @@
 'use client'
 
-import { config } from '@config'
-import { time } from '@distributedlab/tools'
+import {
+  ConfidentialAmount,
+  TwistedEd25519PrivateKey,
+  TwistedElGamalCiphertext,
+} from '@aptos-labs/confidential-assets'
 import {
   Account,
   CommittedTransactionResponse,
-  ConfidentialAmount,
   InputGenerateTransactionPayloadData,
   KeylessAccount,
   SimpleTransaction,
-  TwistedElGamalCiphertext,
-} from '@lukachi/aptos-labs-ts-sdk'
-import { TwistedEd25519PrivateKey } from '@lukachi/aptos-labs-ts-sdk'
+} from '@aptos-labs/ts-sdk'
+import { config } from '@config'
+import { time } from '@distributedlab/tools'
 import { FixedNumber, formatUnits, getBytes, parseUnits } from 'ethers'
 import { jwtDecode, JwtPayload } from 'jwt-decode'
 import get from 'lodash/get'
@@ -24,7 +26,7 @@ import {
   buildDepositConfidentialBalanceCoinTx,
   buildDepositConfidentialBalanceTx,
   buildSafelyRolloverConfidentialBalanceTx,
-  buildTransferConfidentialCoin,
+  buildTransferConfidentialAsset,
   buildWithdrawConfidentialBalance,
   depositConfidentialBalance,
   depositConfidentialBalanceCoin,
@@ -42,7 +44,7 @@ import {
   registerConfidentialBalance,
   safelyRolloverConfidentialBalance,
   sendAndWaitTx,
-  transferConfidentialCoin,
+  transferConfidentialAsset,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos'
 import { aptos } from '@/api/modules/aptos/client'
@@ -1033,7 +1035,7 @@ export const ConfidentialCoinContextProvider = ({
 
       if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
 
-      return buildTransferConfidentialCoin(
+      return buildTransferConfidentialAsset(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
         amountEncrypted,
@@ -1080,7 +1082,7 @@ export const ConfidentialCoinContextProvider = ({
 
       if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded')
 
-      return transferConfidentialCoin(
+      return transferConfidentialAsset(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
         amountEncrypted,

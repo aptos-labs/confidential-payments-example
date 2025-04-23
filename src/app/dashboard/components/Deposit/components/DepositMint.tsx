@@ -1,5 +1,5 @@
+import { APTOS_FA } from '@aptos-labs/ts-sdk'
 import { time } from '@distributedlab/tools'
-import { APTOS_FA } from '@lukachi/aptos-labs-ts-sdk'
 import { FixedNumber, parseUnits } from 'ethers'
 import { useState } from 'react'
 

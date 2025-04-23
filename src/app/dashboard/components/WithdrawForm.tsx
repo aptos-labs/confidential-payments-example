@@ -1,7 +1,7 @@
 'use client'
 
+import { AccountAddress } from '@aptos-labs/ts-sdk'
 import { time } from '@distributedlab/tools'
-import { AccountAddress } from '@lukachi/aptos-labs-ts-sdk'
 import { formatUnits, parseUnits } from 'ethers'
 import { useCallback, useMemo } from 'react'
 

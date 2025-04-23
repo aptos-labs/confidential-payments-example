@@ -6,16 +6,16 @@ import initWasm, {
   batch_verify_proof as batchVerifyProof,
   range_proof as rangeProof,
   verify_proof as verifyProof,
-} from '@distributedlab/aptos-wasm-bindings/range-proofs'
+} from '@aptos-labs/confidential-asset-wasm-bindings/range-proofs'
 import {
   BatchRangeProofInputs,
   BatchVerifyRangeProofInputs,
   RangeProofInputs,
   VerifyRangeProofInputs,
-} from '@lukachi/aptos-labs-ts-sdk'
+} from '@aptos-labs/confidential-assets'
 
 const RANGE_PROOF_WASM_URL =
-  'https://unpkg.com/@distributedlab/aptos-wasm-bindings@0.3.16/range-proofs/aptos_rp_wasm_bg.wasm'
+  'https://unpkg.com/@aptos-labs/confidential-asset-wasm-bindings@0.0.2/range-proofs/aptos_rp_wasm_bg.wasm'
 
 /**
  * Generate range Zero Knowledge Proof

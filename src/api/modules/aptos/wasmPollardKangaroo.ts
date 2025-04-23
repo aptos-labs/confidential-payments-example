@@ -4,17 +4,17 @@
 import initWasm, {
   create_kangaroo,
   WASMKangaroo,
-} from '@distributedlab/aptos-wasm-bindings/pollard-kangaroo'
+} from '@aptos-labs/confidential-asset-wasm-bindings/pollard-kangaroo'
 import {
   ConfidentialAmount,
   TwistedEd25519PrivateKey,
   TwistedElGamal,
   TwistedElGamalCiphertext,
-} from '@lukachi/aptos-labs-ts-sdk'
+} from '@aptos-labs/confidential-assets'
 import { bytesToNumberLE } from '@noble/curves/abstract/utils'
 
 const POLLARD_KANGAROO_WASM_URL =
-  'https://unpkg.com/@distributedlab/aptos-wasm-bindings@0.3.15/pollard-kangaroo/aptos_pollard_kangaroo_wasm_bg.wasm'
+  'https://unpkg.com/@aptos-labs/confidential-asset-wasm-bindings@0.0.2/pollard-kangaroo/aptos_pollard_kangaroo_wasm_bg.wasm'
 
 export async function createKangaroo(secret_size: number) {
   await initWasm({ module_or_path: POLLARD_KANGAROO_WASM_URL })

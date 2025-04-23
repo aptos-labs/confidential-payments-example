@@ -1,11 +1,16 @@
-import { BN, time } from '@distributedlab/tools'
+import {
+  ConfidentialAmount,
+  ConfidentialAsset,
+  TwistedEd25519PrivateKey,
+  TwistedEd25519PublicKey,
+  TwistedElGamalCiphertext,
+} from '@aptos-labs/confidential-assets'
+import { RangeProofExecutor } from '@aptos-labs/confidential-assets'
 import {
   Account,
   AccountAddress,
   type AnyRawTransaction,
   type CommittedTransactionResponse,
-  ConfidentialAmount,
-  ConfidentialCoin,
   Ed25519PrivateKey,
   EphemeralKeyPair,
   GetFungibleAssetMetadataResponse,
@@ -15,12 +20,9 @@ import {
   MoveValue,
   PrivateKey,
   PrivateKeyVariants,
-  RangeProofExecutor,
   TransactionWorkerEventsEnum,
-  TwistedEd25519PrivateKey,
-  TwistedEd25519PublicKey,
-  type TwistedElGamalCiphertext,
-} from '@lukachi/aptos-labs-ts-sdk'
+} from '@aptos-labs/ts-sdk'
+import { BN, time } from '@distributedlab/tools'
 import { sha256 } from '@noble/hashes/sha256'
 import { ethers, isHexString } from 'ethers'
 import { jwtDecode } from 'jwt-decode'
@@ -35,10 +37,10 @@ import {
 import { config as appConfig } from '@/config'
 import { type TokenBaseInfo } from '@/store/wallet'
 
-import { aptos } from './client'
+import { aptos, confidentialAssets } from './client'
 
 if (appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR) {
-  ConfidentialCoin.setConfidentialCoinModuleAddress(
+  ConfidentialAsset.setConfidentialAssetModuleAddress(
     appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
   )
 }
@@ -192,7 +194,7 @@ export const getModuleMockedTokenAddr = async () => {
     ]
   >({
     payload: {
-      function: `${ConfidentialCoin.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::get_token_metadata`,
+      function: `${ConfidentialAsset.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::get_token_metadata`,
     },
   })
 
@@ -233,7 +235,7 @@ export const buildWithdrawConfidentialBalance = async (
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
-  return aptos.confidentialCoin.withdraw({
+  return confidentialAssets.withdraw({
     sender: account.accountAddress,
     to: receiver,
     tokenAddress,
@@ -267,13 +269,13 @@ export const withdrawConfidentialBalance = async (
 }
 
 export const getEkByAddr = async (addrHex: string, tokenAddress: string) => {
-  return aptos.confidentialCoin.getEncryptionByAddr({
+  return confidentialAssets.getEncryptionByAddr({
     accountAddress: AccountAddress.from(addrHex),
     tokenAddress,
   })
 }
 
-export const buildTransferConfidentialCoin = async (
+export const buildTransferConfidentialAsset = async (
   account: Account,
   decryptionKeyHex: string,
   encryptedActualBalance: TwistedElGamalCiphertext[],
@@ -290,7 +292,7 @@ export const buildTransferConfidentialCoin = async (
     tokenAddress,
   )
 
-  return aptos.confidentialCoin.transferCoin({
+  return confidentialAssets.transferCoin({
     senderDecryptionKey: decryptionKey,
     recipientEncryptionKey: new TwistedEd25519PublicKey(
       recipientEncryptionKeyHex,
@@ -307,7 +309,7 @@ export const buildTransferConfidentialCoin = async (
   })
 }
 
-export const transferConfidentialCoin = async (
+export const transferConfidentialAsset = async (
   account: Account,
   decryptionKeyHex: string,
   encryptedActualBalance: TwistedElGamalCiphertext[],
@@ -317,7 +319,7 @@ export const transferConfidentialCoin = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  const transferTx = await buildTransferConfidentialCoin(
+  const transferTx = await buildTransferConfidentialAsset(
     account,
     decryptionKeyHex,
     encryptedActualBalance,
@@ -339,7 +341,7 @@ export const safelyRotateConfidentialBalance = async (
 ) => {
   const newDecryptionKey = TwistedEd25519PrivateKey.generate()
 
-  return ConfidentialCoin.safeRotateCBKey(aptos, account, {
+  return confidentialAssets.safeRotateCBKey(aptos, account, {
     sender: account.accountAddress,
 
     currDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
@@ -358,7 +360,7 @@ export const buildSafelyRolloverConfidentialBalanceTx = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  return aptos.confidentialCoin.safeRolloverPendingCB({
+  return confidentialAssets.safeRolloverPendingCB({
     sender: account.accountAddress,
     tokenAddress,
     withFreezeBalance: false,
@@ -389,7 +391,7 @@ export const buildRegisterConfidentialBalanceTx = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  return aptos.confidentialCoin.registerBalance({
+  return confidentialAssets.registerBalance({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
     publicKey: new TwistedEd25519PublicKey(publicKeyHex),
@@ -420,7 +422,7 @@ export const normalizeConfidentialBalance = async (
   amount: bigint,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const normalizeTx = await aptos.confidentialCoin.normalizeUserBalance({
+  const normalizeTx = await confidentialAssets.normalizeUserBalance({
     tokenAddress,
     decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     unnormalizedEncryptedBalance: encryptedPendingBalance,
@@ -439,7 +441,7 @@ export const buildDepositConfidentialBalanceTx = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  return aptos.confidentialCoin.deposit({
+  return confidentialAssets.deposit({
     sender: account.accountAddress,
     to: AccountAddress.from(to),
     tokenAddress: tokenAddress,
@@ -472,7 +474,7 @@ export const buildDepositConfidentialBalanceCoinTx = async (
   to?: string,
   feePayerAddress?: string,
 ) => {
-  const tx = await aptos.confidentialCoin.depositCoin({
+  const tx = await confidentialAssets.depositCoin({
     sender: account.accountAddress,
     coinType: coinType,
     amount: amount,
@@ -504,7 +506,7 @@ export const getIsAccountRegisteredWithToken = async (
   account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const isRegistered = await aptos.confidentialCoin.hasUserRegistered({
+  const isRegistered = await confidentialAssets.hasUserRegistered({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
   })
@@ -516,7 +518,7 @@ export const getIsBalanceNormalized = async (
   account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const isNormalized = await aptos.confidentialCoin.isUserBalanceNormalized({
+  const isNormalized = await confidentialAssets.isUserBalanceNormalized({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
   })
@@ -528,7 +530,7 @@ export const getIsBalanceFrozen = async (
   account: Account,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const isFrozen = await aptos.confidentialCoin.isBalanceFrozen({
+  const isFrozen = await confidentialAssets.isBalanceFrozen({
     accountAddress: account.accountAddress,
     tokenAddress,
   })
@@ -606,7 +608,7 @@ export const getConfidentialBalances = async (
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
 
-  const { pending, actual } = await aptos.confidentialCoin.getBalance({
+  const { pending, actual } = await confidentialAssets.getBalance({
     accountAddress: account.accountAddress,
     tokenAddress,
   })

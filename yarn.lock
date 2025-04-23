@@ -64,12 +64,51 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@aptos-labs/confidential-asset-wasm-bindings@npm:^0.0.2":
+  version: 0.0.2
+  resolution: "@aptos-labs/confidential-asset-wasm-bindings@npm:0.0.2"
+  checksum: 2c13a6adc417fc321776354ebf7ad4f45ef6386e3a57c64b241d93a1dc43dfd25532902caac2ec3ff7cebb18c09d0a0bbacba86d036a154daadf22b2b1d7433d
+  languageName: node
+  linkType: hard
+
+"@aptos-labs/confidential-assets@file:/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz::locator=react-tw-template%40workspace%3A.":
+  version: 0.1.0
+  resolution: "@aptos-labs/confidential-assets@file:/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz#/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz::hash=0102ad&locator=react-tw-template%40workspace%3A."
+  dependencies:
+    "@aptos-labs/confidential-asset-wasm-bindings": "npm:^0.0.2"
+    "@aptos-labs/ts-sdk": "npm:^1.38.0"
+    "@noble/curves": "npm:^1.6.0"
+    "@noble/hashes": "npm:^1.5.0"
+  checksum: 08696c61c60094ef12d38c44fcae9dc5583e06596f20ef400ee567e081e2a08a9d451406cd023af5e8b387d1819ce10b1f49ed58a8669a2c6d9ba46d5096e69c
+  languageName: node
+  linkType: hard
+
 "@aptos-labs/script-composer-pack@npm:^0.0.9":
   version: 0.0.9
   resolution: "@aptos-labs/script-composer-pack@npm:0.0.9"
   dependencies:
     "@aptos-labs/aptos-dynamic-transaction-composer": "npm:^0.1.3"
   checksum: 8154f8c6ecc4db2db23ebd17d9d88773733671eeabfbfca654286ae9682d6ee973fe06fa90ed2b9441e5e4c2f48247a7437f6407f8b8fbaafe6c6858b4e8485c
+  languageName: node
+  linkType: hard
+
+"@aptos-labs/ts-sdk@npm:^1.38.0":
+  version: 1.38.0
+  resolution: "@aptos-labs/ts-sdk@npm:1.38.0"
+  dependencies:
+    "@aptos-labs/aptos-cli": "npm:^1.0.2"
+    "@aptos-labs/aptos-client": "npm:^1.1.0"
+    "@aptos-labs/script-composer-pack": "npm:^0.0.9"
+    "@noble/curves": "npm:^1.6.0"
+    "@noble/hashes": "npm:^1.5.0"
+    "@scure/bip32": "npm:^1.4.0"
+    "@scure/bip39": "npm:^1.3.0"
+    eventemitter3: "npm:^5.0.1"
+    form-data: "npm:^4.0.0"
+    js-base64: "npm:^3.7.7"
+    jwt-decode: "npm:^4.0.0"
+    poseidon-lite: "npm:^0.2.0"
+  checksum: db7822ff6a6de5963fd774bf58828f24d690a0235804976f28238f9de08db8290569354ea55b923baa9c5a3581eebf31aae7a1ff17a7dff0cb8f7540599c865d
   languageName: node
   linkType: hard
 
@@ -380,13 +419,6 @@ __metadata:
     eventemitter3: "npm:^5.0.1"
     preact: "npm:^10.24.2"
   checksum: ce27b5bfdcbc79e896cd262baf0483073ac854986b518e29a23af9c70b3bb6a75d6c15e5e34355095249d46fa8a8eda4682b63ec82812e92cbadba56b8706190
-  languageName: node
-  linkType: hard
-
-"@distributedlab/aptos-wasm-bindings@npm:^0.3.16":
-  version: 0.3.16
-  resolution: "@distributedlab/aptos-wasm-bindings@npm:0.3.16"
-  checksum: 7028e5d0957944c1942b6842f0325c38fab514add4b9b859503dfe1391303853ec6241559abe6b5d9be7a7b6b4e6b8d9705f35e60dabc6ec72c20b1dfc1219ab
   languageName: node
   linkType: hard
 
@@ -1231,28 +1263,6 @@ __metadata:
   dependencies:
     "@lit-labs/ssr-dom-shim": "npm:^1.0.0"
   checksum: 10f1d25e24e32feb21c4c6f9e11d062901241602e12c4ecf746b3138f87fed4d8394194645514d5c1bfd5f33f3fd56ee8ef41344e2cb4413c40fe4961ec9d419
-  languageName: node
-  linkType: hard
-
-"@lukachi/aptos-labs-ts-sdk@npm:1.37.4":
-  version: 1.37.4
-  resolution: "@lukachi/aptos-labs-ts-sdk@npm:1.37.4"
-  dependencies:
-    "@aptos-labs/aptos-cli": "npm:^1.0.2"
-    "@aptos-labs/aptos-client": "npm:^1.1.0"
-    "@aptos-labs/script-composer-pack": "npm:^0.0.9"
-    "@distributedlab/aptos-wasm-bindings": "npm:^0.3.16"
-    "@noble/curves": "npm:^1.4.0"
-    "@noble/hashes": "npm:^1.4.0"
-    "@scure/bip32": "npm:^1.4.0"
-    "@scure/bip39": "npm:^1.3.0"
-    comlink: "npm:^4.4.2"
-    eventemitter3: "npm:^5.0.1"
-    form-data: "npm:^4.0.0"
-    js-base64: "npm:^3.7.7"
-    jwt-decode: "npm:^4.0.0"
-    poseidon-lite: "npm:^0.2.0"
-  checksum: ceb45af6620733e26b2b8030a21e25b9cbbc1647f9214af77b6cb26537cc693652fc21e1f8fdcc0bf06fc7270e5c596c07a16670fd46d3e259b5dab60b313a89
   languageName: node
   linkType: hard
 
@@ -5767,13 +5777,6 @@ __metadata:
   dependencies:
     delayed-stream: "npm:~1.0.0"
   checksum: 0dbb829577e1b1e839fa82b40c07ffaf7de8a09b935cadd355a73652ae70a88b4320db322f6634a4ad93424292fa80973ac6480986247f1734a1137debf271d5
-  languageName: node
-  linkType: hard
-
-"comlink@npm:^4.4.2":
-  version: 4.4.2
-  resolution: "comlink@npm:4.4.2"
-  checksum: 38aa1f455cf08e94aaa8fc494fd203cc0ef02ece6c21404b7931ce17567e8a72deacddab98aa5650cfd78332ff24c34610586f6fb27fd19dc77e753ed1980deb
   languageName: node
   linkType: hard
 
@@ -13331,6 +13334,9 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "react-tw-template@workspace:."
   dependencies:
+    "@aptos-labs/confidential-asset-wasm-bindings": "npm:^0.0.2"
+    "@aptos-labs/confidential-assets": /Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz
+    "@aptos-labs/ts-sdk": "npm:^1.38.0"
     "@distributedlab/tools": "npm:^1.0.0-rc.17"
     "@esbuild-plugins/node-globals-polyfill": "npm:^0.2.3"
     "@esbuild-plugins/node-modules-polyfill": "npm:^0.2.2"
@@ -13338,7 +13344,6 @@ __metadata:
     "@eslint/eslintrc": "npm:^3.3.0"
     "@eslint/js": "npm:^9.19.0"
     "@hookform/resolvers": "npm:^4.1.3"
-    "@lukachi/aptos-labs-ts-sdk": "npm:1.37.4"
     "@next/env": "npm:^15.2.3"
     "@next/eslint-plugin-next": "npm:^15.2.3"
     "@noble/ed25519": "npm:^2.2.3"

@@ -19,7 +19,7 @@
   },
   "dependencies": {
     "@aptos-labs/confidential-asset-wasm-bindings": "^0.0.2",
-    "@aptos-labs/confidential-assets": "/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz",
+    "@aptos-labs/confidential-assets": "^0.1.0-rc.0",
     "@aptos-labs/ts-sdk": "^1.38.0",
     "@distributedlab/tools": "^1.0.0-rc.17",
     "@hookform/resolvers": "^4.1.3",

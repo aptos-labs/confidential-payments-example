@@ -71,15 +71,15 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@aptos-labs/confidential-assets@file:/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz::locator=react-tw-template%40workspace%3A.":
-  version: 0.1.0
-  resolution: "@aptos-labs/confidential-assets@file:/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz#/Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz::hash=0102ad&locator=react-tw-template%40workspace%3A."
+"@aptos-labs/confidential-assets@npm:^0.1.0-rc.0":
+  version: 0.1.0-rc.0
+  resolution: "@aptos-labs/confidential-assets@npm:0.1.0-rc.0"
   dependencies:
     "@aptos-labs/confidential-asset-wasm-bindings": "npm:^0.0.2"
     "@aptos-labs/ts-sdk": "npm:^1.38.0"
     "@noble/curves": "npm:^1.6.0"
     "@noble/hashes": "npm:^1.5.0"
-  checksum: 08696c61c60094ef12d38c44fcae9dc5583e06596f20ef400ee567e081e2a08a9d451406cd023af5e8b387d1819ce10b1f49ed58a8669a2c6d9ba46d5096e69c
+  checksum: d1cf417c815efe5b1ff3e6a197c7a577dd7fc8d076395a3fb828e3b2559aca6aa9145f956963581c34bf077c1cb9d7bfe69f0ab18986df93bc0c81af75404357
   languageName: node
   linkType: hard
 
@@ -13335,7 +13335,7 @@ __metadata:
   resolution: "react-tw-template@workspace:."
   dependencies:
     "@aptos-labs/confidential-asset-wasm-bindings": "npm:^0.0.2"
-    "@aptos-labs/confidential-assets": /Users/lukachisama/Documents/APTOS/aptos-ts-sdk/confidential-assets/aptos-labs-confidential-assets-0.1.0.tgz
+    "@aptos-labs/confidential-assets": "npm:^0.1.0-rc.0"
     "@aptos-labs/ts-sdk": "npm:^1.38.0"
     "@distributedlab/tools": "npm:^1.0.0-rc.17"
     "@esbuild-plugins/node-globals-polyfill": "npm:^0.2.3"

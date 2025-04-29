@@ -1,0 +1,227 @@
+/* stylelint-disable */
+html body .ui-markdown {
+  line-height: 1.85;
+  font-family: sans-serif !important;
+
+  @media screen and (min-width: 32rem) and (max-width: 48rem) {
+    font-size: 15px;
+  }
+
+  @media screen and (min-width: 48rem) {
+    font-size: 16px;
+  }
+
+  pre,
+  code {
+    font-family: Menlo, Monaco, 'Courier New', monospace;
+  }
+
+  pre {
+    padding: 0.5rem;
+    line-height: 1.25;
+    overflow-x: scroll;
+    font-family: sans-serif;
+  }
+
+  @media print {
+    *,
+    *:before,
+    *:after {
+      background: transparent !important;
+      color: #000 !important;
+      box-shadow: none !important;
+      text-shadow: none !important;
+    }
+
+    a,
+    a:visited {
+      text-decoration: underline;
+    }
+
+    a[href]:after {
+      content: ' (' attr(href) ')';
+    }
+
+    abbr[title]:after {
+      content: ' (' attr(title) ')';
+    }
+
+    a[href^='#']:after,
+    a[href^='javascript:']:after {
+      content: '';
+    }
+
+    pre,
+    blockquote {
+      border: 1px solid #999;
+      page-break-inside: avoid;
+    }
+
+    thead {
+      display: table-header-group;
+    }
+
+    tr,
+    img {
+      page-break-inside: avoid;
+    }
+
+    img {
+      max-width: 100% !important;
+    }
+
+    p,
+    h2,
+    h3 {
+      font-family: sans-serif;
+      orphans: 3;
+      widows: 3;
+    }
+
+    h2,
+    h3 {
+      font-family: sans-serif;
+      page-break-after: avoid;
+    }
+  }
+
+  a,
+  a:visited {
+    color: #0000ff;
+  }
+
+  a:hover,
+  a:focus,
+  a:active {
+    color: #0000ff;
+  }
+
+  .retro-no-decoration {
+    text-decoration: none;
+  }
+
+  p,
+  .retro-p {
+    font-family: sans-serif;
+    line-height: 1.6;
+    font-size: 20px;
+    margin-top: 42px;
+    letter-spacing: 0.005em;
+  }
+
+  h1,
+  .retro-h1,
+  h2,
+  .retro-h2,
+  h3,
+  .retro-h3,
+  h4,
+  .retro-h4 {
+    margin: 1.414rem 0 0.5rem;
+    font-weight: inherit;
+    line-height: 1.42;
+  }
+
+  h1,
+  .retro-h1 {
+    margin-top: 0;
+    font-size: 36px;
+
+    @apply sm:text-[56px];
+  }
+
+  h2,
+  .retro-h2 {
+    font-family: sans-serif;
+    font-size: 24px;
+
+    @apply sm:text-[48px];
+  }
+
+  h3,
+  .retro-h3 {
+    font-family: sans-serif;
+    font-size: 18px;
+
+    @apply sm:text-[36px];
+  }
+
+  h4,
+  .retro-h4 {
+    font-family: sans-serif;
+    font-size: 12px;
+
+    @apply sm:text-[28px];
+  }
+
+  h5,
+  .retro-h5 {
+    font-family: sans-serif;
+    font-size: 10px;
+
+    @apply sm:text-[24px];
+  }
+
+  h6,
+  .retro-h6 {
+    font-family: sans-serif;
+    font-size: 20px;
+  }
+
+  small,
+  .retro-small {
+    font-family: sans-serif;
+    font-size: 0.707em;
+  }
+
+  /* https://github.com/mrmrs/fluidity */
+
+  img,
+  canvas,
+  iframe,
+  video,
+  svg,
+  select,
+  textarea {
+    max-width: 100%;
+  }
+
+  a {
+    font-family: sans-serif;
+    line-height: 1.6;
+    font-size: 18px;
+    margin-top: 42px;
+    letter-spacing: 0.005em;
+  }
+
+  pre {
+    background-color: #333;
+  }
+
+  blockquote {
+    border-left: 3px solid #0000ff;
+    padding-left: 1rem;
+    margin: 36px auto 36px 4px;
+  }
+
+  ol,
+  ol li {
+    font-family: sans-serif;
+    line-height: 1.6;
+    font-size: 20px;
+    letter-spacing: 0.005em;
+    padding-left: 30px;
+    list-style-type: decimal;
+  }
+
+  ul,
+  ul li {
+    font-family: sans-serif;
+    line-height: 1.6;
+    font-size: 20px;
+    letter-spacing: 0.005em;
+    padding-left: 30px;
+    list-style-type: disc;
+  }
+}
+/* stylelint-enable */

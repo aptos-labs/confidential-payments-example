@@ -1,0 +1,17 @@
+.ui-error-message {
+  color: var(--error-main);
+
+  @apply grid place-items-center gap-3 text-center;
+}
+
+.ui-error-message__img {
+  @apply h-auto w-full;
+}
+
+.ui-error-message__title {
+  @apply text-[24px] text-inherit;
+}
+
+.ui-error-message__message {
+  @apply text-[18px] text-inherit;
+}

@@ -1,0 +1,43 @@
+{
+  "metadata": {
+    "title": "Confidential Asset",
+    "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+
+    "openGraph": {
+      "title": "Confidential Asset",
+      "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+      "type": "website",
+      "url": "https://example.com/",
+      "siteName": "Confidential Asset",
+      "images": "https://example.com/images/og-img.png"
+    },
+
+    "twitter": {
+      "title": "Confidential Asset",
+      "description": "Confidential Asset on the Aptos network allows for secure and private management of digital assets, enabling next-generation social apps with enhanced privacy and historical data preservation.",
+      "card": "summary_large_image",
+      "images": "https://example.com/images/og-img.png",
+      "site": "example.com"
+    }
+  },
+  "validations": {
+    "field-error_required": "Please fill out this field",
+    "field-error_minLength": "This field must contain minimum {{minLength}} symbols",
+    "field-error_maxLength": "This field must contain maximum {{maxLength}} symbols"
+  },
+  "errors": {
+    "default": "Something went wrong"
+  },
+  "notifications": {
+    "default-title-success": "Success",
+    "default-title-error": "Error",
+    "default-title-warning": "Warning",
+    "default-title-info": "Info",
+    "default-title-default": "Just a message",
+    "default-message-success": "Action successful",
+    "default-message-error": "Something went wrong",
+    "default-message-warning": "Something you are doing is not recommended",
+    "default-message-info": "Something is happening. Just want you to know that",
+    "default-message-default": "Just a message"
+  }
+}

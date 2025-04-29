@@ -1,0 +1,24 @@
+.ui-spinner {
+  @apply inline-block size-20;
+}
+
+.ui-spinner:after {
+  content: ' ';
+  display: block;
+
+  @apply m-2 size-16 rounded-[50%] border-[6px] border-solid;
+
+  border-color: var(--border-primary-main) transparent
+    var(--border-primary-main) transparent;
+  animation: spinner 1.2s linear infinite;
+}
+
+@keyframes spinner {
+  0% {
+    @apply rotate-0;
+  }
+
+  100% {
+    @apply rotate-[360deg];
+  }
+}

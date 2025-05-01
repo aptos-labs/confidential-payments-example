@@ -19,7 +19,6 @@ import {
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
-  deriveEd25519PrivateKey,
   EncryptedScopedIdToken,
   EphemeralKeyPairEncoding,
   getAptBalance,
@@ -34,7 +33,6 @@ import {
 } from '@/api/modules/aptos';
 import { aptos } from '@/api/modules/aptos/client';
 import { sleep, tryCatch } from '@/helpers';
-import { authClient } from '@/lib/auth-client';
 import { walletStore } from '@/store/wallet';
 
 type StoredAccount = {
@@ -377,37 +375,6 @@ const useLogin = (opts?: {
   const ephemeralKeyPair = useEphemeralKeyPair();
   const switchKeylessAccount = useAuthStore(state => state.switchKeylessAccount);
 
-  const loginWithEmailPassword = async (args: { email: string; password: string }) => {
-    return new Promise((resolve, reject) => {
-      authClient.signIn.email(
-        {
-          email: args.email,
-          password: args.password,
-        },
-        {
-          onRequest: () => {
-            opts?.onRequest?.();
-          },
-          onSuccess: ctx => {
-            const pk = deriveEd25519PrivateKey(
-              args.email,
-              args.password,
-              ctx.data.user.id,
-            );
-            walletStore.useWalletStore.getState().addAndSetPrivateKey(pk);
-
-            opts?.onSuccess?.();
-            resolve(ctx.data);
-          },
-          onError: ctx => {
-            opts?.onError?.();
-            reject(ctx.error);
-          },
-        },
-      );
-    });
-  };
-
   const getGoogleRequestLoginUrl = useMemo(() => {
     const redirectUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
 
@@ -480,7 +447,9 @@ const useLogin = (opts?: {
   const loginWithApple = async (idToken: string) => {
     await switchKeylessAccount(idToken);
 
-    return new Promise((resolve, reject) => {
+    return new Promise((_resolve, _reject) => {
+      // TODO: Use keyless for this properly.
+      /*
       try {
         authClient.signIn.social(
           {
@@ -507,6 +476,7 @@ const useLogin = (opts?: {
       } catch (error) {
         reject(error);
       }
+      */
     });
   };
 
@@ -527,50 +497,11 @@ const useLogin = (opts?: {
   };
 
   return {
-    loginWithEmailPassword,
     getGoogleRequestLoginUrl,
     loginWithGoogle: loginWithGoogle,
     getAppleRequestLoginUrl,
-    loginWithApple,
+    loginWithApple: loginWithApple,
     loginTest,
-  };
-};
-
-const useRegister = (opts?: {
-  onRequest?: () => void;
-  onSuccess?: () => void;
-  onError?: () => void;
-}) => {
-  return async (args: { email: string; password: string; name: string }) => {
-    return new Promise<void>((resolve, reject) => {
-      authClient.signUp.email(
-        {
-          email: args.email,
-          password: args.password,
-          name: args.name,
-        },
-        {
-          onRequest: () => {
-            opts?.onRequest?.();
-          },
-          onSuccess: ctx => {
-            const pk = deriveEd25519PrivateKey(
-              args.email,
-              args.password,
-              ctx.data.user.id,
-            );
-            walletStore.useWalletStore.getState().addAndSetPrivateKey(pk);
-
-            opts?.onSuccess?.();
-            resolve();
-          },
-          onError: () => {
-            opts?.onError?.();
-            reject();
-          },
-        },
-      );
-    });
   };
 };
 
@@ -592,9 +523,7 @@ const useLogout = (opts?: {
 
 export const authStore = {
   useAuthStore: useAuthStore,
-
   useFeePayerAccount: useFeePayerAccount,
   useLogin: useLogin,
-  useRegister: useRegister,
   useLogout: useLogout,
 };

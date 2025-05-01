@@ -11,8 +11,9 @@ import { appFontClassName } from '@/theme/fonts';
 import { cn } from '@/theme/utils';
 import { UiToaster } from '@/ui/UiToaster';
 
-export async function generateMetadata({ params }: { params: { locale: string } }) {
-  const t = await getTranslations({ locale: params.locale, namespace: '' });
+export async function generateMetadata() {
+  const locale = await getLocale();
+  const t = await getTranslations({ locale, namespace: '' });
 
   return {
     metadataBase: new URL('https://example.com/'),

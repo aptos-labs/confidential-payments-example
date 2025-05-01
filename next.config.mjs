@@ -4,7 +4,6 @@ import createNextIntlPlugin from 'next-intl/plugin';
 const nextConfig = {
   // output: 'standalone',
   productionBrowserSourceMaps: true,
-  distDir: './dist',
   eslint: {
     ignoreDuringBuilds: true,
   },

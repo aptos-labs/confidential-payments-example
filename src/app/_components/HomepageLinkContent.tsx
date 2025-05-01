@@ -55,8 +55,6 @@ export default function HomepageLinkContent() {
         (async () => {
           if (googleIdToken) {
             loginWithGoogle(googleIdToken);
-          } else if (appleIdToken) {
-            loginWithApple(appleIdToken);
           }
         })(),
       );
@@ -71,8 +69,8 @@ export default function HomepageLinkContent() {
     activeKeylessAccount,
     appleIdToken,
     googleIdToken,
-    loginWithApple,
     loginWithGoogle,
+    loginWithApple,
     router,
   ]);
 

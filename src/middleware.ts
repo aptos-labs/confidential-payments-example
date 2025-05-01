@@ -9,7 +9,12 @@ async function shouldShowMaintenancePage() {
   }
 
   const response = await fetch(
-    `https://api.devnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+    `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+    {
+      headers: {
+        Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,
+      },
+    },
   );
   if (!response.ok) {
     console.error('Error fetching module:', response.statusText);

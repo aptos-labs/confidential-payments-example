@@ -24,23 +24,28 @@
     "lib": ["ESNext", "DOM", "DOM.Iterable", "ScriptHost"],
     "isolatedModules": true,
     "noEmit": true,
-    "plugins": [{ "name": "next" }],
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ],
     "allowJs": true,
     "forceConsistentCasingInFileNames": true,
     "incremental": true
   },
   "include": [
-    "src/**/*.ts",
+    "./dist/types/**/*.ts",
+    "./next-env.d.ts",
+    "envConfig.ts",
+    "index.d.ts",
+    "package.json",
     "src/**/*.d.ts",
+    "src/**/*.json",
+    "src/**/*.ts",
     "src/**/*.tsx",
     "tests/**/*.ts",
     "tests/**/*.tsx",
-    "index.d.ts",
-    "package.json",
-    "src/**/*.json",
-    "./dist/types/**/*.ts",
-    "./next-env.d.ts",
-    "envConfig.ts"
+    ".next/types/**/*.ts"
   ],
   "exclude": ["./node_modules", "dist"]
 }

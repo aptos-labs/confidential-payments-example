@@ -1,8 +1,8 @@
 type Config = {
   AUTH_BASE_URL: string;
+
   CONFIDENTIAL_ASSET_MODULE_ADDR: string;
   DEFAULT_TOKEN_ADRESSES: string[];
-  PG_URL: string;
 
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
@@ -19,7 +19,6 @@ export const USDC_MOCKED_TOKEN_ADDR =
   '0xeb0d77ea72ab6838c870fc98ed9ea3e12e72fa964021be983b398824ebdd126e';
 
 export const config: Config = {
-  PG_URL: process.env.PG_URL!,
   AUTH_BASE_URL: process.env.AUTH_BASE_URL!,
   CONFIDENTIAL_ASSET_MODULE_ADDR:
     process.env.NEXT_PUBLIC_CONFIDENTIAL_ASSET_MODULE_ADDR!,

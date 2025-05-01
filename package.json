@@ -1,10 +1,9 @@
 {
   "name": "confidential-payments-example",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.0.1",
   "gitHooks": {
-    "pre-commit": "pnpm lint && pnpm type-check",
-    "pre-push": "pnpm rsc"
+    "pre-commit": "pnpm format:check && pnpm lint:check && pnpm type-check"
   },
   "scripts": {
     "dev": "next dev --port 3020",
@@ -14,8 +13,7 @@
     "lint:check": "eslint \"{src,config}/**/*.{js,ts,jsx,tsx}\" --max-warnings=0",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
-    "type-check": "tsc --noEmit",
-    "rsc": "node scripts/release-sanity-check.mjs"
+    "type-check": "tsc --noEmit"
   },
   "dependencies": {
     "@aptos-labs/confidential-asset-wasm-bindings": "^0.0.2",
@@ -43,7 +41,6 @@
     "@rescale/nemo": "^1.4.0",
     "@tanstack/react-query": "^5.66.0",
     "axios": "^1.8.2",
-    "better-auth": "^1.2.7",
     "boring-avatars": "^1.11.2",
     "buffer": "^6.0.3",
     "class-variance-authority": "^0.7.1",
@@ -62,7 +59,6 @@
     "next-intl": "^4.0.2",
     "next-themes": "^0.4.6",
     "ogl": "^1.0.11",
-    "pg": "^8.14.1",
     "postprocessing": "^6.37.1",
     "process": "^0.11.10",
     "react": "^18.3.1",
@@ -102,7 +98,6 @@
     "@types/jsonwebtoken": "^9",
     "@types/lodash": "^4.17.15",
     "@types/node": "^20.17.17",
-    "@types/pg": "^8",
     "@types/react": "^18.3.18",
     "@types/react-dom": "^18.3.5",
     "@types/three": "^0",

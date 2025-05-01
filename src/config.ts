@@ -1,14 +1,16 @@
 type Config = {
-  AUTH_BASE_URL: string
-  CONFIDENTIAL_ASSET_MODULE_ADDR: string
-  DEFAULT_TOKEN_ADRESSES: string[]
-  PG_URL: string
+  AUTH_BASE_URL: string;
+  CONFIDENTIAL_ASSET_MODULE_ADDR: string;
+  DEFAULT_TOKEN_ADRESSES: string[];
+  PG_URL: string;
 
-  GOOGLE_CLIENT_ID: string
+  GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string
 
-  APPLE_CLIENT_ID: string
-  APPLE_CLIENT_SECRET: string
+  APPLE_CLIENT_ID: string;
+  APPLE_CLIENT_SECRET: string;
+
+  FORCE_MAINTENANCE_PAGE: boolean;
 }
 
 export const APT_FA_ADDR =
@@ -31,4 +33,6 @@ export const config: Config = {
 
   APPLE_CLIENT_ID: process.env.NEXT_PUBLIC_APPLE_CLIENT_ID!,
   APPLE_CLIENT_SECRET: process.env.APPLE_CLIENT_SECRET!,
+
+  FORCE_MAINTENANCE_PAGE: process.env.FORCE_MAINTENANCE_PAGE === 'true',
 }

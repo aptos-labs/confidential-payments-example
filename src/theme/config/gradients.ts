@@ -1,4 +1,4 @@
-import type { CSSRuleObject } from 'tailwindcss/types/config'
+import type { CSSRuleObject } from 'tailwindcss/types/config';
 
 export const gradients: CSSRuleObject = {
   '.additional-gradient1': {
@@ -21,4 +21,4 @@ export const gradients: CSSRuleObject = {
     background: 'var(--background-mask-gradient)',
     opacity: 'var(--background-mask-opacity)',
   },
-}
+};

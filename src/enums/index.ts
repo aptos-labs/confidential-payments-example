@@ -1,2 +1,2 @@
-export * from './icon-names'
-export * from './routes'
+export * from './icon-names';
+export * from './routes';

@@ -1,7 +1,7 @@
-import { ComponentPropsWithoutRef } from 'react'
+import { ComponentPropsWithoutRef } from 'react';
 
-import { cn } from '@/theme/utils'
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { cn } from '@/theme/utils';
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
 export default function ConfidentialAssetCardLoader(
   props: ComponentPropsWithoutRef<'div'>,
@@ -21,5 +21,5 @@ export default function ConfidentialAssetCardLoader(
         </div>
       </div>
     </div>
-  )
+  );
 }

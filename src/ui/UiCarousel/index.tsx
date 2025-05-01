@@ -4,28 +4,28 @@ import {
   PanInfo,
   useMotionValue,
   useTransform,
-} from 'motion/react'
-import { ReactNode, useEffect, useRef, useState } from 'react'
+} from 'motion/react';
+import { ReactNode, useEffect, useRef, useState } from 'react';
 
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
 export interface CarouselProps {
-  items: ReactNode[]
-  baseWidth?: number
-  autoplay?: boolean
-  autoplayDelay?: number
-  pauseOnHover?: boolean
-  loop?: boolean
-  round?: boolean
-  isShowPagination?: boolean
-  startIndex?: number
-  onIndexChange?: (index: number) => void
+  items: ReactNode[];
+  baseWidth?: number;
+  autoplay?: boolean;
+  autoplayDelay?: number;
+  pauseOnHover?: boolean;
+  loop?: boolean;
+  round?: boolean;
+  isShowPagination?: boolean;
+  startIndex?: number;
+  onIndexChange?: (index: number) => void;
 }
 
-const DRAG_BUFFER = 0
-const VELOCITY_THRESHOLD = 500
-const GAP = 16
-const SPRING_OPTIONS = { type: 'spring', stiffness: 300, damping: 30 }
+const DRAG_BUFFER = 0;
+const VELOCITY_THRESHOLD = 500;
+const GAP = 16;
+const SPRING_OPTIONS = { type: 'spring', stiffness: 300, damping: 30 };
 
 export default function UiCarousel({
   items,
@@ -39,49 +39,49 @@ export default function UiCarousel({
   startIndex = 0,
   onIndexChange = () => {},
 }: CarouselProps): JSX.Element {
-  const containerPadding = 16
-  const itemWidth = baseWidth - containerPadding * 2
-  const trackItemOffset = itemWidth + GAP
+  const containerPadding = 16;
+  const itemWidth = baseWidth - containerPadding * 2;
+  const trackItemOffset = itemWidth + GAP;
 
-  const carouselItems = loop ? [...items, items[0]] : items
-  const [currentIndex, setCurrentIndex] = useState<number>(startIndex)
-  const x = useMotionValue(0)
-  const [isHovered, setIsHovered] = useState<boolean>(false)
-  const [isResetting, setIsResetting] = useState<boolean>(false)
+  const carouselItems = loop ? [...items, items[0]] : items;
+  const [currentIndex, setCurrentIndex] = useState<number>(startIndex);
+  const x = useMotionValue(0);
+  const [isHovered, setIsHovered] = useState<boolean>(false);
+  const [isResetting, setIsResetting] = useState<boolean>(false);
 
   useEffect(() => {
-    onIndexChange(currentIndex)
-  }, [currentIndex, onIndexChange])
+    onIndexChange(currentIndex);
+  }, [currentIndex, onIndexChange]);
 
-  const containerRef = useRef<HTMLDivElement>(null)
+  const containerRef = useRef<HTMLDivElement>(null);
   useEffect(() => {
     if (pauseOnHover && containerRef.current) {
-      const container = containerRef.current
-      const handleMouseEnter = () => setIsHovered(true)
-      const handleMouseLeave = () => setIsHovered(false)
-      container.addEventListener('mouseenter', handleMouseEnter)
-      container.addEventListener('mouseleave', handleMouseLeave)
+      const container = containerRef.current;
+      const handleMouseEnter = () => setIsHovered(true);
+      const handleMouseLeave = () => setIsHovered(false);
+      container.addEventListener('mouseenter', handleMouseEnter);
+      container.addEventListener('mouseleave', handleMouseLeave);
       return () => {
-        container.removeEventListener('mouseenter', handleMouseEnter)
-        container.removeEventListener('mouseleave', handleMouseLeave)
-      }
+        container.removeEventListener('mouseenter', handleMouseEnter);
+        container.removeEventListener('mouseleave', handleMouseLeave);
+      };
     }
-  }, [pauseOnHover])
+  }, [pauseOnHover]);
 
   useEffect(() => {
     if (autoplay && (!pauseOnHover || !isHovered)) {
       const timer = setInterval(() => {
         setCurrentIndex(prev => {
           if (prev === items.length - 1 && loop) {
-            return prev + 1 // Animate to clone.
+            return prev + 1; // Animate to clone.
           }
           if (prev === carouselItems.length - 1) {
-            return loop ? 0 : prev
+            return loop ? 0 : prev;
           }
-          return prev + 1
-        })
-      }, autoplayDelay)
-      return () => clearInterval(timer)
+          return prev + 1;
+        });
+      }, autoplayDelay);
+      return () => clearInterval(timer);
     }
   }, [
     autoplay,
@@ -91,39 +91,39 @@ export default function UiCarousel({
     items.length,
     carouselItems.length,
     pauseOnHover,
-  ])
+  ]);
 
-  const effectiveTransition = isResetting ? { duration: 0 } : SPRING_OPTIONS
+  const effectiveTransition = isResetting ? { duration: 0 } : SPRING_OPTIONS;
 
   const handleAnimationComplete = () => {
     if (loop && currentIndex === carouselItems.length - 1) {
-      setIsResetting(true)
-      x.set(0)
-      setCurrentIndex(0)
-      setTimeout(() => setIsResetting(false), 50)
+      setIsResetting(true);
+      x.set(0);
+      setCurrentIndex(0);
+      setTimeout(() => setIsResetting(false), 50);
     }
-  }
+  };
 
   const handleDragEnd = (
     _: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo,
   ): void => {
-    const offset = info.offset.x
-    const velocity = info.velocity.x
+    const offset = info.offset.x;
+    const velocity = info.velocity.x;
     if (offset < -DRAG_BUFFER || velocity < -VELOCITY_THRESHOLD) {
       if (loop && currentIndex === items.length - 1) {
-        setCurrentIndex(currentIndex + 1) // Go to clone.
+        setCurrentIndex(currentIndex + 1); // Go to clone.
       } else {
-        setCurrentIndex(prev => Math.min(prev + 1, carouselItems.length - 1))
+        setCurrentIndex(prev => Math.min(prev + 1, carouselItems.length - 1));
       }
     } else if (offset > DRAG_BUFFER || velocity > VELOCITY_THRESHOLD) {
       if (loop && currentIndex === 0) {
-        setCurrentIndex(items.length - 1)
+        setCurrentIndex(items.length - 1);
       } else {
-        setCurrentIndex(prev => Math.max(prev - 1, 0))
+        setCurrentIndex(prev => Math.max(prev - 1, 0));
       }
     }
-  }
+  };
 
   const dragProps = loop
     ? {}
@@ -132,7 +132,7 @@ export default function UiCarousel({
           left: -trackItemOffset * (carouselItems.length - 1),
           right: 0,
         },
-      }
+      };
 
   return (
     <div
@@ -172,7 +172,7 @@ export default function UiCarousel({
             >
               {item}
             </CarouselItem>
-          )
+          );
         })}
       </motion.div>
 
@@ -197,7 +197,7 @@ export default function UiCarousel({
         </div>
       )}
     </div>
-  )
+  );
 }
 
 function CarouselItem({
@@ -209,31 +209,31 @@ function CarouselItem({
   xMotionValue,
   children,
 }: {
-  index: number
-  trackItemOffset: number
-  round?: boolean
+  index: number;
+  trackItemOffset: number;
+  round?: boolean;
   effectiveTransition?:
     | {
-        type: string
-        stiffness: number
-        damping: number
+        type: string;
+        stiffness: number;
+        damping: number;
       }
     | {
-        duration: number
-      }
-  itemWidth: number
-  xMotionValue: MotionValue<number>
-  children: ReactNode
+        duration: number;
+      };
+  itemWidth: number;
+  xMotionValue: MotionValue<number>;
+  children: ReactNode;
 }) {
   const range = [
     -(index + 1) * trackItemOffset,
     -index * trackItemOffset,
     -(index - 1) * trackItemOffset,
-  ]
-  const outputRange = [90, 0, -90]
+  ];
+  const outputRange = [90, 0, -90];
   const rotateY = useTransform(xMotionValue, range, outputRange, {
     clamp: false,
-  })
+  });
 
   return (
     <motion.div
@@ -249,5 +249,5 @@ function CarouselItem({
     >
       {children}
     </motion.div>
-  )
+  );
 }

@@ -1,9 +1,9 @@
-'use client'
+'use client';
 
-import * as SwitchPrimitives from '@radix-ui/react-switch'
-import * as React from 'react'
+import * as SwitchPrimitives from '@radix-ui/react-switch';
+import * as React from 'react';
 
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
 const UiSwitch = React.forwardRef<
   React.ElementRef<typeof SwitchPrimitives.Root>,
@@ -23,7 +23,7 @@ const UiSwitch = React.forwardRef<
       )}
     />
   </SwitchPrimitives.Root>
-))
-UiSwitch.displayName = SwitchPrimitives.Root.displayName
+));
+UiSwitch.displayName = SwitchPrimitives.Root.displayName;
 
-export { UiSwitch }
+export { UiSwitch };

@@ -51,15 +51,15 @@ import {
   UnlockIcon,
   UserPlusIcon,
   WandSparklesIcon,
-} from 'lucide-react'
-import { HTMLAttributes, RefAttributes } from 'react'
+} from 'lucide-react';
+import { HTMLAttributes, RefAttributes } from 'react';
 
-import { IconNames } from '@/enums'
-import { cn } from '@/theme/utils'
+import { IconNames } from '@/enums';
+import { cn } from '@/theme/utils';
 
 type CustomIconProps = {
-  name: IconNames
-} & HTMLAttributes<HTMLOrSVGElement>
+  name: IconNames;
+} & HTMLAttributes<HTMLOrSVGElement>;
 
 function CustomIcon({ name, ...rest }: CustomIconProps) {
   return (
@@ -72,7 +72,7 @@ function CustomIcon({ name, ...rest }: CustomIconProps) {
     >
       <use href={`#${name}-icon`} />
     </svg>
-  )
+  );
 }
 
 const LIB_ICONS = {
@@ -127,24 +127,24 @@ const LIB_ICONS = {
   EarthLockIcon: EarthLockIcon,
   ExternalLinkIcon: ExternalLinkIcon,
   CalendarIcon: CalendarIcon,
-}
+};
 
 type LibIconProps = {
-  name: keyof typeof LIB_ICONS
+  name: keyof typeof LIB_ICONS;
 } & Omit<LucideProps, 'ref'> &
-  RefAttributes<SVGSVGElement>
+  RefAttributes<SVGSVGElement>;
 
 function LibIcon({ name, ...rest }: LibIconProps) {
-  const Component = LIB_ICONS[name]
+  const Component = LIB_ICONS[name];
 
-  return <Component {...rest} />
+  return <Component {...rest} />;
 }
 
 type Props<T extends IconNames | keyof typeof LIB_ICONS> = T extends IconNames
   ? CustomIconProps
   : T extends keyof typeof LIB_ICONS
     ? LibIconProps
-    : undefined
+    : undefined;
 
 export default function UiIcon<T extends IconNames | keyof typeof LIB_ICONS>({
   name,
@@ -152,11 +152,8 @@ export default function UiIcon<T extends IconNames | keyof typeof LIB_ICONS>({
 }: Props<T>) {
   if (Object.values(IconNames).includes(name as unknown as IconNames)) {
     return (
-      <CustomIcon
-        {...(rest as unknown as CustomIconProps)}
-        name={name as IconNames}
-      />
-    )
+      <CustomIcon {...(rest as unknown as CustomIconProps)} name={name as IconNames} />
+    );
   }
 
   if (name in LIB_ICONS) {
@@ -165,8 +162,8 @@ export default function UiIcon<T extends IconNames | keyof typeof LIB_ICONS>({
         {...(rest as unknown as LibIconProps)}
         name={name as keyof typeof LIB_ICONS}
       />
-    )
+    );
   } else {
-    throw new Error(`Icon with name "${name}" not found.`)
+    throw new Error(`Icon with name "${name}" not found.`);
   }
 }

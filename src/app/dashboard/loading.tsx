@@ -1,5 +1,5 @@
-import { UiSeparator } from '@/ui/UiSeparator'
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { UiSeparator } from '@/ui/UiSeparator';
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
 export default function Loading() {
   return (
@@ -46,5 +46,5 @@ export default function Loading() {
         </div> */}
       </div>
     </div>
-  )
+  );
 }

@@ -8,8 +8,8 @@
 
   @apply m-2 size-16 rounded-[50%] border-[6px] border-solid;
 
-  border-color: var(--border-primary-main) transparent
-    var(--border-primary-main) transparent;
+  border-color: var(--border-primary-main) transparent var(--border-primary-main)
+    transparent;
   animation: spinner 1.2s linear infinite;
 }
 

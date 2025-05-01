@@ -1,6 +1,6 @@
-import { cn } from '@/theme/utils'
-import { UiCard, UiCardContent } from '@/ui/UiCard'
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { cn } from '@/theme/utils';
+import { UiCard, UiCardContent } from '@/ui/UiCard';
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
 export default function Loading() {
   return (
@@ -18,5 +18,5 @@ export default function Loading() {
         </div>
       </div>
     </div>
-  )
+  );
 }

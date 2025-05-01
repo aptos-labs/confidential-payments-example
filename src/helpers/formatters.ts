@@ -1,29 +1,25 @@
-import type {
-  BnConfigLike,
-  BnFormatConfig,
-  BnLike,
-} from '@distributedlab/tools'
-import { BN, Time, time, type TimeDate } from '@distributedlab/tools'
-import enDayjsLocal from 'dayjs/locale/en'
+import type { BnConfigLike, BnFormatConfig, BnLike } from '@distributedlab/tools';
+import { BN, Time, time, type TimeDate } from '@distributedlab/tools';
+import enDayjsLocal from 'dayjs/locale/en';
 
 export const setDayjsLocale = (locale: 'en') => {
   const nextLocale = {
     en: enDayjsLocal,
-  }[locale]
+  }[locale];
 
-  Time.locale(nextLocale)
-}
+  Time.locale(nextLocale);
+};
 
 export function formatDateDMY(date: TimeDate) {
-  return new Time(date).format('DD MMM YYYY')
+  return new Time(date).format('DD MMM YYYY');
 }
 
 export function formatDateDMYT(date: TimeDate) {
-  return new Time(date).format('DD MMM YYYY HH:mm')
+  return new Time(date).format('DD MMM YYYY HH:mm');
 }
 
 export function formatDateDiff(dateEnd: TimeDate) {
-  return time(dateEnd).fromNow
+  return time(dateEnd).fromNow;
 }
 
 // number
@@ -31,27 +27,27 @@ const defaultBnFormatConfig: BnFormatConfig = {
   decimals: 2,
   groupSeparator: ',',
   decimalSeparator: '.',
-}
+};
 
 /**
  * Format human amount without trailing zeros
  * @param amount
  */
 function removeTrailingZeros(amount: string) {
-  const [integer, fraction] = amount.split('.')
+  const [integer, fraction] = amount.split('.');
 
-  if (!fraction) return integer
+  if (!fraction) return integer;
 
-  let result = integer
+  let result = integer;
 
   for (let i = fraction.length - 1; i >= 0; i--) {
     if (fraction[i] !== '0') {
-      result += `.${fraction.slice(0, i + 1)}`
-      break
+      result += `.${fraction.slice(0, i + 1)}`;
+      break;
     }
   }
 
-  return result
+  return result;
 }
 
 /**
@@ -59,45 +55,45 @@ function removeTrailingZeros(amount: string) {
  * @param value
  */
 function convertNumberWithPrefix(value: string) {
-  const M_PREFIX_AMOUNT = 1_000_000
-  const B_PREFIX_AMOUNT = 1_000_000_000
-  const T_PREFIX_AMOUNT = 1_000_000_000_000
+  const M_PREFIX_AMOUNT = 1_000_000;
+  const B_PREFIX_AMOUNT = 1_000_000_000;
+  const T_PREFIX_AMOUNT = 1_000_000_000_000;
 
   const getPrefix = (amount: number): 'M' | 'B' | 'T' | '' => {
-    if (amount >= T_PREFIX_AMOUNT) return 'T'
-    if (amount >= B_PREFIX_AMOUNT) return 'B'
-    if (amount >= M_PREFIX_AMOUNT) return 'M'
+    if (amount >= T_PREFIX_AMOUNT) return 'T';
+    if (amount >= B_PREFIX_AMOUNT) return 'B';
+    if (amount >= M_PREFIX_AMOUNT) return 'M';
 
-    return ''
-  }
+    return '';
+  };
 
-  const prefix = getPrefix(+value)
+  const prefix = getPrefix(+value);
 
   const divider = {
     M: M_PREFIX_AMOUNT,
     B: B_PREFIX_AMOUNT,
     T: T_PREFIX_AMOUNT,
     '': 1,
-  }[prefix]
+  }[prefix];
 
   const finalAmount = BN.fromRaw(Number(value) / divider, 3).format({
     decimals: 3,
     groupSeparator: '',
     decimalSeparator: '.',
-  })
+  });
 
-  return `${removeTrailingZeros(finalAmount)}${prefix}`
+  return `${removeTrailingZeros(finalAmount)}${prefix}`;
 }
 
 export function formatNumber(value: number, formatConfig?: BnFormatConfig) {
   try {
     const formatCfg = formatConfig || {
       ...defaultBnFormatConfig,
-    }
+    };
 
-    return removeTrailingZeros(BN.fromRaw(value).format(formatCfg))
+    return removeTrailingZeros(BN.fromRaw(value).format(formatCfg));
   } catch (error) {
-    return '0'
+    return '0';
   }
 }
 
@@ -110,24 +106,24 @@ export function formatAmount(
     const decimals =
       typeof decimalsOrConfig === 'number'
         ? decimalsOrConfig
-        : decimalsOrConfig?.decimals
+        : decimalsOrConfig?.decimals;
 
     const formatCfg = formatConfig || {
       ...defaultBnFormatConfig,
       ...(decimals && { decimals }),
-    }
+    };
 
     if (Number(decimals) === 0) {
-      const newAmount = BN.fromRaw(amount?.toString(), 18)
+      const newAmount = BN.fromRaw(amount?.toString(), 18);
 
-      return removeTrailingZeros(BN.fromBigInt(newAmount, 18).format(formatCfg))
+      return removeTrailingZeros(BN.fromBigInt(newAmount, 18).format(formatCfg));
     }
 
     return removeTrailingZeros(
       BN.fromBigInt(amount, decimalsOrConfig).format(formatCfg),
-    )
+    );
   } catch (error) {
-    return '0'
+    return '0';
   }
 }
 
@@ -140,22 +136,20 @@ export function formatBalance(
     const decimals =
       typeof decimalsOrConfig === 'number'
         ? decimalsOrConfig
-        : decimalsOrConfig?.decimals
+        : decimalsOrConfig?.decimals;
 
     const formatCfg = formatConfig || {
       ...defaultBnFormatConfig,
       groupSeparator: '',
       ...(decimals && { decimals }),
-    }
+    };
 
-    return convertNumberWithPrefix(
-      formatAmount(amount, decimalsOrConfig, formatCfg),
-    )
+    return convertNumberWithPrefix(formatAmount(amount, decimalsOrConfig, formatCfg));
   } catch (error) {
-    return '0'
+    return '0';
   }
 }
 
 export function abbrCenter(addr: string, start = 4, end = 4) {
-  return `${addr.slice(0, start)}...${addr.slice(-end)}`
+  return `${addr.slice(0, start)}...${addr.slice(-end)}`;
 }

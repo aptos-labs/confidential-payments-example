@@ -1,15 +1,9 @@
-import { Config } from 'tailwindcss'
-import plugin from 'tailwindcss/plugin'
+import { Config } from 'tailwindcss';
+import plugin from 'tailwindcss/plugin';
 
-import {
-  colors,
-  cssVars,
-  fontFamily,
-  typography,
-  gradients,
-} from './src/theme/config'
+import { colors, cssVars, fontFamily, typography, gradients } from './src/theme/config';
 
-import twAnimatePlugin from 'tailwindcss-animate'
+import twAnimatePlugin from 'tailwindcss-animate';
 
 const config: Config = {
   darkMode: 'selector',
@@ -98,13 +92,13 @@ const config: Config = {
     ),
 
     plugin(({ addComponents }) => {
-      addComponents(typography)
+      addComponents(typography);
     }),
 
     plugin(({ addComponents }) => {
-      addComponents(gradients)
+      addComponents(gradients);
     }),
   ],
-}
+};
 
-export default config
+export default config;

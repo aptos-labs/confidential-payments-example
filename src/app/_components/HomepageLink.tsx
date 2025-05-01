@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic';
 
 const HomepageLinkContent = dynamic(
   () => import('@/app/_components/HomepageLinkContent'),
@@ -12,8 +12,8 @@ const HomepageLinkContent = dynamic(
       </div>
     ),
   },
-)
+);
 
 export default function HomepageLink() {
-  return <HomepageLinkContent />
+  return <HomepageLinkContent />;
 }

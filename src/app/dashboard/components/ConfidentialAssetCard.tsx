@@ -1,20 +1,20 @@
-'use client'
+'use client';
 
-import Avatar from 'boring-avatars'
-import { HTMLAttributes, useMemo, useState } from 'react'
+import Avatar from 'boring-avatars';
+import { HTMLAttributes, useMemo, useState } from 'react';
 
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatBalance } from '@/helpers'
-import { TokenBaseInfo } from '@/store/wallet'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { ErrorHandler, formatBalance } from '@/helpers';
+import { TokenBaseInfo } from '@/store/wallet';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
 import {
   UiTooltip,
   UiTooltipContent,
   UiTooltipProvider,
   UiTooltipTrigger,
-} from '@/ui/UiTooltip'
+} from '@/ui/UiTooltip';
 
 export default function ConfidentialAssetCard({
   token,
@@ -31,52 +31,52 @@ export default function ConfidentialAssetCard({
 
   ...rest
 }: {
-  token: TokenBaseInfo
+  token: TokenBaseInfo;
 
-  pendingAmount: string
-  actualAmount: string
+  pendingAmount: string;
+  actualAmount: string;
 
-  isNormalized: boolean
-  isFrozen: boolean
-  isRegistered: boolean
+  isNormalized: boolean;
+  isFrozen: boolean;
+  isRegistered: boolean;
 } & HTMLAttributes<HTMLDivElement>) {
   const {
     registerAccountEncryptionKey,
     reloadAptBalance,
     loadSelectedDecryptionKeyState,
     perTokenStatuses,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const amountsSumBN = useMemo(() => {
     return (
       BigInt(pendingAmount || 0) +
       BigInt(actualAmount || 0) +
       BigInt(perTokenStatuses[token.address].fungibleAssetBalance || 0)
-    )
-  }, [actualAmount, pendingAmount, perTokenStatuses, token.address])
+    );
+  }, [actualAmount, pendingAmount, perTokenStatuses, token.address]);
 
   const tryRegister = async () => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
 
-    const currTokenStatus = perTokenStatuses[token.address]
+    const currTokenStatus = perTokenStatuses[token.address];
 
     try {
-      await registerAccountEncryptionKey(token.address)
-      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()])
+      await registerAccountEncryptionKey(token.address);
+      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]);
     } catch (error) {
       if (+currTokenStatus.fungibleAssetBalance >= 0) {
         ErrorHandler.process(
           error,
           'Insufficient APT balance, try funding your account',
-        )
+        );
       } else {
-        ErrorHandler.process(error)
+        ErrorHandler.process(error);
       }
     }
-    setIsSubmitting(false)
-  }
+    setIsSubmitting(false);
+  };
 
   return (
     <div {...rest} className={cn('relative overflow-hidden', className)}>
@@ -132,17 +132,14 @@ export default function ConfidentialAssetCard({
                         Let's register this token as your private balance
                       </span>
                       <UiTooltipTrigger>
-                        <UiIcon
-                          name='InfoIcon'
-                          className='size-4 text-textPrimary'
-                        />
+                        <UiIcon name='InfoIcon' className='size-4 text-textPrimary' />
                       </UiTooltipTrigger>
                     </div>
 
                     <UiTooltipContent className='overflow-hidden text-ellipsis'>
                       <span className='typography-caption1 text-textSecondary'>
-                        make sure you have anough APT to send transactions, or
-                        you can buy some in deposit modal
+                        make sure you have anough APT to send transactions, or you can
+                        buy some in deposit modal
                       </span>
                     </UiTooltipContent>
                   </UiTooltip>
@@ -153,5 +150,5 @@ export default function ConfidentialAssetCard({
         </div>
       </div>
     </div>
-  )
+  );
 }

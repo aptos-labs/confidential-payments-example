@@ -1,4 +1,4 @@
-import createNextIntlPlugin from 'next-intl/plugin'
+import createNextIntlPlugin from 'next-intl/plugin';
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
@@ -18,8 +18,8 @@ const nextConfig = {
     ],
   },
   transpilePackages: ['@lukachi/aptos-labs-ts-sdk'],
-}
+};
 
-const withNextIntl = createNextIntlPlugin('./src/localization/request.ts')
+const withNextIntl = createNextIntlPlugin('./src/localization/request.ts');
 
-export default withNextIntl(nextConfig)
+export default withNextIntl(nextConfig);

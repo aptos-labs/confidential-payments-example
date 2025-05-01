@@ -1,13 +1,13 @@
-import './styles.scss'
+import './styles.scss';
 
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes } from 'react';
 
-import { IconNames } from '@/enums'
-import { UiIcon } from '@/ui'
+import { IconNames } from '@/enums';
+import { UiIcon } from '@/ui';
 
 interface Props extends HTMLAttributes<HTMLDivElement> {
-  message: string
-  iconName?: IconNames
+  message: string;
+  iconName?: IconNames;
 }
 
 export default function UiNoDataMessage({
@@ -21,5 +21,5 @@ export default function UiNoDataMessage({
       <UiIcon className='ui-no-data-message__img' name={iconName} />
       <span className='ui-no-data-message__message'>{message}</span>
     </div>
-  )
+  );
 }

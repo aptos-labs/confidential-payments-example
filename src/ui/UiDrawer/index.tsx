@@ -1,18 +1,18 @@
-import './styles.scss'
+import './styles.scss';
 
-import { AnimatePresence, motion, MotionProps } from 'motion/react'
-import { HTMLAttributes, useEffect, useMemo, useRef } from 'react'
-import { useLocation } from 'react-router-dom'
-import { useClickAway } from 'react-use'
-import { v4 as uuidv4 } from 'uuid'
+import { AnimatePresence, motion, MotionProps } from 'motion/react';
+import { HTMLAttributes, useEffect, useMemo, useRef } from 'react';
+import { useLocation } from 'react-router-dom';
+import { useClickAway } from 'react-use';
+import { v4 as uuidv4 } from 'uuid';
 
 type Props = {
-  isShown: boolean
-  updateIsShown: (isShown: boolean) => void
+  isShown: boolean;
+  updateIsShown: (isShown: boolean) => void;
 
-  isCloseByClickOutside?: boolean
+  isCloseByClickOutside?: boolean;
 } & HTMLAttributes<HTMLDivElement> &
-  MotionProps
+  MotionProps;
 
 export default function UiDrawer({
   isShown,
@@ -24,23 +24,23 @@ export default function UiDrawer({
   children,
   ...rest
 }: Props) {
-  const location = useLocation()
+  const location = useLocation();
 
-  const uid = useMemo(() => uuidv4(), [])
+  const uid = useMemo(() => uuidv4(), []);
 
-  const drawerPaneRef = useRef(null)
-  const drawerBackdropRef = useRef(null)
+  const drawerPaneRef = useRef(null);
+  const drawerBackdropRef = useRef(null);
 
   useClickAway(drawerPaneRef, () => {
     if (isCloseByClickOutside) {
-      updateIsShown(false)
+      updateIsShown(false);
     }
-  })
+  });
 
   useEffect(() => {
-    updateIsShown(false)
+    updateIsShown(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [location])
+  }, [location]);
 
   return (
     <AnimatePresence initial={false} mode='wait'>
@@ -84,5 +84,5 @@ export default function UiDrawer({
         </>
       )}
     </AnimatePresence>
-  )
+  );
 }

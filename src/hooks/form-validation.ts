@@ -1,40 +1,40 @@
-import cloneDeep from 'lodash/cloneDeep'
-import get from 'lodash/get'
-import isEmpty from 'lodash/isEmpty'
-import isEqual from 'lodash/isEqual'
-import isObject from 'lodash/isObject'
-import set from 'lodash/set'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import cloneDeep from 'lodash/cloneDeep';
+import get from 'lodash/get';
+import isEmpty from 'lodash/isEmpty';
+import isEqual from 'lodash/isEqual';
+import isObject from 'lodash/isObject';
+import set from 'lodash/set';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 
-type FormSchema = Record<string, unknown>
+type FormSchema = Record<string, unknown>;
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type Validator = (...params: any[]) => {
-  isValid: boolean
-  message: string
-}
+  isValid: boolean;
+  message: string;
+};
 
 interface ValidatorOptions {
-  [key: string]: Validator | ValidatorOptions
+  [key: string]: Validator | ValidatorOptions;
 }
 
 type ValidationErrors = Record<
   string,
   {
-    message: string
+    message: string;
   }
->
+>;
 
 type ValidationFieldState = {
-  isInvalid: boolean
-  isDirty: boolean
-  isError: boolean
-  errors: ValidationErrors
-}
+  isInvalid: boolean;
+  isDirty: boolean;
+  isError: boolean;
+  errors: ValidationErrors;
+};
 
-type ValidationState = Record<keyof FormSchema, ValidationFieldState>
+type ValidationState = Record<keyof FormSchema, ValidationFieldState>;
 
-type ValidationRules = Record<keyof FormSchema, ValidatorOptions>
+type ValidationRules = Record<keyof FormSchema, ValidatorOptions>;
 
 function _generateDefaultFieldState(
   fieldKey: string | number,
@@ -49,7 +49,7 @@ function _generateDefaultFieldState(
   if (!isObject(field)) {
     return {
       [fieldKey]: defaultFlags,
-    }
+    };
   } else if (Array.isArray(field)) {
     return {
       [fieldKey]: {
@@ -58,10 +58,10 @@ function _generateDefaultFieldState(
           return {
             ...acc,
             ..._generateDefaultFieldState(index, el, defaultFlags),
-          }
+          };
         }, {}),
       },
-    }
+    };
   } else {
     return {
       [fieldKey]: {
@@ -70,10 +70,10 @@ function _generateDefaultFieldState(
           return {
             ...acc,
             ..._generateDefaultFieldState(el, get(field, el), defaultFlags),
-          }
+          };
         }, {}),
       },
-    }
+    };
   }
 }
 
@@ -81,9 +81,9 @@ export const useFormValidation = (
   formSchema: FormSchema,
   validationRules: ValidationRules,
 ) => {
-  const [fieldsToTouchStack, setFieldsToTouchStack] = useState<string[]>([])
+  const [fieldsToTouchStack, setFieldsToTouchStack] = useState<string[]>([]);
 
-  const [isFieldsValid, setIsFieldsValid] = useState(false)
+  const [isFieldsValid, setIsFieldsValid] = useState(false);
   const _getValidationDefaultState = useCallback(
     (
       defaultFlags = {
@@ -98,25 +98,24 @@ export const useFormValidation = (
           fieldName,
           formSchema[fieldName],
           defaultFlags,
-        )
+        );
 
         return {
           ...acc,
           ..._validationState,
-        }
-      }, {})
+        };
+      }, {});
     },
     [formSchema, validationRules],
-  )
+  );
 
   const validationDefaultState = useMemo(
     () => _getValidationDefaultState(),
     [_getValidationDefaultState],
-  )
+  );
 
-  const [validationState, setValidationState] = useState<ValidationState>(
-    validationDefaultState,
-  )
+  const [validationState, setValidationState] =
+    useState<ValidationState>(validationDefaultState);
 
   const _validateField = useCallback(
     (
@@ -126,11 +125,9 @@ export const useFormValidation = (
       fieldValue: unknown,
       accumulator: ValidationFieldState,
       cachedResult: ValidationFieldState,
-    ):
-      | ValidationFieldState
-      | { [x: string | number]: ValidationFieldState } => {
+    ): ValidationFieldState | { [x: string | number]: ValidationFieldState } => {
       if (typeof validator == 'function') {
-        const { isValid, message } = validator(fieldValue)
+        const { isValid, message } = validator(fieldValue);
 
         const errors = {
           ...cloneDeep({
@@ -143,19 +140,19 @@ export const useFormValidation = (
                   },
                 }),
           }),
-        }
+        };
 
         if (Object.keys(errors).length) {
-          setIsFieldsValid(false)
+          setIsFieldsValid(false);
         }
 
         if (isValid && errors[validatorKey]) {
-          delete errors[validatorKey]
+          delete errors[validatorKey];
         }
 
-        const isInvalid = !isEmpty(errors) || false
-        const isDirty = cachedResult?.isDirty || false
-        const isError = (isInvalid && isDirty) || false
+        const isInvalid = !isEmpty(errors) || false;
+        const isDirty = cachedResult?.isDirty || false;
+        const isError = (isInvalid && isDirty) || false;
 
         return {
           ...cachedResult,
@@ -163,10 +160,9 @@ export const useFormValidation = (
           isDirty,
           isError,
           errors,
-        }
+        };
       } else if (validatorKey === '$every') {
-        if (!Array.isArray(fieldValue))
-          throw new Error(`${fieldKey}: is not an array`)
+        if (!Array.isArray(fieldValue)) throw new Error(`${fieldKey}: is not an array`);
 
         return fieldValue.reduce((acc, el, index) => {
           return {
@@ -179,35 +175,34 @@ export const useFormValidation = (
               get(acc, index),
               get(cachedResult, index),
             ),
-          }
-        }, accumulator)
+          };
+        }, accumulator);
       } else if (isObject(validator)) {
         return {
           [validatorKey]: Object.entries(validator).reduce(
             (acc, [_validatorKey, _validatorValue]) => {
-              const isValidatorValueFunction =
-                typeof _validatorValue === 'function'
-              const isValidatorValueEvery = _validatorKey === '$every'
+              const isValidatorValueFunction = typeof _validatorValue === 'function';
+              const isValidatorValueEvery = _validatorKey === '$every';
 
               const _cachedResult =
                 isValidatorValueFunction || isValidatorValueEvery
                   ? cachedResult
-                  : get(cachedResult, _validatorKey)
+                  : get(cachedResult, _validatorKey);
 
               const _fieldKey =
                 isValidatorValueFunction || isValidatorValueEvery
                   ? fieldKey
-                  : _validatorKey
+                  : _validatorKey;
 
               const _fieldValue =
                 isValidatorValueFunction || isValidatorValueEvery
                   ? fieldValue
-                  : get(fieldValue, _validatorKey)
+                  : get(fieldValue, _validatorKey);
 
               const _accumulator =
                 isValidatorValueFunction || isValidatorValueEvery
                   ? acc
-                  : get(acc, _fieldKey)
+                  : get(acc, _fieldKey);
 
               const validatedNestedField = _validateField(
                 _validatorKey,
@@ -216,7 +211,7 @@ export const useFormValidation = (
                 _fieldValue,
                 _accumulator,
                 _cachedResult as ValidationFieldState,
-              )
+              );
 
               return {
                 ...acc,
@@ -225,31 +220,31 @@ export const useFormValidation = (
                 _fieldKey === _validatorKey
                   ? { ...validatedNestedField }
                   : { [_fieldKey]: validatedNestedField }),
-              }
+              };
             },
             accumulator,
           ),
-        }
+        };
       }
-      return {} as ValidationFieldState
+      return {} as ValidationFieldState;
     },
     [],
-  )
+  );
 
   const getValidationState = useCallback((): ValidationState => {
-    setIsFieldsValid(true)
+    setIsFieldsValid(true);
     return Object.keys(validationRules).reduce((acc, fieldName) => {
-      const fieldValidators = validationRules[fieldName]
+      const fieldValidators = validationRules[fieldName];
 
       if (!fieldValidators || isEmpty(fieldValidators)) {
-        console.error(`Field ${fieldName} has no validators`)
-        return {}
+        console.error(`Field ${fieldName} has no validators`);
+        return {};
       }
 
       const validatedField = Object.entries(fieldValidators).reduce(
         (acc, [validatorKey, validator]) => {
-          const isValidatorFunction = typeof validator === 'function'
-          const isValidatorEvery = validatorKey === '$every'
+          const isValidatorFunction = typeof validator === 'function';
+          const isValidatorEvery = validatorKey === '$every';
 
           const cachedResult =
             isValidatorFunction || isValidatorEvery
@@ -264,18 +259,18 @@ export const useFormValidation = (
                       {} as ValidationFieldState,
                     ),
                   ),
-                }
+                };
 
           const fieldKey =
-            isValidatorFunction || isValidatorEvery ? fieldName : validatorKey
+            isValidatorFunction || isValidatorEvery ? fieldName : validatorKey;
 
           const fieldValue =
             isValidatorFunction || isValidatorEvery
               ? formSchema[fieldName]
-              : get(formSchema[fieldName], validatorKey)
+              : get(formSchema[fieldName], validatorKey);
 
           const accumulator =
-            isValidatorFunction || isValidatorEvery ? acc : get(acc, fieldKey)
+            isValidatorFunction || isValidatorEvery ? acc : get(acc, fieldKey);
 
           const validatedField = _validateField(
             validatorKey,
@@ -284,64 +279,64 @@ export const useFormValidation = (
             fieldValue,
             accumulator as ValidationFieldState,
             cachedResult as ValidationFieldState,
-          )
+          );
 
           return {
             ...acc,
             ...validatedField,
-          }
+          };
         },
         {} as ValidationFieldState,
-      )
+      );
 
       return {
         ...acc,
         [fieldName]: validatedField,
-      }
-    }, {})
-  }, [_validateField, formSchema, validationRules, validationState])
+      };
+    }, {});
+  }, [_validateField, formSchema, validationRules, validationState]);
 
   useEffect(() => {
     setValidationState(validationState => {
-      const newState = getValidationState()
+      const newState = getValidationState();
 
-      return isEqual(validationState, newState) ? validationState : newState
-    })
-  }, [getValidationState, formSchema, validationState])
+      return isEqual(validationState, newState) ? validationState : newState;
+    });
+  }, [getValidationState, formSchema, validationState]);
 
   const touchField = useCallback(
     (fieldPath: string): void => {
       if (!get(validationState, fieldPath)) {
-        console.error(`Field ${fieldPath} not found`)
-        setFieldsToTouchStack(prevState => [...prevState, fieldPath])
-        return
+        console.error(`Field ${fieldPath} not found`);
+        setFieldsToTouchStack(prevState => [...prevState, fieldPath]);
+        return;
       }
 
       if (fieldsToTouchStack.includes(fieldPath)) {
         setFieldsToTouchStack(prevState => [
           ...prevState.filter(el => el !== fieldPath),
-        ])
+        ]);
       }
 
       setValidationState(prevState => {
         const nextState = {
           ...cloneDeep(prevState),
-        }
+        };
 
         set(nextState, fieldPath, {
           ...get(nextState, fieldPath),
           isDirty: true,
-        })
+        });
 
-        return isEqual(prevState, nextState) ? prevState : nextState
-      })
+        return isEqual(prevState, nextState) ? prevState : nextState;
+      });
     },
     [fieldsToTouchStack, validationState],
-  )
+  );
 
   useEffect(() => {
-    fieldsToTouchStack.forEach(el => touchField(el))
-  }, [fieldsToTouchStack, touchField, validationState])
+    fieldsToTouchStack.forEach(el => touchField(el));
+  }, [fieldsToTouchStack, touchField, validationState]);
 
   const touchForm = useCallback(() => {
     const _defaultState = _getValidationDefaultState({
@@ -349,43 +344,43 @@ export const useFormValidation = (
       isDirty: true,
       isError: false,
       errors: {},
-    })
+    });
 
-    setValidationState(_defaultState)
-  }, [_getValidationDefaultState])
+    setValidationState(_defaultState);
+  }, [_getValidationDefaultState]);
 
   const getFieldErrorMessage = useCallback(
     (fieldPath: string) => {
-      const validationField = get(validationState, fieldPath)
+      const validationField = get(validationState, fieldPath);
 
       if (!validationField && !Object.keys(formSchema).includes(fieldPath)) {
-        return ''
+        return '';
       } else if (
         validationField?.errors &&
         !Object.entries(validationField.errors)[0]
       ) {
-        return ''
+        return '';
       }
 
       return (
         (validationField?.isError &&
           Object.entries(validationField?.errors)[0][1]?.message) ||
         ''
-      )
+      );
     },
     [formSchema, validationState],
-  )
+  );
 
   const isFieldValid = useCallback(
     (fieldPath: string) => {
-      const validationField = get(validationState, fieldPath)
+      const validationField = get(validationState, fieldPath);
 
-      if (!validationField) return false
+      if (!validationField) return false;
 
-      return !validationField.isInvalid || false
+      return !validationField.isInvalid || false;
     },
     [validationState],
-  )
+  );
 
   return {
     isFieldsValid,
@@ -394,5 +389,5 @@ export const useFormValidation = (
     getFieldErrorMessage,
     touchField,
     isFieldValid,
-  }
-}
+  };
+};

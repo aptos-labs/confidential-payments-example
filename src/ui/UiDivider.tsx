@@ -1,6 +1,6 @@
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes } from 'react';
 
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
 export default function UiDivider(props: HTMLAttributes<HTMLDivElement>) {
   return (
@@ -8,5 +8,5 @@ export default function UiDivider(props: HTMLAttributes<HTMLDivElement>) {
       {...props}
       className={cn('h-[1px] w-full bg-componentPrimary', props.className)}
     />
-  )
+  );
 }

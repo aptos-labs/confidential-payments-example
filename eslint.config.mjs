@@ -1,27 +1,27 @@
 // @ts-check
 
-import eslint from '@eslint/js'
-import eslintConfigPrettier from 'eslint-config-prettier'
-import importPlugin from 'eslint-plugin-import'
-import jsxA11y from 'eslint-plugin-jsx-a11y'
-import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended'
-import reactPlugin from 'eslint-plugin-react'
-import reactHooksPlugin from 'eslint-plugin-react-hooks'
-import simpleImportSort from 'eslint-plugin-simple-import-sort'
-import globals from 'globals'
-import tseslint from 'typescript-eslint'
-import stylisticJs from '@stylistic/eslint-plugin-js'
-import stylisticTs from '@stylistic/eslint-plugin-ts'
-import stylisticJsx from '@stylistic/eslint-plugin-jsx'
-import unusedImports from 'eslint-plugin-unused-imports'
-import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript'
-import { FlatCompat } from '@eslint/eslintrc'
-import { fixupConfigRules } from '@eslint/compat'
+import eslint from '@eslint/js';
+import eslintConfigPrettier from 'eslint-config-prettier';
+import importPlugin from 'eslint-plugin-import';
+import jsxA11y from 'eslint-plugin-jsx-a11y';
+import eslintPluginPrettierRecommended from 'eslint-plugin-prettier/recommended';
+import reactPlugin from 'eslint-plugin-react';
+import reactHooksPlugin from 'eslint-plugin-react-hooks';
+import simpleImportSort from 'eslint-plugin-simple-import-sort';
+import globals from 'globals';
+import tseslint from 'typescript-eslint';
+import stylisticJs from '@stylistic/eslint-plugin-js';
+import stylisticTs from '@stylistic/eslint-plugin-ts';
+import stylisticJsx from '@stylistic/eslint-plugin-jsx';
+import unusedImports from 'eslint-plugin-unused-imports';
+import { createTypeScriptImportResolver } from 'eslint-import-resolver-typescript';
+import { FlatCompat } from '@eslint/eslintrc';
+import { fixupConfigRules } from '@eslint/compat';
 
 const compat = new FlatCompat({
   // import.meta.dirname is available after Node.js v20.11.0
   baseDirectory: import.meta.dirname,
-})
+});
 
 export default fixupConfigRules(
   tseslint.config(
@@ -39,6 +39,7 @@ export default fixupConfigRules(
         // use stylistic/{js/ts/jsx} instead of core eslint deprecated rules
 
         'no-var': 'error',
+        '@stylistic/js/semi': ['error', 'always'],
         '@stylistic/js/max-len': [
           1,
           {
@@ -168,4 +169,4 @@ export default fixupConfigRules(
   ),
 
   compat.extends('next/core-web-vitals', 'next/typescript'),
-)
+);

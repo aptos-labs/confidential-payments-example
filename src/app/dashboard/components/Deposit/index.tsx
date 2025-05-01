@@ -1,38 +1,33 @@
-'use client'
+'use client';
 
-import QRCode from 'react-qr-code'
+import QRCode from 'react-qr-code';
 
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { RoutePaths } from '@/enums'
-import { useCopyToClipboard } from '@/hooks'
-import { UiIcon } from '@/ui'
-import { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger } from '@/ui/UiTabs'
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { RoutePaths } from '@/enums';
+import { useCopyToClipboard } from '@/hooks';
+import { UiIcon } from '@/ui';
+import { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger } from '@/ui/UiTabs';
 
-import DepositMint from './components/DepositMint'
+import DepositMint from './components/DepositMint';
 
 export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
-  const { selectedAccount, selectedToken } = useConfidentialCoinContext()
+  const { selectedAccount, selectedToken } = useConfidentialCoinContext();
 
-  const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`
+  const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`;
 
-  const { copy, isCopied } = useCopyToClipboard()
+  const { copy, isCopied } = useCopyToClipboard();
 
   return (
     <div className='flex flex-col items-center gap-4'>
       <UiTabs defaultValue='faucet' className='w-full'>
         <UiTabsList>
-          <UiTabsTrigger value='faucet'>
-            Buy {selectedToken.symbol}
-          </UiTabsTrigger>
+          <UiTabsTrigger value='faucet'>Buy {selectedToken.symbol}</UiTabsTrigger>
           <UiTabsTrigger value='manual'>Receive from others</UiTabsTrigger>
         </UiTabsList>
         <UiTabsContent value='faucet'>
           <DepositMint onSubmit={onSubmit} />
         </UiTabsContent>
-        <UiTabsContent
-          value='manual'
-          className='flex flex-col items-center gap-4'
-        >
+        <UiTabsContent value='manual' className='flex flex-col items-center gap-4'>
           <div className='aspect-square w-full rounded-xl border-2 border-textPrimary p-4'>
             <QRCode
               size={256}
@@ -73,12 +68,12 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
           </div>
           <div className='mt-4 rounded-md bg-componentPrimary p-4'>
             <p className='text-sm text-textSecondary'>
-              Note: This is the blockchain address associated with your Google
-              account in this dapp.
+              Note: This is the blockchain address associated with your Google account
+              in this dapp.
             </p>
           </div>
         </UiTabsContent>
       </UiTabs>
     </div>
-  )
+  );
 }

@@ -1,10 +1,10 @@
-import './styles.scss'
+import './styles.scss';
 
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes } from 'react';
 
 export default function UiSpinner({
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement>) {
-  return <div className={['ui-spinner', className].join(' ')} {...rest} />
+  return <div className={['ui-spinner', className].join(' ')} {...rest} />;
 }

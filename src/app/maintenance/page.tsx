@@ -1,4 +1,4 @@
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
 export default function MaintenancePage() {
   return (
@@ -18,8 +18,8 @@ export default function MaintenancePage() {
           Under Maintenance
         </h1>
         <p className='font-light text-gray-500 md:text-lg xl:text-xl dark:text-gray-400'>
-          We are currently performing some maintenance on our site. We apologize
-          for any inconvenience this may cause and appreciate your patience.
+          We are currently performing some maintenance on our site. We apologize for any
+          inconvenience this may cause and appreciate your patience.
         </p>
       </div>
 
@@ -40,5 +40,5 @@ export default function MaintenancePage() {
         }}
       />
     </section>
-  )
+  );
 }

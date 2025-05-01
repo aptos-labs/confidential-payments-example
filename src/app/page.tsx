@@ -1,6 +1,6 @@
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
-import HomepageLink from './_components/HomepageLink'
+import HomepageLink from './_components/HomepageLink';
 
 export default async function RootPage() {
   return (
@@ -34,5 +34,5 @@ export default async function RootPage() {
         }}
       />
     </div>
-  )
+  );
 }

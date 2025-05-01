@@ -1,78 +1,72 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useEffect, useRef, useState } from 'react'
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useEffect, useRef, useState } from 'react';
 
-import { ErrorHandler, tryCatch } from '@/helpers'
-import { authStore } from '@/store/auth'
-import { cn } from '@/theme/utils'
-import { UiButton } from '@/ui/UiButton'
+import { ErrorHandler, tryCatch } from '@/helpers';
+import { authStore } from '@/store/auth';
+import { cn } from '@/theme/utils';
+import { UiButton } from '@/ui/UiButton';
 
 export default function HomepageLinkContent() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const activeKeylessAccount = authStore.useAuthStore(
-    state => state.activeAccount,
-  )
+  const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
 
-  const isInitialing = useRef(false)
+  const isInitialing = useRef(false);
 
-  const [isLoading, setIsLoading] = useState(false)
+  const [isLoading, setIsLoading] = useState(false);
 
-  const {
-    getGoogleRequestLoginUrl,
-    loginWithGoogle,
-    loginWithApple,
-    loginTest,
-  } = authStore.useLogin({
-    onSuccess: () => {
-      router.push('/dashboard')
-    },
-  })
+  const { getGoogleRequestLoginUrl, loginWithGoogle, loginWithApple, loginTest } =
+    authStore.useLogin({
+      onSuccess: () => {
+        router.push('/dashboard');
+      },
+    });
 
   // eslint-disable-next-line unused-imports/no-unused-vars
   const tryLoginTest = async () => {
     try {
-      await loginTest()
+      await loginTest();
     } catch (error) {
-      ErrorHandler.process(error)
+      ErrorHandler.process(error);
     }
-  }
+  };
 
-  const fragmentParams = new URLSearchParams(window.location.hash.substring(1))
-  const googleIdToken = fragmentParams.get('id_token')
-  const appleIdToken = fragmentParams.get('token')
+  const fragmentParams = new URLSearchParams(window.location.hash.substring(1));
+  const googleIdToken = fragmentParams.get('id_token');
+  const appleIdToken = fragmentParams.get('token');
 
   useEffect(() => {
-    if (isInitialing.current) return
-    isInitialing.current = true
+    if (isInitialing.current) return;
+    isInitialing.current = true;
 
     if (activeKeylessAccount) {
-      router.push('/dashboard')
+      router.push('/dashboard');
     }
 
-    if (!googleIdToken && !appleIdToken) return
+    if (!googleIdToken && !appleIdToken) return;
 
     const loginWithSocial = async () => {
-      setIsLoading(true)
+      setIsLoading(true);
 
       const [, error] = await tryCatch(
         (async () => {
           if (googleIdToken) {
-            loginWithGoogle(googleIdToken)
+            loginWithGoogle(googleIdToken);
           } else if (appleIdToken) {
-            loginWithApple(appleIdToken)
+            loginWithApple(appleIdToken);
           }
         })(),
-      )
+      );
       if (error) {
-        ErrorHandler.process(error)
-        router.push('/')
+        ErrorHandler.process(error);
+        router.push('/');
       }
-    }
+    };
 
-    loginWithSocial()
+    loginWithSocial();
   }, [
     activeKeylessAccount,
     appleIdToken,
@@ -80,13 +74,11 @@ export default function HomepageLinkContent() {
     loginWithApple,
     loginWithGoogle,
     router,
-  ])
+  ]);
 
   return (
     <>
-      <Link
-        href={activeKeylessAccount ? '/dashboard' : getGoogleRequestLoginUrl}
-      >
+      <Link href={activeKeylessAccount ? '/dashboard' : getGoogleRequestLoginUrl}>
         <UiButton
           variant='outline'
           className={cn(
@@ -95,7 +87,7 @@ export default function HomepageLinkContent() {
           )}
           disabled={Boolean(isLoading || activeKeylessAccount)}
           onClick={() => {
-            setIsLoading(true)
+            setIsLoading(true);
           }}
         >
           {!activeKeylessAccount && (
@@ -118,5 +110,5 @@ export default function HomepageLinkContent() {
         Login Test
       </UiButton> */}
     </>
-  )
+  );
 }

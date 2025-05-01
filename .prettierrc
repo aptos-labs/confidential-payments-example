@@ -1,6 +1,6 @@
 {
   "tabWidth": 2,
-  "semi": false,
+  "semi": true,
   "singleQuote": true,
   "useTabs": false,
   "bracketSpacing": true,
@@ -8,7 +8,7 @@
   "arrowParens": "avoid",
   "endOfLine": "auto",
   "trailingComma": "all",
-  "printWidth": 80,
+  "printWidth": 88,
   "quoteProps": "as-needed",
   "embeddedLanguageFormatting": "auto",
   "htmlWhitespaceSensitivity": "css",

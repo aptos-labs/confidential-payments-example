@@ -1,17 +1,17 @@
-import { APTOS_FA } from '@aptos-labs/ts-sdk'
-import { time } from '@distributedlab/tools'
-import { FixedNumber, parseUnits } from 'ethers'
-import { useState } from 'react'
+import { APTOS_FA } from '@aptos-labs/ts-sdk';
+import { time } from '@distributedlab/tools';
+import { FixedNumber, parseUnits } from 'ethers';
+import { useState } from 'react';
 
-import { getFABalance, mintAptCoin } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { USDC_MOCKED_TOKEN_ADDR } from '@/config'
-import { bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/helpers'
-import { useLoading } from '@/hooks'
-import { UiButton } from '@/ui/UiButton'
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { getFABalance, mintAptCoin } from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { USDC_MOCKED_TOKEN_ADDR } from '@/config';
+import { bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/helpers';
+import { useLoading } from '@/hooks';
+import { UiButton } from '@/ui/UiButton';
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
-const MINT_AMOUNT = 1
+const MINT_AMOUNT = 1;
 
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
@@ -24,13 +24,13 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     loadSelectedDecryptionKeyState,
     addTxHistoryItem,
     perTokenStatuses,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const currTokenStatus = perTokenStatuses[selectedToken?.address]
+  const currTokenStatus = perTokenStatuses[selectedToken?.address];
 
-  const isRegistered = currTokenStatus?.isRegistered
+  const isRegistered = currTokenStatus?.isRegistered;
 
   const {
     data: { moduleMockedTokenAddr },
@@ -45,98 +45,91 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
       return {
         moduleMockedTokenAddr: USDC_MOCKED_TOKEN_ADDR,
-      }
+      };
     },
-  )
+  );
 
   const isCurrTokenIsModuleMockedOne =
-    moduleMockedTokenAddr?.toLowerCase() ===
-    selectedToken?.address.toLowerCase()
+    moduleMockedTokenAddr?.toLowerCase() === selectedToken?.address.toLowerCase();
 
-  const isAptosFA = selectedToken?.address === APTOS_FA
+  const isAptosFA = selectedToken?.address === APTOS_FA;
 
   const tryTestMintTokens = async () => {
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
-      await testMintTokens(`${MINT_AMOUNT}`)
-      onSubmit?.()
+      await testMintTokens(`${MINT_AMOUNT}`);
+      onSubmit?.();
     } catch (error) {
-      ErrorHandler.process(error)
+      ErrorHandler.process(error);
     }
-    setIsSubmitting(false)
-  }
+    setIsSubmitting(false);
+  };
 
   const tryFundAptBalance = async () => {
-    setIsSubmitting(true)
-    const amountToDeposit = parseUnits(`${MINT_AMOUNT}`, selectedToken.decimals)
+    setIsSubmitting(true);
+    const amountToDeposit = parseUnits(`${MINT_AMOUNT}`, selectedToken.decimals);
 
-    let mintAttempts = 0
+    let mintAttempts = 0;
 
     do {
       const [, mintError] = await tryCatch(
         mintAptCoin(selectedAccount, amountToDeposit),
-      )
+      );
       if (mintError) {
         if (mintAttempts >= 5) {
-          ErrorHandler.process(mintError)
-          setIsSubmitting(false)
-          return
+          ErrorHandler.process(mintError);
+          setIsSubmitting(false);
+          return;
         }
 
-        mintAttempts += 1
-        await sleep(200)
-        continue
+        mintAttempts += 1;
+        await sleep(200);
+        continue;
       }
 
-      break
-    } while (mintAttempts < 5)
+      break;
+    } while (mintAttempts < 5);
 
     if (isRegistered) {
-      let depositAttempts = 0
+      let depositAttempts = 0;
 
       do {
         const [faOnlyBalanceResponse, getFAError] = await tryCatch(
           getFABalance(selectedAccount, selectedToken.address),
-        )
+        );
         if (getFAError) {
           if (depositAttempts >= 5) {
-            ErrorHandler.process(getFAError)
-            setIsSubmitting(false)
-            return
+            ErrorHandler.process(getFAError);
+            setIsSubmitting(false);
+            return;
           }
 
-          depositAttempts += 1
-          await sleep(200)
-          continue
+          depositAttempts += 1;
+          await sleep(200);
+          continue;
         }
 
-        const [faOnlyBalance] = faOnlyBalanceResponse
+        const [faOnlyBalance] = faOnlyBalanceResponse;
 
         const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
           faOnlyBalance?.amount || '0',
-        ).lt(FixedNumber.fromValue(amountToDeposit))
+        ).lt(FixedNumber.fromValue(amountToDeposit));
 
         const [depositTxReceipt, depositError] = await tryCatch(
           isInsufficientFAOnlyBalance
-            ? depositCoinTo(
-                amountToDeposit,
-                selectedAccount.accountAddress.toString(),
-              )
-            : depositTo(
-                amountToDeposit,
-                selectedAccount.accountAddress.toString(),
-              ),
-        )
+            ? depositCoinTo(amountToDeposit, selectedAccount.accountAddress.toString())
+            : depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
+        );
         if (depositError) {
           if (depositAttempts >= 5) {
-            ErrorHandler.process(depositError)
-            setIsSubmitting(false)
-            return
+            ErrorHandler.process(depositError);
+            setIsSubmitting(false);
+            return;
           }
 
-          depositAttempts += 1
-          await sleep(200)
-          continue
+          depositAttempts += 1;
+          await sleep(200);
+          continue;
         }
 
         addTxHistoryItem({
@@ -144,31 +137,28 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
           txType: 'deposit',
           createdAt: time().timestamp,
           message: `Gifted ${MINT_AMOUNT} ${selectedToken.symbol} from the faucet`,
-        })
+        });
 
-        await Promise.all([
-          reloadAptBalance(),
-          loadSelectedDecryptionKeyState(),
-        ])
+        await Promise.all([reloadAptBalance(), loadSelectedDecryptionKeyState()]);
         bus.emit(
           BusEvents.Success,
           isRegistered
             ? 'Successfully funded your balance with 1 APT'
             : 'Successfully funded your public balance with 1 APT',
-        )
-        setIsSubmitting(false)
-        onSubmit?.()
+        );
+        setIsSubmitting(false);
+        onSubmit?.();
 
-        break
-      } while (depositAttempts < 5)
+        break;
+      } while (depositAttempts < 5);
     }
-  }
+  };
 
   return (
     <div className='flex w-full flex-col gap-3 rounded-2xl border-2 border-solid border-textPrimary p-4'>
       {(() => {
         if (isLoading) {
-          return <UiSkeleton className='min-h-[36px] w-full' />
+          return <UiSkeleton className='min-h-[36px] w-full' />;
         }
 
         if (isCurrTokenIsModuleMockedOne) {
@@ -182,7 +172,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
                 Get {MINT_AMOUNT} free {selectedToken?.symbol} tokens!
               </UiButton>
             </>
-          )
+          );
         }
 
         if (isAptosFA) {
@@ -196,11 +186,11 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
                 Get {MINT_AMOUNT} free {selectedToken?.symbol} tokens!
               </UiButton>
             </>
-          )
+          );
         }
 
-        return <></>
+        return <></>;
       })()}
     </div>
-  )
+  );
 }

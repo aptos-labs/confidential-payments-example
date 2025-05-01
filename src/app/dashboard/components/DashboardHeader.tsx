@@ -1,63 +1,58 @@
-'use client'
+'use client';
 
-import { Account } from '@aptos-labs/ts-sdk'
-import { BN, time } from '@distributedlab/tools'
-import Avatar from 'boring-avatars'
-import { jwtDecode } from 'jwt-decode'
-import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react'
-import Image from 'next/image'
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { Account } from '@aptos-labs/ts-sdk';
+import { BN, time } from '@distributedlab/tools';
+import Avatar from 'boring-avatars';
+import { jwtDecode } from 'jwt-decode';
+import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react';
+import Image from 'next/image';
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   type ComponentProps,
   HTMLAttributes,
   useCallback,
   useMemo,
   useState,
-} from 'react'
-import { Controller } from 'react-hook-form'
+} from 'react';
+import { Controller } from 'react-hook-form';
 
 import {
   generatePrivateKeyHex,
   getAccountExplorerUrl,
   sendApt,
   validatePrivateKeyHex,
-} from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { abbrCenter, ErrorHandler, isMobile } from '@/helpers'
-import { useCopyToClipboard, useForm } from '@/hooks'
-import { authStore } from '@/store/auth'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
+} from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { abbrCenter, ErrorHandler, isMobile } from '@/helpers';
+import { useCopyToClipboard, useForm } from '@/hooks';
+import { authStore } from '@/store/auth';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
 import {
   UiDropdownMenu,
   UiDropdownMenuContent,
   UiDropdownMenuItem,
   UiDropdownMenuTrigger,
-} from '@/ui/UiDropdownMenu'
-import { UiInput } from '@/ui/UiInput'
-import { UiSeparator } from '@/ui/UiSeparator'
-import {
-  UiSheet,
-  UiSheetContent,
-  UiSheetHeader,
-  UiSheetTitle,
-} from '@/ui/UiSheet'
-import UiThemeSwitcher from '@/ui/UiThemeSwitcher'
+} from '@/ui/UiDropdownMenu';
+import { UiInput } from '@/ui/UiInput';
+import { UiSeparator } from '@/ui/UiSeparator';
+import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
+import UiThemeSwitcher from '@/ui/UiThemeSwitcher';
 
 export default function DashboardHeader({
   className,
   ...rest
 }: HTMLAttributes<HTMLDivElement>) {
-  const isMobileDevice = isMobile()
-  const router = useRouter()
+  const isMobileDevice = isMobile();
+  const router = useRouter();
 
   const logout = authStore.useLogout({
     onSuccess: () => {
-      router.push('/')
+      router.push('/');
     },
-  })
+  });
 
   const {
     accountsList,
@@ -65,46 +60,45 @@ export default function DashboardHeader({
     setSelectedAccount,
     addNewAccount,
     removeAccount,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
-  const [isAccountsBottomSheet, setIsAccountsBottomSheet] = useState(false)
-  const [isAddAccountBottomSheet, setIsAddAccountBottomSheet] = useState(false)
-  const [isTransferNativeBottomSheet, setIsTransferNativeBottomSheet] =
-    useState(false)
+  const [isAccountsBottomSheet, setIsAccountsBottomSheet] = useState(false);
+  const [isAddAccountBottomSheet, setIsAddAccountBottomSheet] = useState(false);
+  const [isTransferNativeBottomSheet, setIsTransferNativeBottomSheet] = useState(false);
 
   const keylessPubAcc = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    if (!selectedAccount.jwt) return
+    if (!selectedAccount.jwt) return;
 
     const decodedJwt = jwtDecode<{
-      name: string
-      picture: string
+      name: string;
+      picture: string;
 
       // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore
-    }>(selectedAccount.jwt)
+    }>(selectedAccount.jwt);
 
     return {
       name: decodedJwt.name,
       avatarUrl: decodedJwt.picture,
-    }
-  }, [selectedAccount])
+    };
+  }, [selectedAccount]);
 
   const handleAddNewAccount = useCallback(
     (privateKeyHex: string) => {
-      addNewAccount(privateKeyHex)
-      setIsAddAccountBottomSheet(false)
-      setIsAccountsBottomSheet(false)
+      addNewAccount(privateKeyHex);
+      setIsAddAccountBottomSheet(false);
+      setIsAccountsBottomSheet(false);
     },
     [addNewAccount],
-  )
+  );
 
   const handleTransferNative = useCallback(async () => {
-    setIsTransferNativeBottomSheet(false)
-  }, [])
+    setIsTransferNativeBottomSheet(false);
+  }, []);
 
-  const { copy, isCopied } = useCopyToClipboard()
+  const { copy, isCopied } = useCopyToClipboard();
 
   return (
     <div {...rest} className={cn('flex items-center', className)}>
@@ -120,10 +114,7 @@ export default function DashboardHeader({
                 className='rounded-full'
               />
             ) : (
-              <Avatar
-                name={selectedAccount.accountAddress.toString()}
-                size={24}
-              />
+              <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
             )}
 
             <div className='max-w-[200px] overflow-hidden text-ellipsis'>
@@ -153,15 +144,11 @@ export default function DashboardHeader({
           <UiDropdownMenuItem>
             <Link
               className='flex w-full items-center gap-2'
-              href={getAccountExplorerUrl(
-                selectedAccount.accountAddress.toString(),
-              )}
+              href={getAccountExplorerUrl(selectedAccount.accountAddress.toString())}
               target='_blank'
             >
               <UiIcon name='ExternalLinkIcon' className='size-4' />
-              <span className='typography-caption1 text-textPrimary'>
-                Account
-              </span>
+              <span className='typography-caption1 text-textPrimary'>Account</span>
             </Link>
           </UiDropdownMenuItem>
           <UiDropdownMenuItem>
@@ -195,10 +182,7 @@ export default function DashboardHeader({
         </UiDropdownMenuContent>
       </UiDropdownMenu>
 
-      <UiSheet
-        open={isAccountsBottomSheet}
-        onOpenChange={setIsAccountsBottomSheet}
-      >
+      <UiSheet open={isAccountsBottomSheet} onOpenChange={setIsAccountsBottomSheet}>
         <UiSheetContent
           side={isMobileDevice ? 'top' : 'left'}
           className='flex flex-col'
@@ -219,11 +203,11 @@ export default function DashboardHeader({
 
             <div className='flex flex-1 flex-col gap-3'>
               {accountsList.map(el => {
-                const isAptAccount = el instanceof Account
+                const isAptAccount = el instanceof Account;
 
                 const nameOrAddr = isAptAccount
                   ? el.accountAddress.toString()
-                  : el.name
+                  : el.name;
 
                 return (
                   <AccountListItem
@@ -233,9 +217,7 @@ export default function DashboardHeader({
                     accountAddress={nameOrAddr}
                     isActive={
                       isAptAccount
-                        ? selectedAccount.accountAddress
-                            .toString()
-                            .toLowerCase() ===
+                        ? selectedAccount.accountAddress.toString().toLowerCase() ===
                           el.accountAddress.toString().toLowerCase()
                         : true
                     }
@@ -244,25 +226,23 @@ export default function DashboardHeader({
                     onSelect={async () => {
                       if (
                         isAptAccount
-                          ? selectedAccount.accountAddress
-                              .toString()
-                              .toLowerCase() ===
+                          ? selectedAccount.accountAddress.toString().toLowerCase() ===
                             el.accountAddress.toString().toLowerCase()
                           : true
                       ) {
-                        setIsAccountsBottomSheet(false)
-                        return
+                        setIsAccountsBottomSheet(false);
+                        return;
                       }
 
                       await setSelectedAccount(
                         isAptAccount
                           ? { accountAddressHex: el.accountAddress.toString() }
                           : { pubKeylessAcc: el },
-                      )
-                      setIsAccountsBottomSheet(false)
+                      );
+                      setIsAccountsBottomSheet(false);
                     }}
                   />
-                )
+                );
               })}
             </div>
 
@@ -279,11 +259,7 @@ export default function DashboardHeader({
               </UiButton> */}
 
               {!isMobileDevice && (
-                <UiButton
-                  onClick={logout}
-                  className='mt-auto'
-                  variant='outline'
-                >
+                <UiButton onClick={logout} className='mt-auto' variant='outline'>
                   Logout
                   <UiIcon
                     name='LogOutIcon'
@@ -308,17 +284,17 @@ export default function DashboardHeader({
         onSubmit={handleTransferNative}
       />
     </div>
-  )
+  );
 }
 
 type AccountListItemProps = {
-  avatarUrl?: string
-  accountAddress: string
-  isActive: boolean
-  isRemovable: boolean
-  onRemove: () => void
-  onSelect: () => void
-} & HTMLAttributes<HTMLDivElement>
+  avatarUrl?: string;
+  accountAddress: string;
+  isActive: boolean;
+  isRemovable: boolean;
+  onRemove: () => void;
+  onSelect: () => void;
+} & HTMLAttributes<HTMLDivElement>;
 
 function AccountListItem({
   avatarUrl,
@@ -330,7 +306,7 @@ function AccountListItem({
   isRemovable,
   ...rest
 }: AccountListItemProps) {
-  const addrCopyManager = useCopyToClipboard()
+  const addrCopyManager = useCopyToClipboard();
   // const pkCopyManager = useCopyToClipboard()
 
   return (
@@ -370,9 +346,7 @@ function AccountListItem({
             <EllipsisIcon className='size-5' />
           </UiDropdownMenuTrigger>
           <UiDropdownMenuContent>
-            <UiDropdownMenuItem
-              onClick={() => addrCopyManager.copy(accountAddress)}
-            >
+            <UiDropdownMenuItem onClick={() => addrCopyManager.copy(accountAddress)}>
               {addrCopyManager.isCopied ? (
                 <CheckIcon className={'size-4'} />
               ) : (
@@ -404,54 +378,48 @@ function AccountListItem({
         </UiDropdownMenu>
       </div>
     </div>
-  )
+  );
 }
 
 type AddNewAccountBottomSheetProps = {
-  onSubmit: (privateKeyHex: string) => void
-} & Omit<ComponentProps<typeof UiSheet>, 'children'>
+  onSubmit: (privateKeyHex: string) => void;
+} & Omit<ComponentProps<typeof UiSheet>, 'children'>;
 
 function AddNewAccountBottomSheet({
   onSubmit,
   ...rest
 }: AddNewAccountBottomSheetProps) {
-  const isMobileDevice = isMobile()
+  const isMobileDevice = isMobile();
 
-  const {
-    formState,
-    isFormDisabled,
-    handleSubmit,
-    disableForm,
-    enableForm,
-    control,
-  } = useForm(
-    {
-      privateKeyHex: '',
-    },
-    yup =>
-      yup.object().shape({
-        privateKeyHex: yup
-          .string()
-          .required('Enter private key')
-          .test('twistedEd25519Key', 'The key is not valid', value => {
-            return validatePrivateKeyHex(value)
-          }),
-      }),
-  )
+  const { formState, isFormDisabled, handleSubmit, disableForm, enableForm, control } =
+    useForm(
+      {
+        privateKeyHex: '',
+      },
+      yup =>
+        yup.object().shape({
+          privateKeyHex: yup
+            .string()
+            .required('Enter private key')
+            .test('twistedEd25519Key', 'The key is not valid', value => {
+              return validatePrivateKeyHex(value);
+            }),
+        }),
+    );
 
   const submit = useCallback(
     () =>
       handleSubmit(formData => {
-        disableForm()
+        disableForm();
         try {
-          onSubmit(formData.privateKeyHex)
+          onSubmit(formData.privateKeyHex);
         } catch (error) {
-          ErrorHandler.process(error)
+          ErrorHandler.process(error);
         }
-        enableForm()
+        enableForm();
       })(),
     [disableForm, enableForm, handleSubmit, onSubmit],
-  )
+  );
 
   return (
     <UiSheet {...rest}>
@@ -472,7 +440,7 @@ function AddNewAccountBottomSheet({
                 placeholder='Enter private key'
                 disabled={isFormDisabled}
               />
-            )
+            );
           }}
         />
 
@@ -495,19 +463,19 @@ function AddNewAccountBottomSheet({
         </div>
       </UiSheetContent>
     </UiSheet>
-  )
+  );
 }
 
 type TransferNativeBottomSheetProps = {
-  onSubmit: () => void
-} & Omit<ComponentProps<typeof UiSheet>, 'children'>
+  onSubmit: () => void;
+} & Omit<ComponentProps<typeof UiSheet>, 'children'>;
 
 function TransferNativeBottomSheet({
   onSubmit,
   ...rest
 }: TransferNativeBottomSheetProps) {
   const { selectedAccount, aptBalance, addTxHistoryItem, reloadAptBalance } =
-    useConfidentialCoinContext()
+    useConfidentialCoinContext();
 
   const {
     formState,
@@ -530,35 +498,35 @@ function TransferNativeBottomSheet({
           .required('Enter amount')
           .max(Number(BN.fromBigInt(aptBalance, 8).toString())),
       }),
-  )
+  );
 
   const clearForm = useCallback(() => {
-    setValue('receiverAccountAddress', '')
-    setValue('amount', '')
-  }, [setValue])
+    setValue('receiverAccountAddress', '');
+    setValue('amount', '');
+  }, [setValue]);
 
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
-        disableForm()
+        disableForm();
         try {
           const txReceipt = await sendApt(
             selectedAccount,
             formData.receiverAccountAddress,
             formData.amount,
-          )
+          );
           addTxHistoryItem({
             txHash: txReceipt.hash,
             txType: 'transfer-native',
             createdAt: time().timestamp,
-          })
-          await reloadAptBalance()
-          onSubmit()
-          clearForm()
+          });
+          await reloadAptBalance();
+          onSubmit();
+          clearForm();
         } catch (error) {
-          ErrorHandler.process(error)
+          ErrorHandler.process(error);
         }
-        enableForm()
+        enableForm();
       })(),
     [
       addTxHistoryItem,
@@ -570,7 +538,7 @@ function TransferNativeBottomSheet({
       reloadAptBalance,
       selectedAccount,
     ],
-  )
+  );
 
   return (
     <UiSheet {...rest}>
@@ -613,9 +581,7 @@ function TransferNativeBottomSheet({
             <UiButton
               onClick={submit}
               disabled={
-                isFormDisabled ||
-                !formState.amount ||
-                !formState.receiverAccountAddress
+                isFormDisabled || !formState.amount || !formState.receiverAccountAddress
               }
             >
               Send
@@ -624,5 +590,5 @@ function TransferNativeBottomSheet({
         </div>
       </UiSheetContent>
     </UiSheet>
-  )
+  );
 }

@@ -5,8 +5,7 @@ import { config as appConfig } from './config';
 
 async function shouldShowMaintenancePage() {
   if (appConfig.FORCE_MAINTENANCE_PAGE) {
-    // TODO: This should be true.
-    return false;
+    return true;
   }
 
   const response = await fetch(

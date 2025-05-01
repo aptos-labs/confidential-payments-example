@@ -17,13 +17,13 @@ description: 'Setup  Node + YARN + Install Dependencies'
 runs:
   using: 'composite'
   steps:
-    - uses: actions/setup-node@v4
+    - name: Install Node.js
+      uses: actions/setup-node@v3
       with:
-        node-version: 20
-        cache: 'yarn'
+        node-version-file: .node-version
+
     - run: corepack enable
       shell: bash
 
-    - name: 📦 Install Project Dependencies
-      run: yarn install --immutable
+    - run: pnpm install --frozen-lockfile
       shell: bash

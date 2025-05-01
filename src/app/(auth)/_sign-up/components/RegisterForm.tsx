@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic';
 
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
 const RegisterFormContent = dynamic(() => import('./RegisterFormContent'), {
   ssr: false,
@@ -29,8 +29,8 @@ const RegisterFormContent = dynamic(() => import('./RegisterFormContent'), {
       </div>
     </div>
   ),
-})
+});
 
 export default function RegisterForm() {
-  return <RegisterFormContent />
+  return <RegisterFormContent />;
 }

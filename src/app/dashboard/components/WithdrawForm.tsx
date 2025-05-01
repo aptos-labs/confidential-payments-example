@@ -1,25 +1,25 @@
-'use client'
+'use client';
 
-import { AccountAddress } from '@aptos-labs/ts-sdk'
-import { time } from '@distributedlab/tools'
-import { formatUnits, parseUnits } from 'ethers'
-import { useCallback, useMemo } from 'react'
+import { AccountAddress } from '@aptos-labs/ts-sdk';
+import { time } from '@distributedlab/tools';
+import { formatUnits, parseUnits } from 'ethers';
+import { useCallback, useMemo } from 'react';
 
-import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { abbrCenter, ErrorHandler, tryCatch } from '@/helpers'
-import { useForm } from '@/hooks'
-import { TokenBaseInfo } from '@/store/wallet'
-import { UiButton } from '@/ui/UiButton'
-import { ControlledUiInput } from '@/ui/UiInput'
-import { UiSeparator } from '@/ui/UiSeparator'
+import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { abbrCenter, ErrorHandler, tryCatch } from '@/helpers';
+import { useForm } from '@/hooks';
+import { TokenBaseInfo } from '@/store/wallet';
+import { UiButton } from '@/ui/UiButton';
+import { ControlledUiInput } from '@/ui/UiInput';
+import { UiSeparator } from '@/ui/UiSeparator';
 
 export default function WithdrawForm({
   token,
   onSubmit,
 }: {
-  token: TokenBaseInfo
-  onSubmit: () => void
+  token: TokenBaseInfo;
+  onSubmit: () => void;
 }) {
   const {
     selectedToken,
@@ -31,77 +31,69 @@ export default function WithdrawForm({
     reloadAptBalance,
     perTokenStatuses,
     ensureConfidentialBalanceReadyBeforeOp,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
-  const currentTokenStatus = perTokenStatuses[token.address]
+  const currentTokenStatus = perTokenStatuses[token.address];
 
-  const publicBalanceBN = BigInt(currentTokenStatus.fungibleAssetBalance || 0)
+  const publicBalanceBN = BigInt(currentTokenStatus.fungibleAssetBalance || 0);
 
-  const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0)
+  const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0);
 
-  const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0)
+  const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0);
 
   const totalBalanceBN = useMemo(() => {
-    return publicBalanceBN + pendingAmountBN + actualAmountBN
-  }, [actualAmountBN, pendingAmountBN, publicBalanceBN])
+    return publicBalanceBN + pendingAmountBN + actualAmountBN;
+  }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
 
-  const {
-    isFormDisabled,
-    handleSubmit,
-    disableForm,
-    enableForm,
-    control,
-    setValue,
-  } = useForm(
-    {
-      recipient: '',
-      amount: '',
-    },
-    yup =>
-      yup.object().shape({
-        recipient: yup
-          .string()
-          .required('Enter recipient address')
-          .test('aptAddr', 'Invalid address', v => {
-            if (!v) return false
+  const { isFormDisabled, handleSubmit, disableForm, enableForm, control, setValue } =
+    useForm(
+      {
+        recipient: '',
+        amount: '',
+      },
+      yup =>
+        yup.object().shape({
+          recipient: yup
+            .string()
+            .required('Enter recipient address')
+            .test('aptAddr', 'Invalid address', v => {
+              if (!v) return false;
 
-            return AccountAddress.isValid({
-              input: v,
-            }).valid
-          })
-          .test('NoReceiverAddr', 'Receiver not found', async v => {
-            if (!v) return false
+              return AccountAddress.isValid({
+                input: v,
+              }).valid;
+            })
+            .test('NoReceiverAddr', 'Receiver not found', async v => {
+              if (!v) return false;
 
-            const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address))
-            if (ekError) return false
-            return Boolean(ek)
-          })
-          .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
-            if (!v) return false
+              const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
+              if (ekError) return false;
+              return Boolean(ek);
+            })
+            .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
+              if (!v) return false;
 
-            return (
-              v.toLowerCase() !==
-              selectedAccount.accountAddress.toString().toLowerCase()
-            )
-          }),
-        amount: yup
-          .number()
-          .min(+formatUnits('1', token.decimals))
-          .max(
-            totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0,
-          )
-          .required('Enter amount'),
-      }),
-  )
+              return (
+                v.toLowerCase() !==
+                selectedAccount.accountAddress.toString().toLowerCase()
+              );
+            }),
+          amount: yup
+            .number()
+            .min(+formatUnits('1', token.decimals))
+            .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
+            .required('Enter amount'),
+        }),
+    );
 
   const clearForm = useCallback(() => {
-    setValue('amount', '')
-  }, [setValue])
+    setValue('amount', '');
+  }, [setValue]);
 
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
-        disableForm()
+        disableForm();
 
         const [withdrawTx, buildWithdrawError] = await tryCatch(
           buildWithdrawToTx(
@@ -112,11 +104,11 @@ export default function WithdrawForm({
               isWithFeePayer: true,
             },
           ),
-        )
+        );
         if (buildWithdrawError) {
-          ErrorHandler.process(buildWithdrawError)
-          enableForm()
-          return
+          ErrorHandler.process(buildWithdrawError);
+          enableForm();
+          return;
         }
 
         const err = await ensureConfidentialBalanceReadyBeforeOp({
@@ -124,20 +116,20 @@ export default function WithdrawForm({
           token: token,
           currentTokenStatus,
           opTx: withdrawTx,
-        })
+        });
         if (err) {
-          ErrorHandler.process(err)
-          enableForm()
-          return
+          ErrorHandler.process(err);
+          enableForm();
+          return;
         }
 
         const [txReceipt, withdrawError] = await tryCatch(
           sendAndWaitTx(withdrawTx, selectedAccount, feePayerAccount),
-        )
+        );
         if (withdrawError) {
-          ErrorHandler.process(withdrawError)
-          enableForm()
-          return
+          ErrorHandler.process(withdrawError);
+          enableForm();
+          return;
         }
 
         addTxHistoryItem({
@@ -145,20 +137,20 @@ export default function WithdrawForm({
           txType: 'withdraw',
           createdAt: time().timestamp,
           message: `Publicly-withdrew ${formData.amount} ${token.symbol} to ${abbrCenter(formData.recipient)}`,
-        })
+        });
 
         const [, reloadError] = await tryCatch(
           Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
-        )
+        );
         if (reloadError) {
-          ErrorHandler.process(reloadError)
-          enableForm()
-          return
+          ErrorHandler.process(reloadError);
+          enableForm();
+          return;
         }
 
-        onSubmit()
-        clearForm()
-        enableForm()
+        onSubmit();
+        clearForm();
+        enableForm();
       })(),
     [
       addTxHistoryItem,
@@ -176,7 +168,7 @@ export default function WithdrawForm({
       selectedAccount,
       token,
     ],
-  )
+  );
 
   return (
     <div className='flex flex-col'>
@@ -209,5 +201,5 @@ export default function WithdrawForm({
         </UiButton>
       </div>
     </div>
-  )
+  );
 }

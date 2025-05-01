@@ -1,27 +1,27 @@
-import { config } from '@config'
-import type { TimeDate } from '@distributedlab/tools'
-import { useMemo } from 'react'
-import { create } from 'zustand'
-import { combine, persist } from 'zustand/middleware'
+import { config } from '@config';
+import type { TimeDate } from '@distributedlab/tools';
+import { useMemo } from 'react';
+import { create } from 'zustand';
+import { combine, persist } from 'zustand/middleware';
 
 import {
   accountFromPrivateKey,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
   generatePrivateKeyHex,
-} from '@/api/modules/aptos'
+} from '@/api/modules/aptos';
 
 export type TokenBaseInfo = {
-  address: string
-  name: string
-  symbol: string
-  decimals: number
-  iconUri: string
-}
+  address: string;
+  name: string;
+  symbol: string;
+  decimals: number;
+  iconUri: string;
+};
 
 export type TxHistoryItem = {
-  txHash: string
-  createdAt: TimeDate
+  txHash: string;
+  createdAt: TimeDate;
   txType:
     | 'transfer'
     | 'transfer-native'
@@ -34,16 +34,16 @@ export type TxHistoryItem = {
     | 'register'
     | 'normalize'
     | 'mint'
-    | 'receive'
-  message?: string
-}
+    | 'receive';
+  message?: string;
+};
 
 type StoreState = {
-  privateKeyHexList: string[]
-  selectedAccountAddr: string
+  privateKeyHexList: string[];
+  selectedAccountAddr: string;
 
-  accountAddrHexToTokenAddrMap: Record<string, string[]>
-  _selectedTokenAddress: string
+  accountAddrHexToTokenAddrMap: Record<string, string[]>;
+  _selectedTokenAddress: string;
 
   accountAddrHexPerTokenTxHistory: Record<
     string,
@@ -51,10 +51,10 @@ type StoreState = {
       string, // token
       TxHistoryItem[] // tx history
     >
-  >
+  >;
 
-  _hasHydrated: boolean
-}
+  _hasHydrated: boolean;
+};
 
 const useWalletStore = create(
   persist(
@@ -74,39 +74,39 @@ const useWalletStore = create(
         setHasHydrated: (value: boolean) => {
           set({
             _hasHydrated: value,
-          })
+          });
         },
 
         addAndSetPrivateKey: (privateKeyHex: string): void => {
-          const account = accountFromPrivateKey(privateKeyHex)
+          const account = accountFromPrivateKey(privateKeyHex);
 
           set(state => ({
             privateKeyHexList: [...state.privateKeyHexList, privateKeyHex],
             selectedAccountAddr: account.accountAddress.toString(),
-          }))
+          }));
         },
         setSelectedAccountAddr: (accountAddr: string): void => {
           set({
             selectedAccountAddr: accountAddr,
-          })
+          });
         },
         removeWalletAccount: (accountAddr: string): void => {
           set(state => ({
             privateKeyHexList: state.privateKeyHexList.filter(hex => {
-              const account = accountFromPrivateKey(hex)
+              const account = accountFromPrivateKey(hex);
 
               return (
                 account.accountAddress.toString().toLowerCase() !==
                 accountAddr.toLowerCase()
-              )
+              );
             }),
-          }))
+          }));
         },
 
         setSelectedTokenAddress: (tokenAddress: string): void => {
           set({
             _selectedTokenAddress: tokenAddress,
-          })
+          });
         },
         addToken: (accAddr: string, token: TokenBaseInfo): void => {
           set(state => ({
@@ -117,17 +117,17 @@ const useWalletStore = create(
                 token.address,
               ],
             },
-          }))
+          }));
         },
         removeToken: (accAddr: string, tokenAddress: string): void => {
           set(state => ({
             accountAddrHexToTokenAddrMap: {
               ...state.accountAddrHexToTokenAddrMap,
-              [accAddr]: (
-                state.accountAddrHexToTokenAddrMap[accAddr] || []
-              ).filter(addr => addr !== tokenAddress),
+              [accAddr]: (state.accountAddrHexToTokenAddrMap[accAddr] || []).filter(
+                addr => addr !== tokenAddress,
+              ),
             },
-          }))
+          }));
         },
         addTxHistoryItem: (
           accAddr: string,
@@ -140,14 +140,13 @@ const useWalletStore = create(
               [accAddr]: {
                 ...state.accountAddrHexPerTokenTxHistory[accAddr],
                 [tokenAddress]: [
-                  ...(state.accountAddrHexPerTokenTxHistory[accAddr]?.[
-                    tokenAddress
-                  ] || []),
+                  ...(state.accountAddrHexPerTokenTxHistory[accAddr]?.[tokenAddress] ||
+                    []),
                   details,
                 ],
               },
             },
-          }))
+          }));
         },
 
         clearStoredKeys: (): void => {
@@ -159,7 +158,7 @@ const useWalletStore = create(
             _selectedTokenAddress: '',
 
             // accountAddrHexPerTokenTxHistory: {},
-          })
+          });
         },
       }),
     ),
@@ -168,7 +167,7 @@ const useWalletStore = create(
       version: 3,
 
       onRehydrateStorage: () => state => {
-        state?.setHasHydrated(true)
+        state?.setHasHydrated(true);
       },
 
       partialize: state => ({
@@ -180,35 +179,35 @@ const useWalletStore = create(
       }),
     },
   ),
-)
+);
 
 const useSelectedTokenAddress = () => {
   return useWalletStore(
     state => state._selectedTokenAddress || config.DEFAULT_TOKEN_ADRESSES[0],
-  )
-}
+  );
+};
 
 const useWalletAccounts = () => {
-  const privateKeyHexList = useWalletStore(state => state.privateKeyHexList)
+  const privateKeyHexList = useWalletStore(state => state.privateKeyHexList);
 
   return useMemo(
     () => privateKeyHexList.map(el => accountFromPrivateKey(el)),
     [privateKeyHexList],
-  )
-}
+  );
+};
 
 const useSelectedWalletAccount = () => {
-  const walletAccounts = useWalletAccounts()
-  const selectedAccountAddr = useWalletStore(state => state.selectedAccountAddr)
+  const walletAccounts = useWalletAccounts();
+  const selectedAccountAddr = useWalletStore(state => state.selectedAccountAddr);
 
   return useMemo(() => {
     return walletAccounts.find(
       el =>
         el.accountAddress.toString().toLowerCase() ===
         selectedAccountAddr.toLowerCase(),
-    )
-  }, [selectedAccountAddr, walletAccounts])
-}
+    );
+  }, [selectedAccountAddr, walletAccounts]);
+};
 
 export const walletStore = {
   useWalletStore,
@@ -219,4 +218,4 @@ export const walletStore = {
   useSelectedTokenAddress: useSelectedTokenAddress,
   decryptionKeyFromPrivateKey: decryptionKeyFromPrivateKey,
   decryptionKeyFromPepper: decryptionKeyFromPepper,
-}
+};

@@ -1,18 +1,18 @@
-'use client'
+'use client';
 
-import * as DialogPrimitive from '@radix-ui/react-dialog'
-import { X } from 'lucide-react'
-import * as React from 'react'
+import * as DialogPrimitive from '@radix-ui/react-dialog';
+import { X } from 'lucide-react';
+import * as React from 'react';
 
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
-const UiDialog = DialogPrimitive.Root
+const UiDialog = DialogPrimitive.Root;
 
-const UiDialogTrigger = DialogPrimitive.Trigger
+const UiDialogTrigger = DialogPrimitive.Trigger;
 
-const UiDialogPortal = DialogPrimitive.Portal
+const UiDialogPortal = DialogPrimitive.Portal;
 
-const UiDialogClose = DialogPrimitive.Close
+const UiDialogClose = DialogPrimitive.Close;
 
 const UiDialogOverlay = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Overlay>,
@@ -26,8 +26,8 @@ const UiDialogOverlay = React.forwardRef<
     )}
     {...props}
   />
-))
-UiDialogOverlay.displayName = DialogPrimitive.Overlay.displayName
+));
+UiDialogOverlay.displayName = DialogPrimitive.Overlay.displayName;
 
 const UiDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
@@ -50,22 +50,19 @@ const UiDialogContent = React.forwardRef<
       </DialogPrimitive.Close>
     </DialogPrimitive.Content>
   </UiDialogPortal>
-))
-UiDialogContent.displayName = DialogPrimitive.Content.displayName
+));
+UiDialogContent.displayName = DialogPrimitive.Content.displayName;
 
 const UiDialogHeader = ({
   className,
   ...props
 }: React.HTMLAttributes<HTMLDivElement>) => (
   <div
-    className={cn(
-      'flex flex-col space-y-1.5 text-center sm:text-left',
-      className,
-    )}
+    className={cn('flex flex-col space-y-1.5 text-center sm:text-left', className)}
     {...props}
   />
-)
-UiDialogHeader.displayName = 'UiDialogHeader'
+);
+UiDialogHeader.displayName = 'UiDialogHeader';
 
 const UiDialogFooter = ({
   className,
@@ -78,8 +75,8 @@ const UiDialogFooter = ({
     )}
     {...props}
   />
-)
-UiDialogFooter.displayName = 'UiDialogFooter'
+);
+UiDialogFooter.displayName = 'UiDialogFooter';
 
 const UiDialogTitle = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Title>,
@@ -87,14 +84,11 @@ const UiDialogTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <DialogPrimitive.Title
     ref={ref}
-    className={cn(
-      'text-lg font-semibold leading-none tracking-tight',
-      className,
-    )}
+    className={cn('text-lg font-semibold leading-none tracking-tight', className)}
     {...props}
   />
-))
-UiDialogTitle.displayName = DialogPrimitive.Title.displayName
+));
+UiDialogTitle.displayName = DialogPrimitive.Title.displayName;
 
 const UiDialogDescription = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Description>,
@@ -105,8 +99,8 @@ const UiDialogDescription = React.forwardRef<
     className={cn('text-sm text-muted-foreground', className)}
     {...props}
   />
-))
-UiDialogDescription.displayName = DialogPrimitive.Description.displayName
+));
+UiDialogDescription.displayName = DialogPrimitive.Description.displayName;
 
 export {
   UiDialog,
@@ -119,4 +113,4 @@ export {
   UiDialogPortal,
   UiDialogTitle,
   UiDialogTrigger,
-}
+};

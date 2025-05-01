@@ -1,7 +1,7 @@
-import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo'
-import { NextResponse } from 'next/server'
+import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo';
+import { NextResponse } from 'next/server';
 
-import { config as appConfig } from './config'
+import { config as appConfig } from './config';
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 const appGuard = async ({ request }: MiddlewareFunctionProps) => {
@@ -12,23 +12,23 @@ const appGuard = async ({ request }: MiddlewareFunctionProps) => {
   // })
 
   // Manual cookie parsing as temporary workaround
-  const cookieHeader = request.headers.get('cookie')
+  const cookieHeader = request.headers.get('cookie');
   const cookies = cookieHeader?.split('; ').reduce((acc, cookie) => {
-    const [key, value] = cookie.split('=')
-    acc.set(key, value)
-    return acc
-  }, new Map())
+    const [key, value] = cookie.split('=');
+    acc.set(key, value);
+    return acc;
+  }, new Map());
 
   const sessionCookie =
     cookies?.get('better-auth.session_token') ||
-    cookies?.get('__Secure-better-auth.session_token')
+    cookies?.get('__Secure-better-auth.session_token');
 
   if (!sessionCookie) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
+    return NextResponse.redirect(new URL('/sign-in', request.url));
   }
 
-  return NextResponse.next()
-}
+  return NextResponse.next();
+};
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 const authGuard = async ({ request }: MiddlewareFunctionProps) => {
@@ -39,23 +39,23 @@ const authGuard = async ({ request }: MiddlewareFunctionProps) => {
   // })
 
   // Manual cookie parsing as temporary workaround
-  const cookieHeader = request.headers.get('cookie')
+  const cookieHeader = request.headers.get('cookie');
   const cookies = cookieHeader?.split('; ').reduce((acc, cookie) => {
-    const [key, value] = cookie.split('=')
-    acc.set(key, value)
-    return acc
-  }, new Map())
+    const [key, value] = cookie.split('=');
+    acc.set(key, value);
+    return acc;
+  }, new Map());
 
   const sessionCookie =
     cookies?.get('better-auth.session_token') ||
-    cookies?.get('__Secure-better-auth.session_token')
+    cookies?.get('__Secure-better-auth.session_token');
 
   if (sessionCookie) {
-    return NextResponse.redirect(new URL('/dashboard', request.url))
+    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
-  return NextResponse.next()
-}
+  return NextResponse.next();
+};
 
 async function shouldShowMaintenancePage() {
   if (appConfig.FORCE_MAINTENANCE_PAGE) {
@@ -75,29 +75,29 @@ async function shouldShowMaintenancePage() {
 const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
   const showMaintenancePage = await shouldShowMaintenancePage();
   if (showMaintenancePage) {
-    return NextResponse.redirect(new URL('/maintenance', request.url))
+    return NextResponse.redirect(new URL('/maintenance', request.url));
   }
 
-  return NextResponse.next()
-}
+  return NextResponse.next();
+};
 
 const maintenanceGuard = async ({ request }: MiddlewareFunctionProps) => {
   const showMaintenancePage = await shouldShowMaintenancePage();
   if (!showMaintenancePage) {
-    return NextResponse.redirect(new URL('/', request.url))
+    return NextResponse.redirect(new URL('/', request.url));
   }
 
-  return NextResponse.next()
-}
+  return NextResponse.next();
+};
 
 const middlewares = {
   '/dashboard': [moduleValidGuard],
   '/': [moduleValidGuard],
   '/maintenance': [maintenanceGuard],
-}
+};
 
-export const middleware = createMiddleware(middlewares)
+export const middleware = createMiddleware(middlewares);
 
 export const config = {
   matcher: ['/((?!_next/|_static|_vercel|[\\w-]+\\.\\w+).*)'],
-}
+};

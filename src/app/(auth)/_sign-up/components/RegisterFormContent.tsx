@@ -1,47 +1,46 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCallback, useState } from 'react';
 
-import { ErrorHandler, tryCatch } from '@/helpers'
-import { useForm } from '@/hooks'
-import { authStore } from '@/store/auth'
-import { cn } from '@/theme/utils'
-import { UiButton } from '@/ui/UiButton'
-import { ControlledUiInput } from '@/ui/UiInput'
+import { ErrorHandler, tryCatch } from '@/helpers';
+import { useForm } from '@/hooks';
+import { authStore } from '@/store/auth';
+import { cn } from '@/theme/utils';
+import { UiButton } from '@/ui/UiButton';
+import { ControlledUiInput } from '@/ui/UiInput';
 
 export default function RegisterFormContent() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const register = authStore.useRegister()
+  const register = authStore.useRegister();
 
-  const [authError, setAuthError] = useState<Error>()
+  const [authError, setAuthError] = useState<Error>();
 
-  const { control, handleSubmit, disableForm, enableForm, isFormDisabled } =
-    useForm(
-      {
-        name: '',
-        email: '',
-        password: '',
-        repeatPassword: '',
-      },
-      yup =>
-        yup.object().shape({
-          name: yup.string().required(),
-          email: yup.string().email().required(),
-          password: yup.string().required(),
-          repeatPassword: yup
-            .string()
-            .required()
-            .oneOf([yup.ref('password')], 'Passwords must match'),
-        }),
-    )
+  const { control, handleSubmit, disableForm, enableForm, isFormDisabled } = useForm(
+    {
+      name: '',
+      email: '',
+      password: '',
+      repeatPassword: '',
+    },
+    yup =>
+      yup.object().shape({
+        name: yup.string().required(),
+        email: yup.string().email().required(),
+        password: yup.string().required(),
+        repeatPassword: yup
+          .string()
+          .required()
+          .oneOf([yup.ref('password')], 'Passwords must match'),
+      }),
+  );
 
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
-        disableForm()
+        disableForm();
 
         const [, error] = await tryCatch(
           (async () => {
@@ -49,19 +48,19 @@ export default function RegisterFormContent() {
               name: formData.name,
               email: formData.email,
               password: formData.password,
-            })
+            });
           })(),
-        )
+        );
         if (error) {
-          setAuthError(error as Error)
-          ErrorHandler.process(error)
-          enableForm()
+          setAuthError(error as Error);
+          ErrorHandler.process(error);
+          enableForm();
         }
 
-        router.push('/dashboard')
+        router.push('/dashboard');
       })(),
     [disableForm, enableForm, handleSubmit, register, router],
-  )
+  );
 
   return (
     <form className='p-6 md:p-8' onSubmit={handleSubmit(submit)}>
@@ -78,7 +77,7 @@ export default function RegisterFormContent() {
           label='Name'
           placeholder='name'
           onChange={() => {
-            setAuthError(undefined)
+            setAuthError(undefined);
           }}
           disabled={isFormDisabled}
         />
@@ -90,7 +89,7 @@ export default function RegisterFormContent() {
           placeholder='m@example.com'
           type='email'
           onChange={() => {
-            setAuthError(undefined)
+            setAuthError(undefined);
           }}
           disabled={isFormDisabled}
         />
@@ -102,7 +101,7 @@ export default function RegisterFormContent() {
           placeholder='password'
           type='password'
           onChange={() => {
-            setAuthError(undefined)
+            setAuthError(undefined);
           }}
           disabled={isFormDisabled}
         />
@@ -114,7 +113,7 @@ export default function RegisterFormContent() {
           placeholder='password'
           type='password'
           onChange={() => {
-            setAuthError(undefined)
+            setAuthError(undefined);
           }}
           disabled={isFormDisabled}
         />
@@ -143,5 +142,5 @@ export default function RegisterFormContent() {
         </div>
       </div>
     </form>
-  )
+  );
 }

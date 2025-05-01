@@ -1,8 +1,8 @@
-'use client'
+'use client';
 
-import dynamic from 'next/dynamic'
+import dynamic from 'next/dynamic';
 
-import { UiSkeleton } from '@/ui/UiSkeleton'
+import { UiSkeleton } from '@/ui/UiSkeleton';
 
 const LoginFormContent = dynamic(
   () => import('@/app/(auth)/_sign-in/components/LoginFormContent'),
@@ -41,8 +41,8 @@ const LoginFormContent = dynamic(
       </div>
     ),
   },
-)
+);
 
 export default function LoginForm() {
-  return <LoginFormContent />
+  return <LoginFormContent />;
 }

@@ -1,15 +1,9 @@
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
-function Skeleton({
-  className,
-  ...props
-}: React.HTMLAttributes<HTMLDivElement>) {
+function Skeleton({ className, ...props }: React.HTMLAttributes<HTMLDivElement>) {
   return (
-    <div
-      className={cn('animate-pulse rounded-md bg-muted', className)}
-      {...props}
-    />
-  )
+    <div className={cn('animate-pulse rounded-md bg-muted', className)} {...props} />
+  );
 }
 
-export { Skeleton as UiSkeleton }
+export { Skeleton as UiSkeleton };

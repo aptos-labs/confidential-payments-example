@@ -1,22 +1,18 @@
-import '@/theme/styles.scss'
-import '../../envConfig'
+import '@/theme/styles.scss';
+import '../../envConfig';
 
-import { NextIntlClientProvider } from 'next-intl'
-import { getLocale } from 'next-intl/server'
-import { getTranslations } from 'next-intl/server'
-import { ThemeProvider } from 'next-themes'
-import { PropsWithChildren } from 'react'
+import { NextIntlClientProvider } from 'next-intl';
+import { getLocale } from 'next-intl/server';
+import { getTranslations } from 'next-intl/server';
+import { ThemeProvider } from 'next-themes';
+import { PropsWithChildren } from 'react';
 
-import { appFontClassName } from '@/theme/fonts'
-import { cn } from '@/theme/utils'
-import { UiToaster } from '@/ui/UiToaster'
+import { appFontClassName } from '@/theme/fonts';
+import { cn } from '@/theme/utils';
+import { UiToaster } from '@/ui/UiToaster';
 
-export async function generateMetadata({
-  params,
-}: {
-  params: { locale: string }
-}) {
-  const t = await getTranslations({ locale: params.locale, namespace: '' })
+export async function generateMetadata({ params }: { params: { locale: string } }) {
+  const t = await getTranslations({ locale: params.locale, namespace: '' });
 
   return {
     metadataBase: new URL('https://example.com/'),
@@ -39,11 +35,11 @@ export async function generateMetadata({
       images: t('metadata.twitter.images'),
       site: t('metadata.twitter.site'),
     },
-  }
+  };
 }
 
 export default async function RootLayout({ children }: PropsWithChildren) {
-  const locale = await getLocale()
+  const locale = await getLocale();
 
   return (
     <html
@@ -77,5 +73,5 @@ export default async function RootLayout({ children }: PropsWithChildren) {
         </NextIntlClientProvider>
       </body>
     </html>
-  )
+  );
 }

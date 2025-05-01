@@ -1,3 +1,3 @@
-export * from './colors'
-export * from './gradients'
-export * from './typography'
+export * from './colors';
+export * from './gradients';
+export * from './typography';

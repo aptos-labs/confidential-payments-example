@@ -1,11 +1,11 @@
-import Image from 'next/image'
-import { Suspense } from 'react'
+import Image from 'next/image';
+import { Suspense } from 'react';
 
-import LoginForm from '@/app/(auth)/_sign-in/components/LoginForm'
-import { cn } from '@/theme/utils'
-import { UiCard, UiCardContent } from '@/ui/UiCard'
+import LoginForm from '@/app/(auth)/_sign-in/components/LoginForm';
+import { cn } from '@/theme/utils';
+import { UiCard, UiCardContent } from '@/ui/UiCard';
 
-import Loading from './loading'
+import Loading from './loading';
 
 export default function LoginPage() {
   return (
@@ -38,5 +38,5 @@ export default function LoginPage() {
         </div>
       </div>
     </Suspense>
-  )
+  );
 }

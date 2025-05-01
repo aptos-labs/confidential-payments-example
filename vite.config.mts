@@ -1,28 +1,28 @@
-import react from '@vitejs/plugin-react'
+import react from '@vitejs/plugin-react';
 
-import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill'
-import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill'
-import { nodePolyfills } from 'vite-plugin-node-polyfills'
+import { NodeGlobalsPolyfillPlugin } from '@esbuild-plugins/node-globals-polyfill';
+import { NodeModulesPolyfillPlugin } from '@esbuild-plugins/node-modules-polyfill';
+import { nodePolyfills } from 'vite-plugin-node-polyfills';
 
-import * as fs from 'fs'
-import * as path from 'path'
-import { visualizer } from 'rollup-plugin-visualizer'
-import { defineConfig, loadEnv } from 'vite'
-import { checker } from 'vite-plugin-checker'
-import { createSvgIconsPlugin } from 'vite-plugin-svg-icons'
-import tsconfigPaths from 'vite-tsconfig-paths'
+import * as fs from 'fs';
+import * as path from 'path';
+import { visualizer } from 'rollup-plugin-visualizer';
+import { defineConfig, loadEnv } from 'vite';
+import { checker } from 'vite-plugin-checker';
+import { createSvgIconsPlugin } from 'vite-plugin-svg-icons';
+import tsconfigPaths from 'vite-tsconfig-paths';
 
-const appDirectory = fs.realpathSync(process.cwd())
-const resolveApp = (relative: string) => path.resolve(appDirectory, relative)
-const root = path.resolve(__dirname, resolveApp('src'))
+const appDirectory = fs.realpathSync(process.cwd());
+const resolveApp = (relative: string) => path.resolve(appDirectory, relative);
+const root = path.resolve(__dirname, resolveApp('src'));
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const env = loadEnv(mode, process.cwd(), '')
+  const env = loadEnv(mode, process.cwd(), '');
 
   // const isProduction = mode === 'production'
   // const isDevelopment = mode === 'development'
-  const isAnalyze = mode === 'analyze'
+  const isAnalyze = mode === 'analyze';
 
   // const buildVersion = env.VITE_APP_BUILD_VERSION
 
@@ -42,7 +42,7 @@ export default defineConfig(({ mode }) => {
         transform(code, id) {
           if (id.slice(-3) === '.md') {
             // For .md files, get the raw content
-            return `export default ${JSON.stringify(code)};`
+            return `export default ${JSON.stringify(code)};`;
           }
         },
       },
@@ -112,5 +112,5 @@ export default defineConfig(({ mode }) => {
         ],
       },
     },
-  }
-})
+  };
+});

@@ -1,21 +1,21 @@
-'use client'
+'use client';
 
-import Link from 'next/link'
-import { useRouter } from 'next/navigation'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
-import { ErrorHandler, tryCatch } from '@/helpers'
-import { useForm } from '@/hooks'
-import { authStore } from '@/store/auth'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
-import { ControlledUiInput } from '@/ui/UiInput'
+import { ErrorHandler, tryCatch } from '@/helpers';
+import { useForm } from '@/hooks';
+import { authStore } from '@/store/auth';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
+import { ControlledUiInput } from '@/ui/UiInput';
 
 export default function LoginFormContent() {
-  const router = useRouter()
+  const router = useRouter();
 
-  const isInitialing = useRef(false)
+  const isInitialing = useRef(false);
 
   const {
     getGoogleRequestLoginUrl,
@@ -25,71 +25,70 @@ export default function LoginFormContent() {
     loginWithApple,
   } = authStore.useLogin({
     onSuccess: () => {
-      router.push('/dashboard')
+      router.push('/dashboard');
     },
-  })
+  });
 
-  const fragmentParams = new URLSearchParams(window.location.hash.substring(1))
-  const googleIdToken = fragmentParams.get('id_token')
-  const appleIdToken = fragmentParams.get('token')
+  const fragmentParams = new URLSearchParams(window.location.hash.substring(1));
+  const googleIdToken = fragmentParams.get('id_token');
+  const appleIdToken = fragmentParams.get('token');
 
   useEffect(() => {
-    if (isInitialing.current) return
-    isInitialing.current = true
+    if (isInitialing.current) return;
+    isInitialing.current = true;
 
-    if (!googleIdToken && !appleIdToken) return
+    if (!googleIdToken && !appleIdToken) return;
 
     const loginWithSocial = async () => {
       const [, error] = await tryCatch(
         (async () => {
           if (googleIdToken) {
-            loginWithGoogle(googleIdToken)
+            loginWithGoogle(googleIdToken);
           } else if (appleIdToken) {
-            loginWithApple(appleIdToken)
+            loginWithApple(appleIdToken);
           }
         })(),
-      )
+      );
       if (error) {
-        ErrorHandler.process(error)
-        router.push('/sign-in')
+        ErrorHandler.process(error);
+        router.push('/sign-in');
       }
-    }
+    };
 
-    loginWithSocial()
-  }, [appleIdToken, googleIdToken, loginWithApple, loginWithGoogle, router])
+    loginWithSocial();
+  }, [appleIdToken, googleIdToken, loginWithApple, loginWithGoogle, router]);
 
-  const [authError, setAuthError] = useState<Error>()
+  const [authError, setAuthError] = useState<Error>();
 
-  const { control, handleSubmit, disableForm, enableForm, isFormDisabled } =
-    useForm(
-      {
-        email: '',
-        password: '',
-      },
-      yup =>
-        yup.object().shape({
-          email: yup.string().email().required(),
-          password: yup.string().required(),
-        }),
-    )
+  const { control, handleSubmit, disableForm, enableForm, isFormDisabled } = useForm(
+    {
+      email: '',
+      password: '',
+    },
+    yup =>
+      yup.object().shape({
+        email: yup.string().email().required(),
+        password: yup.string().required(),
+      }),
+  );
 
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
-        disableForm()
+        disableForm();
         try {
           await loginWithEmailPassword({
             email: formData.email,
             password: formData.password,
-          })
+          });
         } catch (error) {
-          setAuthError(error as Error)
-          ErrorHandler.process(error)
+          setAuthError(error as Error);
+          ErrorHandler.process(error);
         }
-        enableForm()
+        enableForm();
       })(),
     [disableForm, enableForm, handleSubmit, loginWithEmailPassword],
-  )
+  );
 
   return (
     <form className='p-6 md:p-8' onSubmit={handleSubmit(submit)}>
@@ -103,16 +102,14 @@ export default function LoginFormContent() {
                   className={'size-12 text-textPrimary'}
                 />
                 <div>
-                  <p className='text-lg font-bold text-primary'>
-                    Authorizing...
-                  </p>
+                  <p className='text-lg font-bold text-primary'>Authorizing...</p>
                   <p className='text-sm text-muted-foreground'>
                     You are being logged in with Google.
                   </p>
                 </div>
               </div>
             </div>
-          )
+          );
         }
 
         return (
@@ -131,7 +128,7 @@ export default function LoginFormContent() {
               placeholder='m@example.com'
               type='email'
               onChange={() => {
-                setAuthError(undefined)
+                setAuthError(undefined);
               }}
               disabled={isFormDisabled}
             />
@@ -143,7 +140,7 @@ export default function LoginFormContent() {
               placeholder='password'
               type='password'
               onChange={() => {
-                setAuthError(undefined)
+                setAuthError(undefined);
               }}
               disabled={isFormDisabled}
               autoComplete='on'
@@ -155,11 +152,7 @@ export default function LoginFormContent() {
               </p>
             )}
 
-            <UiButton
-              type='submit'
-              className='w-full'
-              disabled={isFormDisabled}
-            >
+            <UiButton type='submit' className='w-full' disabled={isFormDisabled}>
               Login
             </UiButton>
 
@@ -217,8 +210,8 @@ export default function LoginFormContent() {
               </Link>
             </div>
           </div>
-        )
+        );
       })()}
     </form>
-  )
+  );
 }

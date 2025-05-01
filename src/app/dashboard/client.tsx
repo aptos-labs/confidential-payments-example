@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { time } from '@distributedlab/tools'
+import { time } from '@distributedlab/tools';
 import {
   ArrowDownIcon,
   ArrowRightIcon,
@@ -14,9 +14,9 @@ import {
   KeyIcon,
   LockIcon,
   UnlockIcon,
-} from 'lucide-react'
-import Link from 'next/link'
-import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+} from 'lucide-react';
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ButtonHTMLAttributes,
   ComponentProps,
@@ -24,49 +24,44 @@ import {
   useCallback,
   useEffect,
   useState,
-} from 'react'
-import { useMeasure } from 'react-use'
+} from 'react';
+import { useMeasure } from 'react-use';
 
-import { getTxExplorerUrl } from '@/api/modules/aptos'
-import AddTokenForm from '@/app/dashboard/components/AddTokenForm'
-import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard'
-import DashboardHeader from '@/app/dashboard/components/DashboardHeader'
-import TokenInfo from '@/app/dashboard/components/TokenInfo'
-import WithdrawForm from '@/app/dashboard/components/WithdrawForm'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers'
-import { TxHistoryItem } from '@/store/wallet'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiSeparator } from '@/ui/UiSeparator'
-import {
-  UiSheet,
-  UiSheetContent,
-  UiSheetHeader,
-  UiSheetTitle,
-} from '@/ui/UiSheet'
+import { getTxExplorerUrl } from '@/api/modules/aptos';
+import AddTokenForm from '@/app/dashboard/components/AddTokenForm';
+import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard';
+import DashboardHeader from '@/app/dashboard/components/DashboardHeader';
+import TokenInfo from '@/app/dashboard/components/TokenInfo';
+import WithdrawForm from '@/app/dashboard/components/WithdrawForm';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers';
+import { TxHistoryItem } from '@/store/wallet';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiSeparator } from '@/ui/UiSeparator';
+import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
 
-import ConfidentialAssetCardLoader from './components/ConfidentialAssetCardLoader'
-import Deposit from './components/Deposit'
+import ConfidentialAssetCardLoader from './components/ConfidentialAssetCardLoader';
+import Deposit from './components/Deposit';
 import {
   TransferFormSheet,
   useTransferFormSheet,
-} from './components/TransferFormSheet'
+} from './components/TransferFormSheet';
 
 export default function DashboardClient() {
-  const isMobileDevice = isMobile()
+  const isMobileDevice = isMobile();
 
-  const router = useRouter()
-  const pathname = usePathname()
-  const searchParams = useSearchParams()
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false)
-  const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false)
-  const [isWithdrawSheetOpen, setIsWithdrawSheetOpen] = useState(false)
-  const [isAddTokenSheetOpen, setIsAddTokenSheetOpen] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isDepositSheetOpen, setIsDepositSheetOpen] = useState(false);
+  const [isTokenInfoSheetOpen, setIsTokenInfoSheetOpen] = useState(false);
+  const [isWithdrawSheetOpen, setIsWithdrawSheetOpen] = useState(false);
+  const [isAddTokenSheetOpen, setIsAddTokenSheetOpen] = useState(false);
 
-  const transferFormSheet = useTransferFormSheet()
+  const transferFormSheet = useTransferFormSheet();
 
   const {
     accountsLoadingState,
@@ -87,30 +82,30 @@ export default function DashboardClient() {
     tokens,
 
     txHistory,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
   const isLoading = [
     decryptionKeyStatusLoadingState,
     accountsLoadingState,
     tokensLoadingState,
-  ].includes('loading')
+  ].includes('loading');
 
   const isActionsDisabled =
-    !selectedAccountDecryptionKeyStatus.isRegistered || isSubmitting
+    !selectedAccountDecryptionKeyStatus.isRegistered || isSubmitting;
 
-  const [, setIsRefreshing] = useState(false)
+  const [, setIsRefreshing] = useState(false);
 
   const tryRefresh = useCallback(async () => {
-    setIsSubmitting(true)
-    setIsRefreshing(true)
+    setIsSubmitting(true);
+    setIsRefreshing(true);
     try {
-      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()])
+      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]);
     } catch (error) {
-      ErrorHandler.processWithoutFeedback(error)
+      ErrorHandler.processWithoutFeedback(error);
     }
-    setIsRefreshing(false)
-    setIsSubmitting(false)
-  }, [loadSelectedDecryptionKeyState, reloadAptBalance])
+    setIsRefreshing(false);
+    setIsSubmitting(false);
+  }, [loadSelectedDecryptionKeyState, reloadAptBalance]);
 
   // const tryUnfreeze = useCallback(async () => {
   //   setIsSubmitting(true)
@@ -128,43 +123,41 @@ export default function DashboardClient() {
   //   setIsSubmitting(false)
   // }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
 
-  const [carouselWrpRef] = useMeasure()
+  const [carouselWrpRef] = useMeasure();
 
   const clearAllParams = useCallback(() => {
-    router.replace(`${pathname}?`)
-  }, [pathname, router])
+    router.replace(`${pathname}?`);
+  }, [pathname, router]);
 
   // TODO: enchance to more fabric orchestration
   useEffect(() => {
     if (
-      [
-        decryptionKeyStatusLoadingState,
-        accountsLoadingState,
-        tokensLoadingState,
-      ].every(el => el === 'success')
+      [decryptionKeyStatusLoadingState, accountsLoadingState, tokensLoadingState].every(
+        el => el === 'success',
+      )
     )
-      return
+      return;
 
-    const action = searchParams.get('action')
+    const action = searchParams.get('action');
 
-    if (!action) return
+    if (!action) return;
 
     if (action === 'send') {
-      const asset = searchParams.get('asset')
-      const to = searchParams.get('to')
+      const asset = searchParams.get('asset');
+      const to = searchParams.get('to');
 
-      if (!asset || !to) return
+      if (!asset || !to) return;
 
-      if (!perTokenStatuses[asset].isRegistered) return
+      if (!perTokenStatuses[asset].isRegistered) return;
 
       if (selectedToken.address.toLowerCase() !== asset.toLowerCase()) {
-        setSelectedTokenAddress(asset)
+        setSelectedTokenAddress(asset);
       }
 
-      transferFormSheet.open(to)
+      transferFormSheet.open(to);
     }
 
-    clearAllParams()
+    clearAllParams();
   }, [
     tokensLoadingState,
     accountsLoadingState,
@@ -176,7 +169,7 @@ export default function DashboardClient() {
     selectedToken.address,
     setSelectedTokenAddress,
     transferFormSheet,
-  ])
+  ]);
 
   return (
     <div className='flex size-full flex-col'>
@@ -195,11 +188,11 @@ export default function DashboardClient() {
           >
             {(() => {
               if (isLoading) {
-                return <ConfidentialAssetCardLoader />
+                return <ConfidentialAssetCardLoader />;
               }
 
               return tokens.map((token, idx) => {
-                const currTokenStatuses = perTokenStatuses[token.address]
+                const currTokenStatuses = perTokenStatuses[token.address];
 
                 return (
                   <ConfidentialAssetCard
@@ -212,8 +205,8 @@ export default function DashboardClient() {
                     isFrozen={currTokenStatuses.isFrozen}
                     isRegistered={currTokenStatuses.isRegistered}
                   />
-                )
-              })
+                );
+              });
             })()}
 
             {/* <UiCarousel
@@ -278,7 +271,7 @@ export default function DashboardClient() {
                 name: 'CircleDollarSignIcon',
               }}
               onClick={() => {
-                setIsDepositSheetOpen(true)
+                setIsDepositSheetOpen(true);
               }}
             />
 
@@ -299,7 +292,7 @@ export default function DashboardClient() {
                 name: 'EarthIcon',
               }}
               onClick={() => {
-                setIsWithdrawSheetOpen(true)
+                setIsWithdrawSheetOpen(true);
               }}
               disabled={isActionsDisabled}
             />
@@ -311,7 +304,7 @@ export default function DashboardClient() {
                 name: 'EarthLockIcon',
               }}
               onClick={() => {
-                transferFormSheet.open()
+                transferFormSheet.open();
               }}
               disabled={isActionsDisabled}
             />
@@ -350,7 +343,7 @@ export default function DashboardClient() {
               <div className='flex flex-col gap-6'>
                 {txHistory
                   .sort((a, b) => {
-                    return time(a.createdAt).isAfter(time(b.createdAt)) ? -1 : 1
+                    return time(a.createdAt).isAfter(time(b.createdAt)) ? -1 : 1;
                   })
                   .map((el, idx) => (
                     <TxItem key={idx} {...el} />
@@ -382,16 +375,13 @@ export default function DashboardClient() {
             <UiSeparator className='mb-4 mt-2' />
             <Deposit
               onSubmit={() => {
-                setIsDepositSheetOpen(false)
-                tryRefresh()
+                setIsDepositSheetOpen(false);
+                tryRefresh();
               }}
             />
           </UiSheetContent>
         </UiSheet>
-        <UiSheet
-          open={isTokenInfoSheetOpen}
-          onOpenChange={setIsTokenInfoSheetOpen}
-        >
+        <UiSheet open={isTokenInfoSheetOpen} onOpenChange={setIsTokenInfoSheetOpen}>
           <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
             <UiSheetHeader>
               <UiSheetTitle>Token Info</UiSheetTitle>
@@ -402,10 +392,7 @@ export default function DashboardClient() {
             <TokenInfo token={selectedToken} />
           </UiSheetContent>
         </UiSheet>
-        <UiSheet
-          open={isWithdrawSheetOpen}
-          onOpenChange={setIsWithdrawSheetOpen}
-        >
+        <UiSheet open={isWithdrawSheetOpen} onOpenChange={setIsWithdrawSheetOpen}>
           <UiSheetContent side={isMobileDevice ? 'bottom' : 'right'}>
             <UiSheetHeader>
               <UiSheetTitle>Publicly Withdraw</UiSheetTitle>
@@ -414,7 +401,7 @@ export default function DashboardClient() {
             <WithdrawForm
               token={selectedToken}
               onSubmit={() => {
-                setIsWithdrawSheetOpen(false)
+                setIsWithdrawSheetOpen(false);
               }}
             />
           </UiSheetContent>
@@ -424,14 +411,11 @@ export default function DashboardClient() {
           ref={transferFormSheet.ref}
           token={selectedToken}
           onSubmit={() => {
-            transferFormSheet.close()
+            transferFormSheet.close();
           }}
         />
 
-        <UiSheet
-          open={isAddTokenSheetOpen}
-          onOpenChange={setIsAddTokenSheetOpen}
-        >
+        <UiSheet open={isAddTokenSheetOpen} onOpenChange={setIsAddTokenSheetOpen}>
           <UiSheetContent
             side={isMobileDevice ? 'bottom' : 'right'}
             className='max-h-[70dvh] overflow-y-scroll md:max-h-none'
@@ -442,14 +426,14 @@ export default function DashboardClient() {
             <UiSeparator className='mb-4 mt-2' />
             <AddTokenForm
               onSubmit={() => {
-                setIsAddTokenSheetOpen(false)
+                setIsAddTokenSheetOpen(false);
               }}
             />
           </UiSheetContent>
         </UiSheet>
       </div>
     </div>
-  )
+  );
 }
 
 function TxItem({
@@ -472,7 +456,7 @@ function TxItem({
     normalize: 'Normalize',
     mint: 'Mint',
     receive: 'Receive',
-  }[txType]
+  }[txType];
 
   const icon = {
     transfer: <ArrowRightIcon size={24} className={cn('text-textPrimary')} />,
@@ -489,13 +473,10 @@ function TxItem({
     normalize: <EditIcon size={24} className={cn('text-textPrimary')} />,
     mint: <HandCoinsIcon size={24} className={cn('text-textPrimary')} />,
     receive: <ArrowDownIcon size={24} className={cn('text-textPrimary')} />,
-  }[txType]
+  }[txType];
 
   return (
-    <div
-      {...rest}
-      className={cn('flex flex-row items-center gap-4', rest.className)}
-    >
+    <div {...rest} className={cn('flex flex-row items-center gap-4', rest.className)}>
       <div className='flex size-[48] flex-col items-center justify-center rounded-full bg-componentSelected'>
         {icon}
       </div>
@@ -505,11 +486,7 @@ function TxItem({
           <span className='typography-body4 text-textSecondary'>{message}</span>
         )}
         <div className='flex items-center gap-2'>
-          <UiIcon
-            name='CalendarIcon'
-            size={14}
-            className='text-textSecondary'
-          />
+          <UiIcon name='CalendarIcon' size={14} className='text-textSecondary' />
           {createdAt && (
             <span className='typography-caption3 text-textSecondary'>
               {formatDateDMYT(createdAt)}
@@ -518,21 +495,14 @@ function TxItem({
         </div>
       </div>
 
-      <Link
-        href={getTxExplorerUrl(txHash)}
-        target='_blank'
-        className='ml-auto p-4'
-      >
+      <Link href={getTxExplorerUrl(txHash)} target='_blank' className='ml-auto p-4'>
         <ExternalLinkIcon size={18} className='text-textSecondary' />
       </Link>
     </div>
-  )
+  );
 }
 
-function TxEmptyComponent({
-  className,
-  ...rest
-}: HTMLAttributes<HTMLDivElement>) {
+function TxEmptyComponent({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
   return (
     <div
       {...rest}
@@ -565,7 +535,7 @@ function TxEmptyComponent({
         </span>
       </div>
     </div>
-  )
+  );
 }
 
 function CircleButton({
@@ -574,8 +544,8 @@ function CircleButton({
   className,
   ...rest
 }: {
-  caption?: string
-  iconProps: ComponentProps<typeof UiIcon>
+  caption?: string;
+  iconProps: ComponentProps<typeof UiIcon>;
 } & ButtonHTMLAttributes<HTMLButtonElement>) {
   return (
     <button
@@ -593,5 +563,5 @@ function CircleButton({
       </span>
       <span className='typography-caption3 uppercase'>{caption}</span>
     </button>
-  )
+  );
 }

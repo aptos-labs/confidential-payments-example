@@ -1,9 +1,9 @@
 /* eslint-disable unused-imports/no-unused-vars */
-'use client'
+'use client';
 
-import { AccountAddress } from '@aptos-labs/ts-sdk'
-import { time } from '@distributedlab/tools'
-import { formatUnits, isHexString, parseUnits } from 'ethers'
+import { AccountAddress } from '@aptos-labs/ts-sdk';
+import { time } from '@distributedlab/tools';
+import { formatUnits, isHexString, parseUnits } from 'ethers';
 import {
   ComponentProps,
   forwardRef,
@@ -13,57 +13,52 @@ import {
   useMemo,
   useRef,
   useState,
-} from 'react'
-import { Control, useFieldArray } from 'react-hook-form'
+} from 'react';
+import { Control, useFieldArray } from 'react-hook-form';
 
-import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { abbrCenter, ErrorHandler, isMobile, tryCatch } from '@/helpers'
-import { useForm } from '@/hooks'
-import { TokenBaseInfo } from '@/store/wallet'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
-import { ControlledUiInput } from '@/ui/UiInput'
-import { UiSeparator } from '@/ui/UiSeparator'
-import {
-  UiSheet,
-  UiSheetContent,
-  UiSheetHeader,
-  UiSheetTitle,
-} from '@/ui/UiSheet'
+import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { abbrCenter, ErrorHandler, isMobile, tryCatch } from '@/helpers';
+import { useForm } from '@/hooks';
+import { TokenBaseInfo } from '@/store/wallet';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
+import { ControlledUiInput } from '@/ui/UiInput';
+import { UiSeparator } from '@/ui/UiSeparator';
+import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
 
 type TransferFormSheetRef = {
-  open: (prefillAddr?: string) => void
-  close: () => void
-}
+  open: (prefillAddr?: string) => void;
+  close: () => void;
+};
 
 export const useTransferFormSheet = () => {
-  const ref = useRef<TransferFormSheetRef>(null)
+  const ref = useRef<TransferFormSheetRef>(null);
 
   const open = (prefillAddr?: string) => {
-    ref.current?.open(prefillAddr)
-  }
+    ref.current?.open(prefillAddr);
+  };
 
   const close = () => {
-    ref.current?.close()
-  }
+    ref.current?.close();
+  };
 
   return {
     ref,
     open,
     close,
-  }
-}
+  };
+};
 
 type Props = {
-  token: TokenBaseInfo
-  onSubmit: () => void
-} & ComponentProps<typeof UiSheet>
+  token: TokenBaseInfo;
+  onSubmit: () => void;
+} & ComponentProps<typeof UiSheet>;
 
 export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
   ({ token, onSubmit }, ref) => {
-    const isMobileDevice = isMobile()
+    const isMobileDevice = isMobile();
 
     const {
       selectedAccount,
@@ -74,107 +69,95 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       reloadAptBalance,
       perTokenStatuses,
       ensureConfidentialBalanceReadyBeforeOp,
-    } = useConfidentialCoinContext()
+    } = useConfidentialCoinContext();
 
-    const currTokenStatus = perTokenStatuses[token.address]
+    const currTokenStatus = perTokenStatuses[token.address];
 
-    const publicBalanceBN = BigInt(currTokenStatus.fungibleAssetBalance || 0)
+    const publicBalanceBN = BigInt(currTokenStatus.fungibleAssetBalance || 0);
 
-    const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0)
+    const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0);
 
-    const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0)
+    const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0);
 
     const totalBalanceBN = useMemo(() => {
-      return publicBalanceBN + pendingAmountBN + actualAmountBN
-    }, [actualAmountBN, pendingAmountBN, publicBalanceBN])
+      return publicBalanceBN + pendingAmountBN + actualAmountBN;
+    }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
 
-    const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false)
+    const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false);
 
-    const {
-      isFormDisabled,
-      handleSubmit,
-      disableForm,
-      enableForm,
-      control,
-      setValue,
-    } = useForm(
-      {
-        receiverAddressHex: '',
-        amount: '',
-        auditorsAddresses: [] as string[],
-      },
-      yup =>
-        yup.object().shape({
-          receiverAddressHex: yup
-            .string()
-            .test('aptAddr', 'Invalid address', v => {
-              if (!v) return false
-
-              return AccountAddress.isValid({
-                input: v,
-              }).valid
-            })
-            .test('DRYAptAddr', 'You cannot send to yourself', v => {
-              if (!v) return false
-
-              return (
-                v.toLowerCase() !==
-                selectedAccount.accountAddress.toString().toLowerCase()
-              )
-            })
-            .test('NoReceiverAddr', 'Receiver not found', async v => {
-              if (!v) return false
-
-              const [ek, ekError] = await tryCatch(
-                getEkByAddr(v, token.address),
-              )
-              if (ekError) return false
-              return Boolean(ek)
-            })
-            .required('Enter receiver'),
-          amount: yup
-            .number()
-            .min(+formatUnits('1', token.decimals))
-            .max(
-              totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0,
-            )
-            .required('Enter amount'),
-          auditorsAddresses: yup.array().of(
-            yup
+    const { isFormDisabled, handleSubmit, disableForm, enableForm, control, setValue } =
+      useForm(
+        {
+          receiverAddressHex: '',
+          amount: '',
+          auditorsAddresses: [] as string[],
+        },
+        yup =>
+          yup.object().shape({
+            receiverAddressHex: yup
               .string()
               .test('aptAddr', 'Invalid address', v => {
-                if (!v) return false
+                if (!v) return false;
 
-                return isHexString(v)
+                return AccountAddress.isValid({
+                  input: v,
+                }).valid;
               })
-              .test('audAddr', "Auditor's address not exist", async v => {
-                if (!v) return false
+              .test('DRYAptAddr', 'You cannot send to yourself', v => {
+                if (!v) return false;
 
-                const [ek, ekError] = await tryCatch(
-                  getEkByAddr(v, token.address),
-                )
-                if (ekError) return false
-                return Boolean(ek)
-              }),
-          ),
-        }),
-    )
+                return (
+                  v.toLowerCase() !==
+                  selectedAccount.accountAddress.toString().toLowerCase()
+                );
+              })
+              .test('NoReceiverAddr', 'Receiver not found', async v => {
+                if (!v) return false;
+
+                const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
+                if (ekError) return false;
+                return Boolean(ek);
+              })
+              .required('Enter receiver'),
+            amount: yup
+              .number()
+              .min(+formatUnits('1', token.decimals))
+              .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
+              .required('Enter amount'),
+            auditorsAddresses: yup.array().of(
+              yup
+                .string()
+                .test('aptAddr', 'Invalid address', v => {
+                  if (!v) return false;
+
+                  return isHexString(v);
+                })
+                .test('audAddr', "Auditor's address not exist", async v => {
+                  if (!v) return false;
+
+                  const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
+                  if (ekError) return false;
+                  return Boolean(ek);
+                }),
+            ),
+          }),
+      );
 
     const clearForm = useCallback(() => {
-      setValue('receiverAddressHex', '')
-      setValue('amount', '')
-    }, [setValue])
+      setValue('receiverAddressHex', '');
+      setValue('amount', '');
+    }, [setValue]);
 
     const submit = useCallback(
       () =>
         handleSubmit(async formData => {
-          disableForm()
+          disableForm();
 
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
-              return getEkByAddr(addr, token.address)
+              return getEkByAddr(addr, token.address);
             }),
-          )
+          );
 
           const [transferTx, buildTransferTxError] = await tryCatch(
             buildTransferTx(
@@ -186,11 +169,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 isWithFeePayer: true,
               },
             ),
-          )
+          );
           if (buildTransferTxError) {
-            ErrorHandler.process(buildTransferTxError)
-            enableForm()
-            return
+            ErrorHandler.process(buildTransferTxError);
+            enableForm();
+            return;
           }
 
           const err = await ensureConfidentialBalanceReadyBeforeOp({
@@ -198,37 +181,37 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             token: token,
             currentTokenStatus: currTokenStatus,
             opTx: transferTx,
-          })
+          });
           if (err) {
-            enableForm()
-            return
+            enableForm();
+            return;
           }
 
           const txReceipt = await sendAndWaitTx(
             transferTx,
             selectedAccount,
             feePayerAccount,
-          )
+          );
 
           addTxHistoryItem({
             txHash: txReceipt.hash,
             txType: 'transfer',
             createdAt: time().timestamp,
             message: `Confidentially-sent ${formData.amount} ${token.symbol} to ${abbrCenter(formData.receiverAddressHex)}`,
-          })
+          });
 
           const [, reloadError] = await tryCatch(
             Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
-          )
+          );
           if (reloadError) {
-            ErrorHandler.process(reloadError)
-            enableForm()
-            return
+            ErrorHandler.process(reloadError);
+            enableForm();
+            return;
           }
 
-          onSubmit()
-          clearForm()
-          enableForm()
+          onSubmit();
+          clearForm();
+          enableForm();
         })(),
       [
         addTxHistoryItem,
@@ -246,21 +229,21 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         selectedAccount,
         token,
       ],
-    )
+    );
 
     useImperativeHandle(ref, () => ({
       open: prefillAddr => {
-        setIsTransferSheetOpen(true)
+        setIsTransferSheetOpen(true);
 
         if (prefillAddr) {
-          setValue('receiverAddressHex', prefillAddr)
+          setValue('receiverAddressHex', prefillAddr);
         }
       },
       close: () => {
-        setIsTransferSheetOpen(false)
-        clearForm()
+        setIsTransferSheetOpen(false);
+        clearForm();
       },
-    }))
+    }));
 
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
@@ -296,47 +279,43 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
             <div className='mt-auto pt-4'>
               <UiSeparator className='mb-4' />
-              <UiButton
-                className='w-full'
-                onClick={submit}
-                disabled={isFormDisabled}
-              >
+              <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
                 Send confidentially
               </UiButton>
             </div>
           </div>
         </UiSheetContent>
       </UiSheet>
-    )
+    );
   },
-)
+);
 
-TransferFormSheet.displayName = 'TransferFormSheet'
+TransferFormSheet.displayName = 'TransferFormSheet';
 
 const AuditorsList = ({
   control,
   ...rest
 }: {
   control: Control<{
-    receiverAddressHex: string
-    amount: string
-    auditorsAddresses: string[]
-  }>
+    receiverAddressHex: string;
+    amount: string;
+    auditorsAddresses: string[];
+  }>;
 } & HTMLAttributes<HTMLDivElement>) => {
   const { fields, append, remove } = useFieldArray({
     control: control!,
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     name: 'auditorsAddresses',
-  })
+  });
 
   const addAuditor = () => {
-    append('')
-  }
+    append('');
+  };
 
   const removeAuditor = (index: number) => {
-    remove(index)
-  }
+    remove(index);
+  };
 
   return (
     <div {...rest} className={cn('flex flex-col gap-2', rest.className)}>
@@ -362,15 +341,12 @@ const AuditorsList = ({
                 placeholder={`Auditor ${index + 1}`}
               />
             </div>
-            <button
-              className='text-textPrimary'
-              onClick={() => removeAuditor(index)}
-            >
+            <button className='text-textPrimary' onClick={() => removeAuditor(index)}>
               <UiIcon name={'Trash2Icon'} className={'size-5 text-errorMain'} />
             </button>
           </div>
         ))}
       </div>
     </div>
-  )
-}
+  );
+};

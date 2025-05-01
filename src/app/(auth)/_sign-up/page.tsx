@@ -1,8 +1,8 @@
-import Image from 'next/image'
+import Image from 'next/image';
 
-import RegisterForm from '@/app/(auth)/_sign-up/components/RegisterForm'
-import { cn } from '@/theme/utils'
-import { UiCard, UiCardContent } from '@/ui/UiCard'
+import RegisterForm from '@/app/(auth)/_sign-up/components/RegisterForm';
+import { cn } from '@/theme/utils';
+import { UiCard, UiCardContent } from '@/ui/UiCard';
 
 export default function LoginPage() {
   return (
@@ -30,5 +30,5 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
-  )
+  );
 }

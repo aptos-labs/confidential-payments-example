@@ -4,4 +4,4 @@ document.ENV =
   document.ENV ||
   Object.freeze({
     /* ... */
-  })
+  });

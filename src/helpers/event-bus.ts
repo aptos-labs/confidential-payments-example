@@ -1,6 +1,6 @@
-'use client'
+'use client';
 
-import { EventEmitter } from '@distributedlab/tools'
+import { EventEmitter } from '@distributedlab/tools';
 
 export enum BusEvents {
   Error = 'error',
@@ -10,10 +10,10 @@ export enum BusEvents {
 }
 
 export type DefaultBusEventMap = {
-  [BusEvents.Success]: string
-  [BusEvents.Error]: string
-  [BusEvents.Warning]: string
-  [BusEvents.Info]: string
-}
+  [BusEvents.Success]: string;
+  [BusEvents.Error]: string;
+  [BusEvents.Warning]: string;
+  [BusEvents.Info]: string;
+};
 
-export const bus = new EventEmitter<DefaultBusEventMap>()
+export const bus = new EventEmitter<DefaultBusEventMap>();

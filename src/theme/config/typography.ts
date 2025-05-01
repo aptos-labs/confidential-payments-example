@@ -1,10 +1,10 @@
-import defaultTheme from 'tailwindcss/defaultTheme'
-import type { CSSRuleObject, ThemeConfig } from 'tailwindcss/types/config'
+import defaultTheme from 'tailwindcss/defaultTheme';
+import type { CSSRuleObject, ThemeConfig } from 'tailwindcss/types/config';
 
-export const PRIMARY_FONT_VARIABLE = '--font-primary' as const
+export const PRIMARY_FONT_VARIABLE = '--font-primary' as const;
 export const fontFamily: ThemeConfig['fontFamily'] = {
   primary: `var(${PRIMARY_FONT_VARIABLE}, ${defaultTheme.fontFamily.sans})`,
-}
+};
 
 export const typography: CSSRuleObject = {
   '.typography-h1': {
@@ -122,4 +122,4 @@ export const typography: CSSRuleObject = {
     fontWeight: '700',
     letterSpacing: '0.4',
   },
-}
+};

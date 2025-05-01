@@ -4,8 +4,8 @@ import {
   TwistedEd25519PrivateKey,
   TwistedEd25519PublicKey,
   TwistedElGamalCiphertext,
-} from '@aptos-labs/confidential-assets'
-import { RangeProofExecutor } from '@aptos-labs/confidential-assets'
+} from '@aptos-labs/confidential-assets';
+import { RangeProofExecutor } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AccountAddress,
@@ -21,49 +21,46 @@ import {
   PrivateKey,
   PrivateKeyVariants,
   TransactionWorkerEventsEnum,
-} from '@aptos-labs/ts-sdk'
-import { BN, time } from '@distributedlab/tools'
-import { sha256 } from '@noble/hashes/sha256'
-import { ethers, isHexString } from 'ethers'
-import { jwtDecode } from 'jwt-decode'
-import { z } from 'zod'
+} from '@aptos-labs/ts-sdk';
+import { BN, time } from '@distributedlab/tools';
+import { sha256 } from '@noble/hashes/sha256';
+import { ethers, isHexString } from 'ethers';
+import { jwtDecode } from 'jwt-decode';
+import { z } from 'zod';
 
 import {
   genBatchRangeZKP,
   generateRangeZKP,
   verifyBatchRangeZKP,
   verifyRangeZKP,
-} from '@/api/modules/aptos/wasmRangeProof'
-import { config as appConfig } from '@/config'
-import { type TokenBaseInfo } from '@/store/wallet'
+} from '@/api/modules/aptos/wasmRangeProof';
+import { config as appConfig } from '@/config';
+import { type TokenBaseInfo } from '@/store/wallet';
 
-import { aptos, confidentialAssets } from './client'
+import { aptos, confidentialAssets } from './client';
 
 if (appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR) {
   ConfidentialAsset.setConfidentialAssetModuleAddress(
     appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-  )
+  );
 }
 
-RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP)
-RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP)
-RangeProofExecutor.setGenerateRangeZKP(generateRangeZKP)
-RangeProofExecutor.setVerifyRangeZKP(verifyRangeZKP)
+RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP);
+RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP);
+RangeProofExecutor.setGenerateRangeZKP(generateRangeZKP);
+RangeProofExecutor.setVerifyRangeZKP(verifyRangeZKP);
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
     ? privateKeyHex.slice(2)
-    : privateKeyHex
+    : privateKeyHex;
 
   return Account.fromPrivateKey({
     privateKey: new Ed25519PrivateKey(
-      PrivateKey.formatPrivateKey(
-        sanitizedPrivateKeyHex,
-        PrivateKeyVariants.Ed25519,
-      ),
+      PrivateKey.formatPrivateKey(sanitizedPrivateKeyHex, PrivateKeyVariants.Ed25519),
     ),
-  })
-}
+  });
+};
 
 export function deriveEd25519PrivateKey(
   login: string,
@@ -73,10 +70,10 @@ export function deriveEd25519PrivateKey(
   // Generate or use provided salt
   const saltBytes = salt
     ? ethers.hexlify(ethers.toUtf8Bytes(salt))
-    : ethers.randomBytes(32)
+    : ethers.randomBytes(32);
 
   // Combine login and password
-  const combined = `${login}:${password}`
+  const combined = `${login}:${password}`;
 
   // Derive key using PBKDF2
   const derivedKey = ethers.pbkdf2(
@@ -85,48 +82,48 @@ export function deriveEd25519PrivateKey(
     100000,
     32,
     'sha256',
-  )
+  );
 
-  return ethers.hexlify(derivedKey)
+  return ethers.hexlify(derivedKey);
 }
 
 export const validatePrivateKeyHex = (privateKeyHex: string) => {
   try {
-    const account = accountFromPrivateKey(privateKeyHex)
+    const account = accountFromPrivateKey(privateKeyHex);
 
-    return Boolean(account.accountAddress.toString())
+    return Boolean(account.accountAddress.toString());
   } catch (error) {
-    return false
+    return false;
   }
-}
+};
 
 export const validateEncryptionKeyHex = (encryptionKeyHex: string) => {
   try {
-    const encryptionKey = new TwistedEd25519PublicKey(encryptionKeyHex)
+    const encryptionKey = new TwistedEd25519PublicKey(encryptionKeyHex);
 
-    return Boolean(encryptionKey.toString())
+    return Boolean(encryptionKey.toString());
   } catch (error) {
-    return false
+    return false;
   }
-}
+};
 
 export const decryptionKeyFromPrivateKey = (account: Account) => {
   const signature = account.sign(
     TwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
-  )
+  );
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
-  return TwistedEd25519PrivateKey.fromSignature(signature)
-}
+  return TwistedEd25519PrivateKey.fromSignature(signature);
+};
 
 export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
-  const bytes = ethers.getBytes(ethers.zeroPadBytes(pepper, 32))
+  const bytes = ethers.getBytes(ethers.zeroPadBytes(pepper, 32));
 
-  const hashDigest = sha256(bytes)
+  const hashDigest = sha256(bytes);
 
-  return new TwistedEd25519PrivateKey(hashDigest)
-}
+  return new TwistedEd25519PrivateKey(hashDigest);
+};
 
 export const sendAndWaitTx = async (
   transaction: AnyRawTransaction,
@@ -138,7 +135,7 @@ export const sendAndWaitTx = async (
         signer: feePayerAccount,
         transaction,
       })
-    : undefined
+    : undefined;
 
   const pendingTxn = await aptos.signAndSubmitTransaction({
     signer,
@@ -147,9 +144,9 @@ export const sendAndWaitTx = async (
       feePayer: undefined,
       feePayerAuthenticator,
     }),
-  })
-  return aptos.waitForTransaction({ transactionHash: pendingTxn.hash })
-}
+  });
+  return aptos.waitForTransaction({ transactionHash: pendingTxn.hash });
+};
 
 export const sendAndWaitBatchTxs = async (
   txPayloads: InputGenerateTransactionPayloadData[],
@@ -158,48 +155,46 @@ export const sendAndWaitBatchTxs = async (
   aptos.transaction.batch.forSingleAccount({
     sender,
     data: txPayloads,
-  })
+  });
 
-  let allTxSentPromiseResolve: (value: void | PromiseLike<void>) => void
+  let allTxSentPromiseResolve: (value: void | PromiseLike<void>) => void;
 
-  const txHashes: string[] = []
+  const txHashes: string[] = [];
   aptos.transaction.batch.on(
     TransactionWorkerEventsEnum.TransactionSent,
     async data => {
-      txHashes.push(data.transactionHash)
+      txHashes.push(data.transactionHash);
 
       if (txHashes.length === txPayloads.length) {
-        allTxSentPromiseResolve()
+        allTxSentPromiseResolve();
       }
     },
-  )
+  );
 
   await new Promise<void>(resolve => {
-    allTxSentPromiseResolve = resolve
-  })
+    allTxSentPromiseResolve = resolve;
+  });
 
   return Promise.all(
-    txHashes.map(txHash =>
-      aptos.waitForTransaction({ transactionHash: txHash }),
-    ),
-  )
-}
+    txHashes.map(txHash => aptos.waitForTransaction({ transactionHash: txHash })),
+  );
+};
 
 export const getModuleMockedTokenAddr = async () => {
   const [vec] = await aptos.view<
     [
       {
-        inner: string
+        inner: string;
       },
     ]
   >({
     payload: {
       function: `${ConfidentialAsset.CONFIDENTIAL_COIN_MODULE_ADDRESS}::mock_token::get_token_metadata`,
     },
-  })
+  });
 
-  return vec.inner
-}
+  return vec.inner;
+};
 
 export const mintTokens = async (account: Account, amount: bigint) => {
   const tx = await aptos.transaction.build.simple({
@@ -209,10 +204,10 @@ export const mintTokens = async (account: Account, amount: bigint) => {
       function: `0x33c6f1c080cffdb8bc57dbd93bf2e4f10420f729bedb430ffd79c788518e0f86::mock_token::mint_to`,
       functionArguments: [amount],
     },
-  })
+  });
 
-  return sendAndWaitTx(tx, account)
-}
+  return sendAndWaitTx(tx, account);
+};
 
 export const mintAptCoin = async (
   account: Account,
@@ -221,8 +216,8 @@ export const mintAptCoin = async (
   await aptos.fundAccount({
     accountAddress: account.accountAddress,
     amount: +fundAmount.toString(),
-  })
-}
+  });
+};
 
 export const buildWithdrawConfidentialBalance = async (
   account: Account,
@@ -233,7 +228,7 @@ export const buildWithdrawConfidentialBalance = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
 
   return confidentialAssets.withdraw({
     sender: account.accountAddress,
@@ -243,8 +238,8 @@ export const buildWithdrawConfidentialBalance = async (
     encryptedActualBalance,
     amountToWithdraw: withdrawAmount,
     feePayerAddress: feePayerAddress,
-  })
-}
+  });
+};
 
 export const withdrawConfidentialBalance = async (
   account: Account,
@@ -263,17 +258,17 @@ export const withdrawConfidentialBalance = async (
     encryptedActualBalance,
     tokenAddress,
     feePayerAddress,
-  )
+  );
 
-  return sendAndWaitTx(withdrawTx, account)
-}
+  return sendAndWaitTx(withdrawTx, account);
+};
 
 export const getEkByAddr = async (addrHex: string, tokenAddress: string) => {
   return confidentialAssets.getEncryptionByAddr({
     accountAddress: AccountAddress.from(addrHex),
     tokenAddress,
-  })
-}
+  });
+};
 
 export const buildTransferConfidentialAsset = async (
   account: Account,
@@ -285,18 +280,16 @@ export const buildTransferConfidentialAsset = async (
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
   feePayerAddress?: string,
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
 
   const recipientEncryptionKeyHex = await getEkByAddr(
     recipientAddressHex,
     tokenAddress,
-  )
+  );
 
   return confidentialAssets.transferCoin({
     senderDecryptionKey: decryptionKey,
-    recipientEncryptionKey: new TwistedEd25519PublicKey(
-      recipientEncryptionKeyHex,
-    ),
+    recipientEncryptionKey: new TwistedEd25519PublicKey(recipientEncryptionKeyHex),
     encryptedActualBalance: encryptedActualBalance,
     amountToTransfer,
     sender: account.accountAddress,
@@ -306,8 +299,8 @@ export const buildTransferConfidentialAsset = async (
       hex => new TwistedEd25519PublicKey(hex),
     ),
     feePayerAddress,
-  })
-}
+  });
+};
 
 export const transferConfidentialAsset = async (
   account: Account,
@@ -328,10 +321,10 @@ export const transferConfidentialAsset = async (
     auditorsEncryptionKeyHexList,
     tokenAddress,
     feePayerAddress,
-  )
+  );
 
-  return await sendAndWaitTx(transferTx, account)
-}
+  return await sendAndWaitTx(transferTx, account);
+};
 
 export const safelyRotateConfidentialBalance = async (
   account: Account,
@@ -339,7 +332,7 @@ export const safelyRotateConfidentialBalance = async (
   currEncryptedBalance: TwistedElGamalCiphertext[],
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const newDecryptionKey = TwistedEd25519PrivateKey.generate()
+  const newDecryptionKey = TwistedEd25519PrivateKey.generate();
 
   return confidentialAssets.safeRotateCBKey(aptos, account, {
     sender: account.accountAddress,
@@ -351,8 +344,8 @@ export const safelyRotateConfidentialBalance = async (
 
     withUnfreezeBalance: true,
     tokenAddress,
-  })
-}
+  });
+};
 
 export const buildSafelyRolloverConfidentialBalanceTx = async (
   account: Account,
@@ -366,8 +359,8 @@ export const buildSafelyRolloverConfidentialBalanceTx = async (
     withFreezeBalance: false,
     decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     feePayerAddress: feePayerAddress,
-  })
-}
+  });
+};
 
 export const safelyRolloverConfidentialBalance = async (
   account: Account,
@@ -380,10 +373,10 @@ export const safelyRolloverConfidentialBalance = async (
     decryptionKeyHex,
     tokenAddress,
     feePayerAddress,
-  )
+  );
 
-  return sendAndWaitBatchTxs(rolloverTxPayloads, account)
-}
+  return sendAndWaitBatchTxs(rolloverTxPayloads, account);
+};
 
 export const buildRegisterConfidentialBalanceTx = async (
   account: Account,
@@ -396,8 +389,8 @@ export const buildRegisterConfidentialBalanceTx = async (
     tokenAddress: tokenAddress,
     publicKey: new TwistedEd25519PublicKey(publicKeyHex),
     feePayerAddress,
-  })
-}
+  });
+};
 
 export const registerConfidentialBalance = async (
   account: Account,
@@ -410,10 +403,10 @@ export const registerConfidentialBalance = async (
     publicKeyHex,
     tokenAddress,
     feePayerAddress,
-  )
+  );
 
-  return sendAndWaitTx(registerVBTxBody, account)
-}
+  return sendAndWaitTx(registerVBTxBody, account);
+};
 
 export const normalizeConfidentialBalance = async (
   account: Account,
@@ -429,10 +422,10 @@ export const normalizeConfidentialBalance = async (
     balanceAmount: amount,
 
     sender: account.accountAddress,
-  })
+  });
 
-  return sendAndWaitTx(normalizeTx, account)
-}
+  return sendAndWaitTx(normalizeTx, account);
+};
 
 export const buildDepositConfidentialBalanceTx = async (
   account: Account,
@@ -447,8 +440,8 @@ export const buildDepositConfidentialBalanceTx = async (
     tokenAddress: tokenAddress,
     amount: amount,
     feePayerAddress: feePayerAddress,
-  })
-}
+  });
+};
 
 export const depositConfidentialBalance = async (
   account: Account,
@@ -463,9 +456,9 @@ export const depositConfidentialBalance = async (
     to,
     tokenAddress,
     feePayerAddress,
-  )
-  return sendAndWaitTx(depositTx, account)
-}
+  );
+  return sendAndWaitTx(depositTx, account);
+};
 
 export const buildDepositConfidentialBalanceCoinTx = async (
   account: Account,
@@ -480,10 +473,10 @@ export const buildDepositConfidentialBalanceCoinTx = async (
     amount: amount,
     to: to ? AccountAddress.from(to) : account.accountAddress,
     feePayerAddress: feePayerAddress,
-  })
+  });
 
-  return tx
-}
+  return tx;
+};
 
 export const depositConfidentialBalanceCoin = async (
   account: Account,
@@ -498,9 +491,9 @@ export const depositConfidentialBalanceCoin = async (
     coinType,
     to,
     feePayerAddress,
-  )
-  return sendAndWaitTx(depositTx, account)
-}
+  );
+  return sendAndWaitTx(depositTx, account);
+};
 
 export const getIsAccountRegisteredWithToken = async (
   account: Account,
@@ -509,10 +502,10 @@ export const getIsAccountRegisteredWithToken = async (
   const isRegistered = await confidentialAssets.hasUserRegistered({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
-  })
+  });
 
-  return isRegistered
-}
+  return isRegistered;
+};
 
 export const getIsBalanceNormalized = async (
   account: Account,
@@ -521,10 +514,10 @@ export const getIsBalanceNormalized = async (
   const isNormalized = await confidentialAssets.isUserBalanceNormalized({
     accountAddress: account.accountAddress,
     tokenAddress: tokenAddress,
-  })
+  });
 
-  return isNormalized
-}
+  return isNormalized;
+};
 
 export const getIsBalanceFrozen = async (
   account: Account,
@@ -533,17 +526,17 @@ export const getIsBalanceFrozen = async (
   const isFrozen = await confidentialAssets.isBalanceFrozen({
     accountAddress: account.accountAddress,
     tokenAddress,
-  })
+  });
 
-  return isFrozen
-}
+  return isFrozen;
+};
 
 export const getCoinByFaAddress = async (
   tokenAddress: string,
 ): Promise<{
-  account_address: string
-  module_name: string
-  struct_name: string
+  account_address: string;
+  module_name: string;
+  struct_name: string;
 }> => {
   const pairedCoinTypeStruct = (
     await aptos.view({
@@ -552,23 +545,23 @@ export const getCoinByFaAddress = async (
         functionArguments: [tokenAddress],
       },
     })
-  ).at(0) as { vec: MoveValue[] }
+  ).at(0) as { vec: MoveValue[] };
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  return pairedCoinTypeStruct.vec[0]
-}
+  return pairedCoinTypeStruct.vec[0];
+};
 
 export const parseCoinTypeFromCoinStruct = (coinStruct: {
-  account_address: string
-  module_name: string
-  struct_name: string
+  account_address: string;
+  module_name: string;
+  struct_name: string;
 }): MoveStructId => {
-  const moduleNameUtf8 = ethers.toUtf8String(coinStruct.module_name)
-  const structNameUtf8 = ethers.toUtf8String(coinStruct.struct_name)
+  const moduleNameUtf8 = ethers.toUtf8String(coinStruct.module_name);
+  const structNameUtf8 = ethers.toUtf8String(coinStruct.struct_name);
 
-  return `${coinStruct.account_address}::${moduleNameUtf8}::${structNameUtf8}`
-}
+  return `${coinStruct.account_address}::${moduleNameUtf8}::${structNameUtf8}`;
+};
 
 export const getFAByCoinType = async (coinType: string): Promise<string> => {
   const fungibleAsset = (
@@ -578,70 +571,66 @@ export const getFAByCoinType = async (coinType: string): Promise<string> => {
         typeArguments: [coinType],
       },
     })
-  ).at(0) as { vec: { inner: string }[] }
+  ).at(0) as { vec: { inner: string }[] };
 
-  return fungibleAsset?.vec[0].inner
-}
+  return fungibleAsset?.vec[0].inner;
+};
 
-export const getCoinBalanceByFaAddress = (
-  account: Account,
-  tokenAddress: string,
-) => {
+export const getCoinBalanceByFaAddress = (account: Account, tokenAddress: string) => {
   return aptos.account.getAccountCoinAmount({
     accountAddress: account.accountAddress,
     faMetadataAddress: tokenAddress,
-  })
-}
+  });
+};
 
 export const getAptBalance = async (account: Account) => {
   const aptBalance = await aptos.getAccountAPTAmount({
     accountAddress: account.accountAddress,
-  })
+  });
 
-  return aptBalance
-}
+  return aptBalance;
+};
 
 export const getConfidentialBalances = async (
   account: Account,
   decryptionKeyHex: string,
   tokenAddress = appConfig.DEFAULT_TOKEN_ADRESSES[0],
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex)
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
 
   const { pending, actual } = await confidentialAssets.getBalance({
     accountAddress: account.accountAddress,
     tokenAddress,
-  })
+  });
 
   try {
-    const [confidentialAmountPending, confidentialAmountActual] =
-      await Promise.all([
-        ConfidentialAmount.fromEncrypted(pending, decryptionKey),
-        ConfidentialAmount.fromEncrypted(actual, decryptionKey),
-      ])
+    const [confidentialAmountPending, confidentialAmountActual] = await Promise.all([
+      ConfidentialAmount.fromEncrypted(pending, decryptionKey),
+      ConfidentialAmount.fromEncrypted(actual, decryptionKey),
+    ]);
 
     return {
       pending: confidentialAmountPending,
       actual: confidentialAmountActual,
-    }
+    };
   } catch (error) {
     return {
       pending: ConfidentialAmount.fromAmount(0n),
       actual: ConfidentialAmount.fromAmount(0n),
-    }
+    };
   }
-}
+};
 
 export const generatePrivateKeyHex = () => {
-  const account = Account.generate()
+  const account = Account.generate();
 
-  return account.privateKey.toString()
-}
+  return account.privateKey.toString();
+};
 
 export const getFungibleAssetMetadata = async (
   tokenNameOrSymbolOrAddressHex: string,
 ): Promise<TokenBaseInfo[]> => {
-  const isHex = isHexString(tokenNameOrSymbolOrAddressHex)
+  const isHex = isHexString(tokenNameOrSymbolOrAddressHex);
 
   const searchByHexPromise = isHex
     ? aptos.getFungibleAssetMetadata({
@@ -656,7 +645,7 @@ export const getFungibleAssetMetadata = async (
           },
         },
       })
-    : undefined
+    : undefined;
 
   const searchByNamePromise = isHex
     ? undefined
@@ -668,7 +657,7 @@ export const getFungibleAssetMetadata = async (
             },
           },
         },
-      })
+      });
 
   const searchBySymbolPromise = isHex
     ? undefined
@@ -680,23 +669,21 @@ export const getFungibleAssetMetadata = async (
             },
           },
         },
-      })
+      });
 
   const searchResults = await Promise.all([
     searchByHexPromise,
     searchByNamePromise,
     searchBySymbolPromise,
-  ])
+  ]);
 
-  const filteredUniqueFungibleAssets = searchResults
-    .flat()
-    .reduce((acc, el) => {
-      if (!acc.find(accEl => accEl.asset_type === el?.asset_type) && el) {
-        acc.push(el)
-      }
+  const filteredUniqueFungibleAssets = searchResults.flat().reduce((acc, el) => {
+    if (!acc.find(accEl => accEl.asset_type === el?.asset_type) && el) {
+      acc.push(el);
+    }
 
-      return acc
-    }, [] as GetFungibleAssetMetadataResponse)
+    return acc;
+  }, [] as GetFungibleAssetMetadataResponse);
 
   return filteredUniqueFungibleAssets.map(el => ({
     address: el.asset_type,
@@ -704,13 +691,10 @@ export const getFungibleAssetMetadata = async (
     symbol: el.symbol,
     decimals: el.decimals,
     iconUri: el.icon_uri || '',
-  }))
-}
+  }));
+};
 
-export const getFABalance = async (
-  account: Account,
-  tokenAddressHex: string,
-) => {
+export const getFABalance = async (account: Account, tokenAddressHex: string) => {
   return aptos.fungibleAsset.getCurrentFungibleAssetBalances({
     options: {
       where: {
@@ -722,24 +706,24 @@ export const getFABalance = async (
         },
       },
     },
-  })
-}
+  });
+};
 
 export const sendApt = async (
   account: Account,
   receiverAccountAddressHex: string,
   humanAmount: string,
 ) => {
-  const amount = BN.fromRaw(humanAmount, 8).value
+  const amount = BN.fromRaw(humanAmount, 8).value;
 
   const sendAptTransaction = await aptos.coin.transferCoinTransaction({
     sender: account.accountAddress,
     recipient: receiverAccountAddressHex,
     amount: BigInt(amount), // Ensure the amount is in bigint format
-  })
+  });
 
-  return sendAndWaitTx(sendAptTransaction, account)
-}
+  return sendAndWaitTx(sendAptTransaction, account);
+};
 
 // =========================================================================
 // Keyless helpers
@@ -752,17 +736,17 @@ export const EphemeralKeyPairEncoding = {
     __type: 'EphemeralKeyPair',
     data: e.bcsToBytes(),
   }),
-}
+};
 
 export const validateEphemeralKeyPair = (
   keyPair: EphemeralKeyPair,
 ): EphemeralKeyPair | undefined =>
-  isValidEphemeralKeyPair(keyPair) ? keyPair : undefined
+  isValidEphemeralKeyPair(keyPair) ? keyPair : undefined;
 
 export const isValidEphemeralKeyPair = (keyPair: EphemeralKeyPair): boolean => {
-  if (keyPair.isExpired()) return false
-  return true
-}
+  if (keyPair.isExpired()) return false;
+  return true;
+};
 
 /**
  * Create a new ephemeral key pair with a random private key and nonce.
@@ -774,7 +758,7 @@ export const createEphemeralKeyPair = ({
   privateKey = Ed25519PrivateKey.generate(),
   ...options
 }: Partial<ConstructorParameters<typeof EphemeralKeyPair>[0]> = {}) =>
-  new EphemeralKeyPair({ expiryDateSecs, privateKey, ...options })
+  new EphemeralKeyPair({ expiryDateSecs, privateKey, ...options });
 
 export const idTokenSchema = z.object({
   aud: z.string(),
@@ -782,11 +766,11 @@ export const idTokenSchema = z.object({
   iat: z.number(),
   iss: z.string(),
   sub: z.string(),
-})
+});
 
 export const nonceEncryptedIdTokenSchema = idTokenSchema.extend({
   nonce: z.string(),
-})
+});
 
 export const profileScopedPayloadSchema = nonceEncryptedIdTokenSchema.extend({
   family_name: z.string().optional(),
@@ -794,49 +778,45 @@ export const profileScopedPayloadSchema = nonceEncryptedIdTokenSchema.extend({
   locale: z.string().optional(),
   name: z.string(),
   picture: z.string().optional(),
-})
+});
 
 export const emailScopedPayloadSchema = nonceEncryptedIdTokenSchema.extend({
   email: z.string().optional(),
   email_verified: z.boolean(),
-})
+});
 
 export const scopedPayloadSchema = profileScopedPayloadSchema.merge(
   emailScopedPayloadSchema,
-)
+);
 
-export type IDToken = z.infer<typeof idTokenSchema>
+export type IDToken = z.infer<typeof idTokenSchema>;
 
-export type NonceEncryptedIdToken = z.infer<typeof nonceEncryptedIdTokenSchema>
+export type NonceEncryptedIdToken = z.infer<typeof nonceEncryptedIdTokenSchema>;
 
-export type ProfileScopedPayloadSchema = z.infer<
-  typeof profileScopedPayloadSchema
->
+export type ProfileScopedPayloadSchema = z.infer<typeof profileScopedPayloadSchema>;
 
-export type EmailScopedPayloadSchema = z.infer<typeof emailScopedPayloadSchema>
+export type EmailScopedPayloadSchema = z.infer<typeof emailScopedPayloadSchema>;
 
-export type EncryptedScopedIdToken = z.infer<typeof scopedPayloadSchema>
+export type EncryptedScopedIdToken = z.infer<typeof scopedPayloadSchema>;
 
 export const decodeIdToken = (jwt: string): EncryptedScopedIdToken =>
-  scopedPayloadSchema.parse(jwtDecode(jwt))
+  scopedPayloadSchema.parse(jwtDecode(jwt));
 
-export const isValidIdToken = (
-  jwt: string | EncryptedScopedIdToken,
-): boolean => {
-  if (typeof jwt === 'string') return isValidIdToken(decodeIdToken(jwt))
+export const isValidIdToken = (jwt: string | EncryptedScopedIdToken): boolean => {
+  if (typeof jwt === 'string') return isValidIdToken(decodeIdToken(jwt));
 
   // Check whether the token has an expiration, nonce, and is not expired
-  if (!jwt.nonce) return false
+  if (!jwt.nonce) return false;
 
-  return true
-}
+  return true;
+};
 
 export const validateIdToken = (
   jwt: string | EncryptedScopedIdToken,
 ): EncryptedScopedIdToken | null => {
-  if (typeof jwt === 'string') return validateIdToken(decodeIdToken(jwt))
-  return isValidIdToken(jwt) ? jwt : null
-}
+  if (typeof jwt === 'string') return validateIdToken(decodeIdToken(jwt));
+  return isValidIdToken(jwt) ? jwt : null;
+};
 
 /**
  * Encoding for the KeylessAccount class to be stored in localStorage
@@ -853,7 +833,7 @@ export const KeylessAccountEncoding = {
           data: e.bcsToBytes(),
         }
       : undefined,
-}
+};
 
 /**
  * If the account has an invalid Ephemeral key pair or idToken, the account needs to be refreshed with either
@@ -872,17 +852,17 @@ export const validateKeylessAccount = (
     // If the EphemeralAccount nonce algorithm changes, this will need to be updated
     decodeIdToken(account.jwt).nonce === account.ephemeralKeyPair.nonce
     ? account
-    : undefined
-}
+    : undefined;
+};
 
 export const getTxExplorerUrl = (txHash: string) => {
-  const network = aptos.config.network
+  const network = aptos.config.network;
 
-  return `https://explorer.aptoslabs.com/txn/${txHash}?network=${network}`
-}
+  return `https://explorer.aptoslabs.com/txn/${txHash}?network=${network}`;
+};
 
 export const getAccountExplorerUrl = (accountAddressHex: string) => {
-  const network = aptos.config.network
+  const network = aptos.config.network;
 
-  return `https://explorer.aptoslabs.com/account/${accountAddressHex}?network=${network}`
-}
+  return `https://explorer.aptoslabs.com/account/${accountAddressHex}?network=${network}`;
+};

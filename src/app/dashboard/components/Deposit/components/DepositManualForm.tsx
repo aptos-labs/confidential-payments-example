@@ -1,31 +1,27 @@
-'use client'
+'use client';
 
-import { time } from '@distributedlab/tools'
-import { FixedNumber, parseUnits } from 'ethers'
-import { useCallback, useState } from 'react'
+import { time } from '@distributedlab/tools';
+import { FixedNumber, parseUnits } from 'ethers';
+import { useCallback, useState } from 'react';
 
-import { getFABalance } from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatBalance } from '@/helpers'
-import { useForm } from '@/hooks'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
-import { UiCollapsible, UiCollapsibleContent } from '@/ui/UiCollapsible'
-import { ControlledUiInput } from '@/ui/UiInput'
-import { UiLabel } from '@/ui/UiLabel'
-import { UiSwitch } from '@/ui/UiSwitch'
+import { getFABalance } from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { ErrorHandler, formatBalance } from '@/helpers';
+import { useForm } from '@/hooks';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
+import { UiCollapsible, UiCollapsibleContent } from '@/ui/UiCollapsible';
+import { ControlledUiInput } from '@/ui/UiInput';
+import { UiLabel } from '@/ui/UiLabel';
+import { UiSwitch } from '@/ui/UiSwitch';
 import {
   UiTooltip,
   UiTooltipContent,
   UiTooltipProvider,
   UiTooltipTrigger,
-} from '@/ui/UiTooltip'
+} from '@/ui/UiTooltip';
 
-export default function DepositManualForm({
-  onSubmit,
-}: {
-  onSubmit?: () => void
-}) {
+export default function DepositManualForm({ onSubmit }: { onSubmit?: () => void }) {
   const {
     selectedAccount,
     selectedToken,
@@ -33,59 +29,58 @@ export default function DepositManualForm({
     depositCoinTo,
     addTxHistoryItem,
     perTokenStatuses,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
-  const [isOtherRecipient, setIsOtherRecipient] = useState(false)
+  const [isOtherRecipient, setIsOtherRecipient] = useState(false);
 
   const formattedTotalBalance = formatBalance(
     perTokenStatuses[selectedToken.address].fungibleAssetBalance,
     selectedToken.decimals,
-  )
+  );
 
-  const { control, disableForm, enableForm, isFormDisabled, handleSubmit } =
-    useForm(
-      { recipient: selectedAccount.accountAddress.toString(), amount: '' },
-      yup =>
-        yup.object().shape({
-          amount: yup.number().max(+formattedTotalBalance).required(),
-          recipient: yup.string().required(),
-        }),
-    )
+  const { control, disableForm, enableForm, isFormDisabled, handleSubmit } = useForm(
+    { recipient: selectedAccount.accountAddress.toString(), amount: '' },
+    yup =>
+      yup.object().shape({
+        amount: yup.number().max(+formattedTotalBalance).required(),
+        recipient: yup.string().required(),
+      }),
+  );
 
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
-        disableForm()
+        disableForm();
         try {
           const amountToDeposit = parseUnits(
             String(formData.amount),
             selectedToken.decimals,
-          )
+          );
 
           const [faOnlyBalance] = await getFABalance(
             selectedAccount,
             selectedToken.address,
-          )
+          );
 
           const isInsufficientFAOnlyBalance = FixedNumber.fromValue(
             faOnlyBalance?.amount || '0',
-          ).lt(FixedNumber.fromValue(amountToDeposit))
+          ).lt(FixedNumber.fromValue(amountToDeposit));
 
           const depositTxReceipt = isInsufficientFAOnlyBalance
             ? await depositCoinTo(amountToDeposit, formData.recipient)
-            : await depositTo(amountToDeposit, formData.recipient)
+            : await depositTo(amountToDeposit, formData.recipient);
 
           addTxHistoryItem({
             txHash: depositTxReceipt.hash,
             txType: 'deposit',
             createdAt: time().timestamp,
-          })
+          });
 
-          onSubmit?.()
+          onSubmit?.();
         } catch (error) {
-          ErrorHandler.process(error)
+          ErrorHandler.process(error);
         }
-        enableForm()
+        enableForm();
       })(),
     [
       addTxHistoryItem,
@@ -99,7 +94,7 @@ export default function DepositManualForm({
       selectedToken.address,
       selectedToken.decimals,
     ],
-  )
+  );
 
   return (
     <form className='flex flex-col gap-3' onSubmit={handleSubmit(submit)}>
@@ -132,15 +127,11 @@ export default function DepositManualForm({
                 <UiTooltipTrigger>
                   <div className='typography-caption2 flex items-center gap-2 text-textPrimary'>
                     Amount
-                    <UiIcon
-                      name='InfoIcon'
-                      className='size-4 text-textPrimary'
-                    />
+                    <UiIcon name='InfoIcon' className='size-4 text-textPrimary' />
                   </div>
                 </UiTooltipTrigger>
                 <UiTooltipContent className='max-w-[75vw]'>
-                  Manual deposit from you Fungible Asset balance to Confidential
-                  balance
+                  Manual deposit from you Fungible Asset balance to Confidential balance
                 </UiTooltipContent>
               </UiTooltip>
             </UiTooltipProvider>
@@ -169,13 +160,9 @@ export default function DepositManualForm({
         </div>
       </div>
 
-      <UiButton
-        className='mt-4 w-full'
-        onClick={submit}
-        disabled={isFormDisabled}
-      >
+      <UiButton className='mt-4 w-full' onClick={submit} disabled={isFormDisabled}>
         Deposit
       </UiButton>
     </form>
-  )
+  );
 }

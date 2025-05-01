@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   AudioWaveform,
@@ -22,20 +22,20 @@ import {
   SquareTerminal,
   SunIcon,
   Trash2,
-} from 'lucide-react'
-import { useRouter } from 'next/navigation'
-import { useTheme } from 'next-themes'
-import * as React from 'react'
-import { useCallback } from 'react'
+} from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { useTheme } from 'next-themes';
+import * as React from 'react';
+import { useCallback } from 'react';
 
-import { ErrorHandler } from '@/helpers'
-import { authStore } from '@/store/auth'
-import { UiAvatar, UiAvatarFallback, UiAvatarImage } from '@/ui/UiAvatar'
+import { ErrorHandler } from '@/helpers';
+import { authStore } from '@/store/auth';
+import { UiAvatar, UiAvatarFallback, UiAvatarImage } from '@/ui/UiAvatar';
 import {
   UiCollapsible,
   UiCollapsibleContent,
   UiCollapsibleTrigger,
-} from '@/ui/UiCollapsible'
+} from '@/ui/UiCollapsible';
 import {
   UiDropdownMenu,
   UiDropdownMenuContent,
@@ -45,7 +45,7 @@ import {
   UiDropdownMenuSeparator,
   UiDropdownMenuShortcut,
   UiDropdownMenuTrigger,
-} from '@/ui/UiDropdownMenu'
+} from '@/ui/UiDropdownMenu';
 import {
   UiSidebar,
   UiSidebarContent,
@@ -62,8 +62,8 @@ import {
   UiSidebarMenuSubItem,
   UiSidebarRail,
   useUiSidebar,
-} from '@/ui/UiSidebar'
-import { UiSwitch } from '@/ui/UiSwitch'
+} from '@/ui/UiSidebar';
+import { UiSwitch } from '@/ui/UiSwitch';
 
 // This is sample data.
 const data = {
@@ -193,11 +193,9 @@ const data = {
       icon: Map,
     },
   ],
-}
+};
 
-export function DashboardSidebar({
-  ...props
-}: React.ComponentProps<typeof UiSidebar>) {
+export function DashboardSidebar({ ...props }: React.ComponentProps<typeof UiSidebar>) {
   return (
     <UiSidebar collapsible='icon' {...props}>
       <UiSidebarHeader>
@@ -212,17 +210,17 @@ export function DashboardSidebar({
       </UiSidebarFooter>
       <UiSidebarRail />
     </UiSidebar>
-  )
+  );
 }
 
 const ThemeSwitcher = () => {
-  const { theme, setTheme, systemTheme } = useTheme()
+  const { theme, setTheme, systemTheme } = useTheme();
 
-  const currentTheme = theme === 'system' ? systemTheme : theme
+  const currentTheme = theme === 'system' ? systemTheme : theme;
 
   const toggleTheme = useCallback(() => {
-    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
-  }, [currentTheme, setTheme])
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  }, [currentTheme, setTheme]);
 
   return (
     <div className='mr-auto flex items-center gap-2'>
@@ -233,23 +231,23 @@ const ThemeSwitcher = () => {
       />
       <MoonIcon className='size-4' />
     </div>
-  )
-}
+  );
+};
 
 // eslint-disable-next-line unused-imports/no-unused-vars
 function NavMain({
   items,
 }: {
   items: {
-    title: string
-    url: string
-    icon?: LucideIcon
-    isActive?: boolean
+    title: string;
+    url: string;
+    icon?: LucideIcon;
+    isActive?: boolean;
     items?: {
-      title: string
-      url: string
-    }[]
-  }[]
+      title: string;
+      url: string;
+    }[];
+  }[];
 }) {
   return (
     <UiSidebarGroup>
@@ -288,23 +286,23 @@ function NavMain({
         ))}
       </UiSidebarMenu>
     </UiSidebarGroup>
-  )
+  );
 }
 
 export function TeamSwitcher({
   teams,
 }: {
   teams: {
-    name: string
-    logo: React.ElementType
-    plan: string
-  }[]
+    name: string;
+    logo: React.ElementType;
+    plan: string;
+  }[];
 }) {
-  const { isMobile } = useUiSidebar()
-  const [activeTeam, setActiveTeam] = React.useState(teams[0])
+  const { isMobile } = useUiSidebar();
+  const [activeTeam, setActiveTeam] = React.useState(teams[0]);
 
   if (!activeTeam) {
-    return null
+    return null;
   }
 
   return (
@@ -320,9 +318,7 @@ export function TeamSwitcher({
                 <activeTeam.logo className='size-4' />
               </div>
               <div className='grid flex-1 text-left text-sm leading-tight'>
-                <span className='truncate font-semibold'>
-                  {activeTeam.name}
-                </span>
+                <span className='truncate font-semibold'>{activeTeam.name}</span>
                 <span className='truncate text-xs'>{activeTeam.plan}</span>
               </div>
               <ChevronsUpDown className='ml-auto' />
@@ -361,19 +357,19 @@ export function TeamSwitcher({
         </UiDropdownMenu>
       </UiSidebarMenuItem>
     </UiSidebarMenu>
-  )
+  );
 }
 
 export function NavProjects({
   projects,
 }: {
   projects: {
-    name: string
-    url: string
-    icon: LucideIcon
-  }[]
+    name: string;
+    url: string;
+    icon: LucideIcon;
+  }[];
 }) {
-  const { isMobile } = useUiSidebar()
+  const { isMobile } = useUiSidebar();
 
   return (
     <UiSidebarGroup className='group-data-[collapsible=icon]:hidden'>
@@ -424,31 +420,31 @@ export function NavProjects({
         </UiSidebarMenuItem>
       </UiSidebarMenu>
     </UiSidebarGroup>
-  )
+  );
 }
 
 export function NavUser({
   user,
 }: {
   user: {
-    name: string
-    email: string
-    avatar: string
-  }
+    name: string;
+    email: string;
+    avatar: string;
+  };
 }) {
-  const router = useRouter()
+  const router = useRouter();
 
-  const { isMobile } = useUiSidebar()
-  const logout = authStore.useLogout()
+  const { isMobile } = useUiSidebar();
+  const logout = authStore.useLogout();
 
   const tryLogout = async () => {
     try {
-      await logout()
-      router.push('/')
+      await logout();
+      router.push('/');
     } catch (error) {
-      ErrorHandler.process(error)
+      ErrorHandler.process(error);
     }
-  }
+  };
 
   return (
     <UiSidebarMenu>
@@ -503,5 +499,5 @@ export function NavUser({
         </UiDropdownMenu>
       </UiSidebarMenuItem>
     </UiSidebarMenu>
-  )
+  );
 }

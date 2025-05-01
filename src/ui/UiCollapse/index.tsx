@@ -1,12 +1,12 @@
-import { AnimatePresence, motion, type MotionProps } from 'motion/react'
-import { HTMLAttributes, useMemo } from 'react'
-import { v4 as uuidv4 } from 'uuid'
+import { AnimatePresence, motion, type MotionProps } from 'motion/react';
+import { HTMLAttributes, useMemo } from 'react';
+import { v4 as uuidv4 } from 'uuid';
 
 type Props = {
-  isOpen: boolean
-  duration?: number
+  isOpen: boolean;
+  duration?: number;
 } & HTMLAttributes<HTMLDivElement> &
-  MotionProps
+  MotionProps;
 
 export default function UiCollapse({
   isOpen,
@@ -14,7 +14,7 @@ export default function UiCollapse({
   children,
   ...rest
 }: Props) {
-  const uid = useMemo(() => uuidv4(), [])
+  const uid = useMemo(() => uuidv4(), []);
 
   return (
     <AnimatePresence>
@@ -35,5 +35,5 @@ export default function UiCollapse({
         </motion.div>
       )}
     </AnimatePresence>
-  )
+  );
 }

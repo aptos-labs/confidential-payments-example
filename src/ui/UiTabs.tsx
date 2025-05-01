@@ -1,11 +1,11 @@
-'use client'
+'use client';
 
-import * as TabsPrimitive from '@radix-ui/react-tabs'
-import * as React from 'react'
+import * as TabsPrimitive from '@radix-ui/react-tabs';
+import * as React from 'react';
 
-import { cn } from '@/theme/utils'
+import { cn } from '@/theme/utils';
 
-const UiTabs = TabsPrimitive.Root
+const UiTabs = TabsPrimitive.Root;
 
 const UiTabsList = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.List>,
@@ -19,8 +19,8 @@ const UiTabsList = React.forwardRef<
     )}
     {...props}
   />
-))
-UiTabsList.displayName = TabsPrimitive.List.displayName
+));
+UiTabsList.displayName = TabsPrimitive.List.displayName;
 
 const UiTabsTrigger = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Trigger>,
@@ -34,8 +34,8 @@ const UiTabsTrigger = React.forwardRef<
     )}
     {...props}
   />
-))
-UiTabsTrigger.displayName = TabsPrimitive.Trigger.displayName
+));
+UiTabsTrigger.displayName = TabsPrimitive.Trigger.displayName;
 
 const UiTabsContent = React.forwardRef<
   React.ElementRef<typeof TabsPrimitive.Content>,
@@ -49,7 +49,7 @@ const UiTabsContent = React.forwardRef<
     )}
     {...props}
   />
-))
-UiTabsContent.displayName = TabsPrimitive.Content.displayName
+));
+UiTabsContent.displayName = TabsPrimitive.Content.displayName;
 
-export { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger }
+export { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger };

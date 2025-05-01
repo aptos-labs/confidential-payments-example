@@ -1,13 +1,13 @@
-import kebabCase from 'lodash/kebabCase'
-import type { ThemeConfig } from 'tailwindcss/types/config'
+import kebabCase from 'lodash/kebabCase';
+import type { ThemeConfig } from 'tailwindcss/types/config';
 
 const getRgba = (hex: string, opacity: number) => {
-  const hexValue = hex.replace('#', '')
-  const r = parseInt(hexValue.substring(0, 2), 16)
-  const g = parseInt(hexValue.substring(2, 4), 16)
-  const b = parseInt(hexValue.substring(4, 6), 16)
-  return `rgba(${r}, ${g}, ${b}, ${opacity})`
-}
+  const hexValue = hex.replace('#', '');
+  const r = parseInt(hexValue.substring(0, 2), 16);
+  const g = parseInt(hexValue.substring(2, 4), 16);
+  const b = parseInt(hexValue.substring(4, 6), 16);
+  return `rgba(${r}, ${g}, ${b}, ${opacity})`;
+};
 
 export const lightPalette = {
   baseBlack: '#000000',
@@ -65,9 +65,9 @@ export const lightPalette = {
   additionalLayerBorder: '#ffffff',
   additionalPureDark: '#000000',
   additionalInverted: '#ffffff',
-}
+};
 
-export type BaseTheme = typeof lightPalette
+export type BaseTheme = typeof lightPalette;
 
 export const darkPalette: BaseTheme = {
   baseBlack: '#202020',
@@ -125,7 +125,7 @@ export const darkPalette: BaseTheme = {
   additionalLayerBorder: getRgba('#FFFFFF', 0.05),
   additionalPureDark: getRgba('#FFFFFF', 0.1),
   additionalInverted: '#444444',
-}
+};
 
 export const cssVars = {
   light: Object.entries(lightPalette).reduce(
@@ -142,7 +142,7 @@ export const cssVars = {
     }),
     {} as Record<string, string>,
   ),
-}
+};
 
 export const colorsScheme: BaseTheme = {
   baseBlack: 'var(--base-black)',
@@ -199,6 +199,6 @@ export const colorsScheme: BaseTheme = {
   additionalLayerBorder: 'var(--additional-layer-border)',
   additionalPureDark: 'var(--additional-pure-dark)',
   additionalInverted: 'var(--additional-inverted)',
-}
+};
 
-export const colors: ThemeConfig['colors'] = colorsScheme
+export const colors: ThemeConfig['colors'] = colorsScheme;

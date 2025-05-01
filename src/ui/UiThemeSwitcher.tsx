@@ -1,17 +1,17 @@
-import { MoonIcon, SunIcon } from 'lucide-react'
-import { useTheme } from 'next-themes'
-import { useCallback } from 'react'
+import { MoonIcon, SunIcon } from 'lucide-react';
+import { useTheme } from 'next-themes';
+import { useCallback } from 'react';
 
-import { UiSwitch } from './UiSwitch'
+import { UiSwitch } from './UiSwitch';
 
 export default function UiThemeSwitcher() {
-  const { theme, setTheme, systemTheme } = useTheme()
+  const { theme, setTheme, systemTheme } = useTheme();
 
-  const currentTheme = theme === 'system' ? systemTheme : theme
+  const currentTheme = theme === 'system' ? systemTheme : theme;
 
   const toggleTheme = useCallback(() => {
-    setTheme(currentTheme === 'dark' ? 'light' : 'dark')
-  }, [currentTheme, setTheme])
+    setTheme(currentTheme === 'dark' ? 'light' : 'dark');
+  }, [currentTheme, setTheme]);
 
   return (
     <div className='mr-auto flex items-center gap-2'>
@@ -22,5 +22,5 @@ export default function UiThemeSwitcher() {
       />
       <MoonIcon className='size-4' />
     </div>
-  )
+  );
 }

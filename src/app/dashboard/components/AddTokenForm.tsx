@@ -1,39 +1,39 @@
-'use client'
+'use client';
 
-import { time } from '@distributedlab/tools'
-import Avatar from 'boring-avatars'
-import Image from 'next/image'
-import { useCallback, useState } from 'react'
-import { Controller, SubmitHandler } from 'react-hook-form'
-import { useDebounce } from 'react-use'
+import { time } from '@distributedlab/tools';
+import Avatar from 'boring-avatars';
+import Image from 'next/image';
+import { useCallback, useState } from 'react';
+import { Controller, SubmitHandler } from 'react-hook-form';
+import { useDebounce } from 'react-use';
 
 import {
   getFABalance,
   getFAByCoinType,
   getFungibleAssetMetadata,
-} from '@/api/modules/aptos'
-import { useConfidentialCoinContext } from '@/app/dashboard/context'
-import { ErrorHandler, formatBalance } from '@/helpers'
-import { useForm } from '@/hooks'
-import { TokenBaseInfo } from '@/store/wallet'
-import { cn } from '@/theme/utils'
-import { UiIcon } from '@/ui'
-import { UiButton } from '@/ui/UiButton'
+} from '@/api/modules/aptos';
+import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { ErrorHandler, formatBalance } from '@/helpers';
+import { useForm } from '@/hooks';
+import { TokenBaseInfo } from '@/store/wallet';
+import { cn } from '@/theme/utils';
+import { UiIcon } from '@/ui';
+import { UiButton } from '@/ui/UiButton';
 import {
   UiDialog,
   UiDialogContent,
   UiDialogFooter,
   UiDialogHeader,
   UiDialogTitle,
-} from '@/ui/UiDialog'
-import { UiInput } from '@/ui/UiInput'
-import { UiSeparator } from '@/ui/UiSeparator'
+} from '@/ui/UiDialog';
+import { UiInput } from '@/ui/UiInput';
+import { UiSeparator } from '@/ui/UiSeparator';
 import {
   UiTooltip,
   UiTooltipContent,
   UiTooltipProvider,
   UiTooltipTrigger,
-} from '@/ui/UiTooltip'
+} from '@/ui/UiTooltip';
 
 export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
   const {
@@ -42,7 +42,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     registerAccountEncryptionKey,
     addTxHistoryItem,
     setSelectedTokenAddress,
-  } = useConfidentialCoinContext()
+  } = useConfidentialCoinContext();
 
   const {
     formState,
@@ -64,64 +64,63 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
           address: yup.string().required(),
         }),
       }),
-  )
+  );
 
-  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] =
-    useState(false)
-  const [isSearching, setIsSearching] = useState(false)
+  const [isConfirmationDialogOpen, setIsConfirmationDialogOpen] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [foundedTokens, setFoundedTokens] = useState<
     (TokenBaseInfo & { balanceAmount: string })[]
-  >([])
-  const [selectedToken, setSelectedToken] = useState<TokenBaseInfo>()
+  >([]);
+  const [selectedToken, setSelectedToken] = useState<TokenBaseInfo>();
 
-  const isDisabled = isSearching || isFormDisabled
+  const isDisabled = isSearching || isFormDisabled;
 
   const ensureV2Token = useCallback(async () => {
-    if (!selectedToken) return
+    if (!selectedToken) return;
 
     try {
-      const tokenAddress = await getFAByCoinType(selectedToken?.address)
+      const tokenAddress = await getFAByCoinType(selectedToken?.address);
 
-      const [token] = await getFungibleAssetMetadata(tokenAddress)
+      const [token] = await getFungibleAssetMetadata(tokenAddress);
 
-      return token
+      return token;
     } catch (error) {
       /* empty */
     }
 
-    return selectedToken
-  }, [selectedToken])
+    return selectedToken;
+  }, [selectedToken]);
 
   const clearForm = useCallback(() => {
-    setValue('tokenAddressOrNameOrSymbol', '')
-    setValue('tokenInfo', undefined)
-    setFoundedTokens([])
-  }, [setValue])
+    setValue('tokenAddressOrNameOrSymbol', '');
+    setValue('tokenInfo', undefined);
+    setFoundedTokens([]);
+  }, [setValue]);
 
   const submit = useCallback<SubmitHandler<typeof formState>>(
     async formData => {
-      disableForm()
+      disableForm();
       try {
         try {
           const txReceipt = await registerAccountEncryptionKey(
             formData.tokenAddressOrNameOrSymbol,
-          )
+          );
           addTxHistoryItem({
             txHash: txReceipt.hash,
             txType: 'register',
             createdAt: time().timestamp,
-          })
+          });
         } catch (error) {
           /* empty */
         }
-        addToken(formData.tokenInfo!)
-        setSelectedTokenAddress(formData.tokenInfo!.address)
-        onSubmit()
-        clearForm()
+        addToken(formData.tokenInfo!);
+        setSelectedTokenAddress(formData.tokenInfo!.address);
+        onSubmit();
+        clearForm();
       } catch (error) {
-        ErrorHandler.process(error)
+        ErrorHandler.process(error);
       }
-      enableForm()
+      enableForm();
     },
     [
       addToken,
@@ -133,83 +132,73 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       registerAccountEncryptionKey,
       setSelectedTokenAddress,
     ],
-  )
+  );
 
   const searchToken = useCallback(
     async (tokenAddress: string) => {
-      setIsSearching(true)
+      setIsSearching(true);
 
       try {
-        const tokens = await getFungibleAssetMetadata(tokenAddress)
+        const tokens = await getFungibleAssetMetadata(tokenAddress);
 
         const tokensBalances = await Promise.all(
           tokens.map(async el => {
-            const balances = await getFABalance(selectedAccount, el.address)
+            const balances = await getFABalance(selectedAccount, el.address);
 
-            return balances[0]
+            return balances[0];
           }),
-        )
+        );
 
         setFoundedTokens(
           tokens.map((el, idx) => ({
             ...el,
             balanceAmount: tokensBalances[idx]?.amount,
           })),
-        )
+        );
       } catch (error) {
-        return undefined
+        return undefined;
       }
-      setIsSearching(false)
+      setIsSearching(false);
     },
     [selectedAccount],
-  )
+  );
 
   useDebounce(
     async () => {
-      if (!formState.tokenAddressOrNameOrSymbol) return
+      if (!formState.tokenAddressOrNameOrSymbol) return;
 
-      await searchToken(formState.tokenAddressOrNameOrSymbol)
+      await searchToken(formState.tokenAddressOrNameOrSymbol);
     },
     500,
     [formState.tokenAddressOrNameOrSymbol],
-  )
+  );
 
-  const renderTokenImage = useCallback(
-    (tokenInfo: (typeof foundedTokens)[0]) => {
-      try {
-        const iconUrl = new URL(tokenInfo.iconUri)
-
-        return (
-          <Image
-            src={iconUrl.href}
-            alt={tokenInfo.name}
-            className='size-[48px] rounded-full'
-            width={48}
-            height={48}
-          />
-        )
-      } catch (_) {
-        /* empty */
-      }
+  const renderTokenImage = useCallback((tokenInfo: (typeof foundedTokens)[0]) => {
+    try {
+      const iconUrl = new URL(tokenInfo.iconUri);
 
       return (
-        <Avatar
-          name={tokenInfo.address}
-          className={'size-[48px] rounded-[50%]'}
+        <Image
+          src={iconUrl.href}
+          alt={tokenInfo.name}
+          className='size-[48px] rounded-full'
+          width={48}
+          height={48}
         />
-      )
-    },
-    [],
-  )
+      );
+    } catch (_) {
+      /* empty */
+    }
+
+    return <Avatar name={tokenInfo.address} className={'size-[48px] rounded-[50%]'} />;
+  }, []);
 
   return (
     <div className='flex-1'>
       <Controller
         control={control}
         name={'tokenAddressOrNameOrSymbol'}
-        render={({ field }) => (
-          <UiInput {...field} placeholder='Enter token address' />
-        )}
+        render={({ field }) => <UiInput {...field} placeholder='Enter token address' />}
       />
 
       <div className='mt-4 flex flex-col gap-4'>
@@ -229,10 +218,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                     <span className='typography-caption1 text-textPrimary'>
                       {el.name}
                     </span>
-                    <UiIcon
-                      name='InfoIcon'
-                      className='size-4 text-textPrimary'
-                    />
+                    <UiIcon name='InfoIcon' className='size-4 text-textPrimary' />
                   </UiTooltipTrigger>
                   <UiTooltipContent className='overflow-hidden text-ellipsis'>
                     <span className='typography-caption1 text-textSecondary'>
@@ -266,8 +252,8 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               type='button'
               disabled={isDisabled}
               onClick={() => {
-                setSelectedToken(el)
-                setIsConfirmationDialogOpen(true)
+                setSelectedToken(el);
+                setIsConfirmationDialogOpen(true);
               }}
             >
               Add
@@ -277,8 +263,8 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
               className='absolute inset-0 z-20 md:hidden'
               type='button'
               onClick={() => {
-                setSelectedToken(el)
-                setIsConfirmationDialogOpen(true)
+                setSelectedToken(el);
+                setIsConfirmationDialogOpen(true);
               }}
             />
           </div>
@@ -330,8 +316,8 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                 className='flex-1'
                 variant={'outline'}
                 onClick={() => {
-                  setValue('tokenInfo', undefined)
-                  setIsConfirmationDialogOpen(false)
+                  setValue('tokenInfo', undefined);
+                  setIsConfirmationDialogOpen(false);
                 }}
                 type='button'
               >
@@ -341,10 +327,10 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
                 className='flex-1'
                 type={'button'}
                 onClick={async () => {
-                  const token = await ensureV2Token()
+                  const token = await ensureV2Token();
 
-                  setValue('tokenInfo', token)
-                  handleSubmit(submit)()
+                  setValue('tokenInfo', token);
+                  handleSubmit(submit)();
                 }}
               >
                 Add
@@ -354,5 +340,5 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
         </UiDialogContent>
       </UiDialog>
     </div>
-  )
+  );
 }

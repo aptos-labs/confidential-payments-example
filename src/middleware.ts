@@ -57,13 +57,24 @@ const authGuard = async ({ request }: MiddlewareFunctionProps) => {
   return NextResponse.next()
 }
 
-const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
+async function shouldShowMaintenancePage() {
+  if (appConfig.FORCE_MAINTENANCE_PAGE) {
+    return true;
+  }
+
   const response = await fetch(
     `https://api.devnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
-  )
-
+  );
   if (!response.ok) {
-    console.error('Error fetching module:', response.statusText)
+    console.error('Error fetching module:', response.statusText);
+  }
+
+  return !response.ok;
+}
+
+const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
+  const showMaintenancePage = await shouldShowMaintenancePage();
+  if (showMaintenancePage) {
     return NextResponse.redirect(new URL('/maintenance', request.url))
   }
 
@@ -71,13 +82,11 @@ const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
 }
 
 const maintenanceGuard = async ({ request }: MiddlewareFunctionProps) => {
-  const response = await fetch(
-    `https://api.devnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
-  )
-
-  if (response.ok) {
-    return NextResponse.redirect(new URL('/maintenance', request.url))
+  const showMaintenancePage = await shouldShowMaintenancePage();
+  if (!showMaintenancePage) {
+    return NextResponse.redirect(new URL('/', request.url))
   }
+
   return NextResponse.next()
 }
 

@@ -7,7 +7,7 @@
     "pre-push": "pnpm rsc"
   },
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev --port 3020",
     "build": "next build",
     "start": "next start",
     "lint": "eslint \"{src,config}/**/*.{js,ts,jsx,tsx}\" --cache --cache-location 'node_modules/.cache/.eslintcache' --fix --max-warnings=0",

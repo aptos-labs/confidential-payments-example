@@ -2,27 +2,22 @@
 
 ## Project setup
 ```
-yarn install
+pnpm install
 ```
 
 ### Compiles and hot-reloads for development
 ```
-yarn start
+pnpm dev
 ```
 
 ### Compiles and minifies for production
 ```
-yarn build
+pnpm build
 ```
 
 ### Lints and fixes files
 ```
-yarn lint
-```
-
-### Build docker image with version
-```dockerfile
-docker build --no-cache --progress=plain --build-arg BUILD_VERSION=1.0.0-rc.0 -t my-app .
+pnpm lint
 ```
 
 ### Dealing with env variables

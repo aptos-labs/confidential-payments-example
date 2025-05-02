@@ -1,7 +1,7 @@
 'use client';
 
 import { Account } from '@aptos-labs/ts-sdk';
-import { BN, time } from '@distributedlab/tools';
+import { BN } from '@distributedlab/tools';
 import Avatar from 'boring-avatars';
 import { jwtDecode } from 'jwt-decode';
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react';
@@ -20,13 +20,14 @@ import { Controller } from 'react-hook-form';
 import {
   generatePrivateKeyHex,
   getAccountExplorerUrl,
-  sendApt,
+  sendPrimaryToken,
   validatePrivateKeyHex,
 } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { abbrCenter, ErrorHandler, isMobile } from '@/helpers';
 import { useCopyToClipboard, useForm } from '@/hooks';
 import { authStore } from '@/store/auth';
+import { useGasStationArgs } from '@/store/gas-station';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
 import { UiButton } from '@/ui/UiButton';
@@ -474,8 +475,9 @@ function TransferNativeBottomSheet({
   onSubmit,
   ...rest
 }: TransferNativeBottomSheetProps) {
-  const { selectedAccount, aptBalance, addTxHistoryItem, reloadAptBalance } =
+  const { selectedAccount, primaryTokenBalance, reloadPrimaryTokenBalance } =
     useConfidentialCoinContext();
+  const gasStationArgs = useGasStationArgs();
 
   const {
     formState,
@@ -496,7 +498,7 @@ function TransferNativeBottomSheet({
         amount: yup
           .number()
           .required('Enter amount')
-          .max(Number(BN.fromBigInt(aptBalance, 8).toString())),
+          .max(Number(BN.fromBigInt(primaryTokenBalance, 8).toString())),
       }),
   );
 
@@ -510,17 +512,13 @@ function TransferNativeBottomSheet({
       handleSubmit(async formData => {
         disableForm();
         try {
-          const txReceipt = await sendApt(
+          await sendPrimaryToken(
             selectedAccount,
             formData.receiverAccountAddress,
             formData.amount,
+            gasStationArgs,
           );
-          addTxHistoryItem({
-            txHash: txReceipt.hash,
-            txType: 'transfer-native',
-            createdAt: time().timestamp,
-          });
-          await reloadAptBalance();
+          await reloadPrimaryTokenBalance();
           onSubmit();
           clearForm();
         } catch (error) {
@@ -529,14 +527,14 @@ function TransferNativeBottomSheet({
         enableForm();
       })(),
     [
-      addTxHistoryItem,
       clearForm,
       disableForm,
       enableForm,
       handleSubmit,
       onSubmit,
-      reloadAptBalance,
+      reloadPrimaryTokenBalance,
       selectedAccount,
+      gasStationArgs,
     ],
   );
 

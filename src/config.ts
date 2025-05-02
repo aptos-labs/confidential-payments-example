@@ -1,8 +1,14 @@
-type Config = {
+type AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR: string;
-  DEFAULT_TOKEN_ADRESSES: string[];
+  /**
+   * This is the asset the user deals with in the app. For the demo they only use a
+   * single stablecoin.
+   */
+  PRIMARY_TOKEN_ADDRESS: string;
+  APTOS_NETWORK: string;
 
   APTOS_BUILD_API_KEY: string;
+  APTOS_BUILD_GAS_STATION_KEY: string;
 
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
@@ -15,18 +21,19 @@ type Config = {
 
 export const APT_FA_ADDR =
   '0x000000000000000000000000000000000000000000000000000000000000000a';
-export const USDC_MOCKED_TOKEN_ADDR =
-  '0xeb0d77ea72ab6838c870fc98ed9ea3e12e72fa964021be983b398824ebdd126e';
 
-export const config: Config = {
+// This is the USDT address on testnet.
+export const USDT_TOKEN_ADDR =
+  '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050';
+
+export const appConfig: AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR:
     process.env.NEXT_PUBLIC_CONFIDENTIAL_ASSET_MODULE_ADDR!,
-  DEFAULT_TOKEN_ADRESSES: [
-    APT_FA_ADDR,
-    // USDC_MOCKED_TOKEN_ADDR,
-  ],
+  PRIMARY_TOKEN_ADDRESS: USDT_TOKEN_ADDR,
+  APTOS_NETWORK: 'testnet',
 
   APTOS_BUILD_API_KEY: process.env.NEXT_PUBLIC_APTOS_BUILD_API_KEY!,
+  APTOS_BUILD_GAS_STATION_KEY: process.env.NEXT_PUBLIC_APTOS_BUILD_GAS_STATION_KEY!,
 
   GOOGLE_CLIENT_ID: process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID!,
   GOOGLE_CLIENT_SECRET: process.env.GOOGLE_CLIENT_SECRET!,

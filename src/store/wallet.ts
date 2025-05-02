@@ -1,5 +1,4 @@
-import { config } from '@config';
-import type { TimeDate } from '@distributedlab/tools';
+import { appConfig } from '@config';
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { combine, persist } from 'zustand/middleware';
@@ -19,39 +18,12 @@ export type TokenBaseInfo = {
   iconUri: string;
 };
 
-export type TxHistoryItem = {
-  txHash: string;
-  createdAt: TimeDate;
-  txType:
-    | 'transfer'
-    | 'transfer-native'
-    | 'deposit'
-    | 'withdraw'
-    | 'rollover'
-    | 'key-rotation'
-    | 'freeze'
-    | 'unfreeze'
-    | 'register'
-    | 'normalize'
-    | 'mint'
-    | 'receive';
-  message?: string;
-};
-
 type StoreState = {
   privateKeyHexList: string[];
   selectedAccountAddr: string;
 
   accountAddrHexToTokenAddrMap: Record<string, string[]>;
   _selectedTokenAddress: string;
-
-  accountAddrHexPerTokenTxHistory: Record<
-    string,
-    Record<
-      string, // token
-      TxHistoryItem[] // tx history
-    >
-  >;
 
   _hasHydrated: boolean;
 };
@@ -129,26 +101,6 @@ const useWalletStore = create(
             },
           }));
         },
-        addTxHistoryItem: (
-          accAddr: string,
-          tokenAddress: string,
-          details: TxHistoryItem,
-        ): void => {
-          set(state => ({
-            accountAddrHexPerTokenTxHistory: {
-              ...state.accountAddrHexPerTokenTxHistory,
-              [accAddr]: {
-                ...state.accountAddrHexPerTokenTxHistory[accAddr],
-                [tokenAddress]: [
-                  ...(state.accountAddrHexPerTokenTxHistory[accAddr]?.[tokenAddress] ||
-                    []),
-                  details,
-                ],
-              },
-            },
-          }));
-        },
-
         clearStoredKeys: (): void => {
           set({
             privateKeyHexList: [],
@@ -175,7 +127,6 @@ const useWalletStore = create(
         selectedAccountAddr: state.selectedAccountAddr,
         accountAddrHexToTokenAddrMap: state.accountAddrHexToTokenAddrMap,
         _selectedTokenAddress: state._selectedTokenAddress,
-        accountAddrHexPerTokenTxHistory: state.accountAddrHexPerTokenTxHistory,
       }),
     },
   ),
@@ -183,7 +134,7 @@ const useWalletStore = create(
 
 const useSelectedTokenAddress = () => {
   return useWalletStore(
-    state => state._selectedTokenAddress || config.DEFAULT_TOKEN_ADRESSES[0],
+    state => state._selectedTokenAddress || appConfig.PRIMARY_TOKEN_ADDRESS,
   );
 };
 

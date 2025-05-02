@@ -1,6 +1,5 @@
 'use client';
 
-import { time } from '@distributedlab/tools';
 import { FixedNumber, parseUnits } from 'ethers';
 import { useCallback, useState } from 'react';
 
@@ -22,14 +21,8 @@ import {
 } from '@/ui/UiTooltip';
 
 export default function DepositManualForm({ onSubmit }: { onSubmit?: () => void }) {
-  const {
-    selectedAccount,
-    selectedToken,
-    depositTo,
-    depositCoinTo,
-    addTxHistoryItem,
-    perTokenStatuses,
-  } = useConfidentialCoinContext();
+  const { selectedAccount, selectedToken, depositTo, depositCoinTo, perTokenStatuses } =
+    useConfidentialCoinContext();
 
   const [isOtherRecipient, setIsOtherRecipient] = useState(false);
 
@@ -66,15 +59,11 @@ export default function DepositManualForm({ onSubmit }: { onSubmit?: () => void 
             faOnlyBalance?.amount || '0',
           ).lt(FixedNumber.fromValue(amountToDeposit));
 
-          const depositTxReceipt = isInsufficientFAOnlyBalance
-            ? await depositCoinTo(amountToDeposit, formData.recipient)
-            : await depositTo(amountToDeposit, formData.recipient);
-
-          addTxHistoryItem({
-            txHash: depositTxReceipt.hash,
-            txType: 'deposit',
-            createdAt: time().timestamp,
-          });
+          if (isInsufficientFAOnlyBalance) {
+            await depositCoinTo(amountToDeposit, formData.recipient);
+          } else {
+            await depositTo(amountToDeposit, formData.recipient);
+          }
 
           onSubmit?.();
         } catch (error) {
@@ -83,7 +72,6 @@ export default function DepositManualForm({ onSubmit }: { onSubmit?: () => void 
         enableForm();
       })(),
     [
-      addTxHistoryItem,
       depositCoinTo,
       depositTo,
       disableForm,

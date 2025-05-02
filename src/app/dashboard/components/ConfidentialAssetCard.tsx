@@ -3,8 +3,10 @@
 import Avatar from 'boring-avatars';
 import { HTMLAttributes, useMemo, useState } from 'react';
 
+import { createAccount } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, formatBalance } from '@/helpers';
+import { ErrorHandler, formatBalance, tryCatch } from '@/helpers';
+import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
@@ -41,11 +43,13 @@ export default function ConfidentialAssetCard({
   isRegistered: boolean;
 } & HTMLAttributes<HTMLDivElement>) {
   const {
+    selectedAccount,
     registerAccountEncryptionKey,
-    reloadAptBalance,
+    reloadPrimaryTokenBalance,
     loadSelectedDecryptionKeyState,
     perTokenStatuses,
   } = useConfidentialCoinContext();
+  const gasStationArgs = useGasStationArgs();
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -60,11 +64,28 @@ export default function ConfidentialAssetCard({
   const tryRegister = async () => {
     setIsSubmitting(true);
 
+    // Try to use the gas station to create the account.
+    const [_response, createAccountError] = await tryCatch(
+      createAccount(selectedAccount, gasStationArgs),
+    );
+
+    if (createAccountError) {
+      // If it fails because the account already exists, keep moving.
+      if (!createAccountError.message.includes('EACCOUNT_ALREADY_EXISTS')) {
+        ErrorHandler.process(createAccountError);
+        setIsSubmitting(false);
+        return;
+      }
+    }
+
     const currTokenStatus = perTokenStatuses[token.address];
 
     try {
       await registerAccountEncryptionKey(token.address);
-      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]);
+      await Promise.all([
+        loadSelectedDecryptionKeyState(),
+        reloadPrimaryTokenBalance(),
+      ]);
     } catch (error) {
       if (+currTokenStatus.fungibleAssetBalance >= 0) {
         ErrorHandler.process(
@@ -138,7 +159,7 @@ export default function ConfidentialAssetCard({
 
                     <UiTooltipContent className='overflow-hidden text-ellipsis'>
                       <span className='typography-caption1 text-textSecondary'>
-                        make sure you have anough APT to send transactions, or you can
+                        make sure you have enough APT to send transactions, or you can
                         buy some in deposit modal
                       </span>
                     </UiTooltipContent>

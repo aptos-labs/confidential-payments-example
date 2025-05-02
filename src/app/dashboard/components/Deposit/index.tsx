@@ -21,7 +21,7 @@ export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
     <div className='flex flex-col items-center gap-4'>
       <UiTabs defaultValue='faucet' className='w-full'>
         <UiTabsList>
-          <UiTabsTrigger value='faucet'>Buy {selectedToken.symbol}</UiTabsTrigger>
+          <UiTabsTrigger value='faucet'>Faucet {selectedToken.symbol}</UiTabsTrigger>
           <UiTabsTrigger value='manual'>Receive from others</UiTabsTrigger>
         </UiTabsList>
         <UiTabsContent value='faucet'>

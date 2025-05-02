@@ -1,14 +1,14 @@
 'use client';
 
 import { AccountAddress } from '@aptos-labs/ts-sdk';
-import { time } from '@distributedlab/tools';
 import { formatUnits, parseUnits } from 'ethers';
 import { useCallback, useMemo } from 'react';
 
 import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { abbrCenter, ErrorHandler, tryCatch } from '@/helpers';
+import { ErrorHandler, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
+import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
@@ -23,15 +23,14 @@ export default function WithdrawForm({
 }) {
   const {
     selectedToken,
-    feePayerAccount,
     selectedAccount,
     buildWithdrawToTx,
     loadSelectedDecryptionKeyState,
-    addTxHistoryItem,
-    reloadAptBalance,
+    reloadPrimaryTokenBalance,
     perTokenStatuses,
     ensureConfidentialBalanceReadyBeforeOp,
   } = useConfidentialCoinContext();
+  const gasStationArgs = useGasStationArgs();
 
   const currentTokenStatus = perTokenStatuses[token.address];
 
@@ -101,7 +100,6 @@ export default function WithdrawForm({
             formData.recipient,
             {
               isSyncFirst: true,
-              isWithFeePayer: true,
             },
           ),
         );
@@ -123,8 +121,8 @@ export default function WithdrawForm({
           return;
         }
 
-        const [txReceipt, withdrawError] = await tryCatch(
-          sendAndWaitTx(withdrawTx, selectedAccount, feePayerAccount),
+        const [_txReceipt, withdrawError] = await tryCatch(
+          sendAndWaitTx(withdrawTx, selectedAccount, gasStationArgs),
         );
         if (withdrawError) {
           ErrorHandler.process(withdrawError);
@@ -132,15 +130,8 @@ export default function WithdrawForm({
           return;
         }
 
-        addTxHistoryItem({
-          txHash: txReceipt.hash,
-          txType: 'withdraw',
-          createdAt: time().timestamp,
-          message: `Publicly-withdrew ${formData.amount} ${token.symbol} to ${abbrCenter(formData.recipient)}`,
-        });
-
         const [, reloadError] = await tryCatch(
-          Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
+          Promise.all([loadSelectedDecryptionKeyState(), reloadPrimaryTokenBalance()]),
         );
         if (reloadError) {
           ErrorHandler.process(reloadError);
@@ -153,20 +144,19 @@ export default function WithdrawForm({
         enableForm();
       })(),
     [
-      addTxHistoryItem,
       buildWithdrawToTx,
       clearForm,
       currentTokenStatus,
       disableForm,
       enableForm,
       ensureConfidentialBalanceReadyBeforeOp,
-      feePayerAccount,
       handleSubmit,
       loadSelectedDecryptionKeyState,
       onSubmit,
-      reloadAptBalance,
+      reloadPrimaryTokenBalance,
       selectedAccount,
       token,
+      gasStationArgs,
     ],
   );
 

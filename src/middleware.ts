@@ -1,7 +1,7 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo';
 import { NextResponse } from 'next/server';
 
-import { config as appConfig } from './config';
+import { appConfig } from './config';
 
 async function shouldShowMaintenancePage() {
   if (appConfig.FORCE_MAINTENANCE_PAGE) {

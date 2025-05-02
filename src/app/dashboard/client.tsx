@@ -1,41 +1,22 @@
 'use client';
 
-import { time } from '@distributedlab/tools';
-import {
-  ArrowDownIcon,
-  ArrowRightIcon,
-  ArrowUpIcon,
-  EditIcon,
-  ExternalLinkIcon,
-  FolderOpenIcon,
-  FolderSyncIcon,
-  HandCoinsIcon,
-  IdCardIcon,
-  KeyIcon,
-  LockIcon,
-  UnlockIcon,
-} from 'lucide-react';
-import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   ButtonHTMLAttributes,
   ComponentProps,
-  HTMLAttributes,
   useCallback,
   useEffect,
   useState,
 } from 'react';
 import { useMeasure } from 'react-use';
 
-import { getTxExplorerUrl } from '@/api/modules/aptos';
 import AddTokenForm from '@/app/dashboard/components/AddTokenForm';
 import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard';
 import DashboardHeader from '@/app/dashboard/components/DashboardHeader';
 import TokenInfo from '@/app/dashboard/components/TokenInfo';
 import WithdrawForm from '@/app/dashboard/components/WithdrawForm';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, formatDateDMYT, isMobile } from '@/helpers';
-import { TxHistoryItem } from '@/store/wallet';
+import { ErrorHandler, isMobile } from '@/helpers';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
 import { UiSeparator } from '@/ui/UiSeparator';
@@ -76,12 +57,10 @@ export default function DashboardClient() {
     loadSelectedDecryptionKeyState,
     decryptionKeyStatusLoadingState,
 
-    reloadAptBalance,
+    reloadPrimaryTokenBalance,
 
     perTokenStatuses,
     tokens,
-
-    txHistory,
   } = useConfidentialCoinContext();
 
   const isLoading = [
@@ -99,13 +78,16 @@ export default function DashboardClient() {
     setIsSubmitting(true);
     setIsRefreshing(true);
     try {
-      await Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]);
+      await Promise.all([
+        loadSelectedDecryptionKeyState(),
+        reloadPrimaryTokenBalance(),
+      ]);
     } catch (error) {
       ErrorHandler.processWithoutFeedback(error);
     }
     setIsRefreshing(false);
     setIsSubmitting(false);
-  }, [loadSelectedDecryptionKeyState, reloadAptBalance]);
+  }, [loadSelectedDecryptionKeyState, reloadPrimaryTokenBalance]);
 
   // const tryUnfreeze = useCallback(async () => {
   //   setIsSubmitting(true)
@@ -266,7 +248,7 @@ export default function DashboardClient() {
           <div className='flex w-full flex-row items-center justify-center gap-8 self-center px-4 md:max-w-[50%]'>
             <CircleButton
               className='flex-1'
-              caption={'Deposit'}
+              caption={'Faucet'}
               iconProps={{
                 name: 'CircleDollarSignIcon',
               }}
@@ -333,6 +315,8 @@ export default function DashboardClient() {
           </div>
         )} */}
 
+          {/*
+          TODO: Do txn history properly with indexing.
           <div
             className={cn(
               'mt-12 flex w-full flex-1 flex-col p-4',
@@ -355,6 +339,7 @@ export default function DashboardClient() {
               </div>
             )}
           </div>
+        */}
         </div>
 
         <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
@@ -436,6 +421,7 @@ export default function DashboardClient() {
   );
 }
 
+/*
 function TxItem({
   createdAt,
   txType,
@@ -445,7 +431,7 @@ function TxItem({
 }: HTMLAttributes<HTMLDivElement> & TxHistoryItem) {
   const title = {
     transfer: 'Transfer',
-    ['transfer-native']: 'Send APT',
+    ['transfer-native']: `Send ${selectedToken.symbol}`,
     deposit: 'Deposit',
     withdraw: 'Withdraw',
     rollover: 'Rollover',
@@ -536,7 +522,7 @@ function TxEmptyComponent({ className, ...rest }: HTMLAttributes<HTMLDivElement>
       </div>
     </div>
   );
-}
+}*/
 
 function CircleButton({
   caption,

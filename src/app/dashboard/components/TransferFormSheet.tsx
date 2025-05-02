@@ -2,7 +2,6 @@
 'use client';
 
 import { AccountAddress } from '@aptos-labs/ts-sdk';
-import { time } from '@distributedlab/tools';
 import { formatUnits, isHexString, parseUnits } from 'ethers';
 import {
   ComponentProps,
@@ -18,8 +17,9 @@ import { Control, useFieldArray } from 'react-hook-form';
 
 import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { abbrCenter, ErrorHandler, isMobile, tryCatch } from '@/helpers';
+import { ErrorHandler, isMobile, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
+import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
@@ -62,14 +62,13 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
     const {
       selectedAccount,
-      feePayerAccount,
       buildTransferTx,
       loadSelectedDecryptionKeyState,
-      addTxHistoryItem,
-      reloadAptBalance,
+      reloadPrimaryTokenBalance,
       perTokenStatuses,
       ensureConfidentialBalanceReadyBeforeOp,
     } = useConfidentialCoinContext();
+    const gasStationArgs = useGasStationArgs();
 
     const currTokenStatus = perTokenStatuses[token.address];
 
@@ -166,7 +165,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               {
                 isSyncFirst: true,
                 auditorsEncryptionKeyHexList,
-                isWithFeePayer: true,
               },
             ),
           );
@@ -187,21 +185,13 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             return;
           }
 
-          const txReceipt = await sendAndWaitTx(
-            transferTx,
-            selectedAccount,
-            feePayerAccount,
-          );
-
-          addTxHistoryItem({
-            txHash: txReceipt.hash,
-            txType: 'transfer',
-            createdAt: time().timestamp,
-            message: `Confidentially-sent ${formData.amount} ${token.symbol} to ${abbrCenter(formData.receiverAddressHex)}`,
-          });
+          await sendAndWaitTx(transferTx, selectedAccount, gasStationArgs);
 
           const [, reloadError] = await tryCatch(
-            Promise.all([loadSelectedDecryptionKeyState(), reloadAptBalance()]),
+            Promise.all([
+              loadSelectedDecryptionKeyState(),
+              reloadPrimaryTokenBalance(),
+            ]),
           );
           if (reloadError) {
             ErrorHandler.process(reloadError);
@@ -214,20 +204,19 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           enableForm();
         })(),
       [
-        addTxHistoryItem,
         buildTransferTx,
         clearForm,
         currTokenStatus,
         disableForm,
         enableForm,
         ensureConfidentialBalanceReadyBeforeOp,
-        feePayerAccount,
         handleSubmit,
         loadSelectedDecryptionKeyState,
         onSubmit,
-        reloadAptBalance,
+        reloadPrimaryTokenBalance,
         selectedAccount,
         token,
+        gasStationArgs,
       ],
     );
 

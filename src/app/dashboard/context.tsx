@@ -3,7 +3,6 @@
 import {
   ConfidentialAmount,
   TwistedEd25519PrivateKey,
-  TwistedElGamalCiphertext,
 } from '@aptos-labs/confidential-assets';
 import {
   Account,
@@ -12,15 +11,12 @@ import {
   KeylessAccount,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
-import { config } from '@config';
-import { time } from '@distributedlab/tools';
-import { FixedNumber, formatUnits, getBytes, parseUnits } from 'ethers';
+import { appConfig } from '@config';
+import { FixedNumber, parseUnits } from 'ethers';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
-import get from 'lodash/get';
 import { PropsWithChildren } from 'react';
 import { useCallback } from 'react';
 import { createContext, useContext, useMemo } from 'react';
-import { useHarmonicIntervalFn } from 'react-use';
 
 import {
   buildDepositConfidentialBalanceCoinTx,
@@ -30,7 +26,6 @@ import {
   buildWithdrawConfidentialBalance,
   depositConfidentialBalance,
   depositConfidentialBalanceCoin,
-  getAptBalance,
   getCoinByFaAddress,
   getConfidentialBalances,
   getFABalance,
@@ -38,11 +33,13 @@ import {
   getIsAccountRegisteredWithToken,
   getIsBalanceFrozen,
   getIsBalanceNormalized,
-  mintTokens,
+  getPrimaryTokenBalance,
+  mintPrimaryToken,
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
   safelyRolloverConfidentialBalance,
+  sendAndWaitBatchTxs,
   sendAndWaitTx,
   transferConfidentialAsset,
   withdrawConfidentialBalance,
@@ -51,7 +48,8 @@ import { aptos } from '@/api/modules/aptos/client';
 import { ErrorHandler, tryCatch } from '@/helpers';
 import { useLoading } from '@/hooks';
 import { authStore } from '@/store/auth';
-import { type TokenBaseInfo, type TxHistoryItem, walletStore } from '@/store/wallet';
+import { useGasStationArgs } from '@/store/gas-station';
+import { type TokenBaseInfo, walletStore } from '@/store/wallet';
 
 type AccountDecryptionKeyStatus = {
   isFrozen: boolean;
@@ -98,8 +96,6 @@ type KeylessAccountPublic = {
 };
 
 type ConfidentialCoinContextType = {
-  feePayerAccount: Account;
-
   accountsList: (Account | KeylessAccountPublic)[];
 
   selectedAccount: Account | KeylessAccount;
@@ -114,8 +110,11 @@ type ConfidentialCoinContextType = {
       | { accountAddressHex?: never; pubKeylessAcc: KeylessAccountPublic },
   ) => Promise<void>;
 
-  aptBalance: number;
-  reloadAptBalance: () => Promise<void>;
+  // aptBalance: number;
+  // reloadAptBalance: () => Promise<void>;
+
+  primaryTokenBalance: number;
+  reloadPrimaryTokenBalance: () => Promise<void>;
 
   tokens: TokenBaseInfo[];
   tokensLoadingState: LoadingState;
@@ -125,8 +124,6 @@ type ConfidentialCoinContextType = {
 
   addToken: (token: TokenBaseInfo) => void;
   removeToken: (address: string) => void;
-  txHistory: TxHistoryItem[];
-  addTxHistoryItem: (details: TxHistoryItem) => void;
   setSelectedTokenAddress: (tokenAddress: string) => void;
 
   selectedAccountDecryptionKey: TwistedEd25519PrivateKey;
@@ -143,7 +140,7 @@ type ConfidentialCoinContextType = {
     amount: string,
     opts?: {
       isSyncFirst?: boolean;
-      isWithFeePayer?: boolean;
+
       auditorsEncryptionKeyHexList?: string[];
     },
   ) => Promise<SimpleTransaction>;
@@ -152,7 +149,7 @@ type ConfidentialCoinContextType = {
     amount: string,
     opts?: {
       isSyncFirst?: boolean;
-      isWithFeePayer?: boolean;
+
       auditorsEncryptionKeyHexList?: string[];
     },
   ) => Promise<CommittedTransactionResponse>;
@@ -161,7 +158,6 @@ type ConfidentialCoinContextType = {
     receiver: string,
     opts?: {
       isSyncFirst?: boolean;
-      isWithFeePayer?: boolean;
     },
   ) => Promise<SimpleTransaction>;
   withdrawTo: (
@@ -169,7 +165,6 @@ type ConfidentialCoinContextType = {
     receiver: string,
     opts?: {
       isSyncFirst?: boolean;
-      isWithFeePayer?: boolean;
     },
   ) => Promise<CommittedTransactionResponse>;
   depositTo: (amount: bigint, to: string) => Promise<CommittedTransactionResponse>;
@@ -189,7 +184,7 @@ type ConfidentialCoinContextType = {
 };
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
-  feePayerAccount: {} as Account,
+  // feePayerAccount: {} as Account,
   accountsList: [],
   selectedAccount: {} as Account,
   accountsLoadingState: 'idle',
@@ -198,15 +193,16 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   removeAccount: () => {},
   setSelectedAccount: async () => {},
 
-  aptBalance: 0,
-  reloadAptBalance: async () => {},
+  // aptBalance: 0,
+  // reloadAptBalance: async () => {},
+
+  primaryTokenBalance: 0,
+  reloadPrimaryTokenBalance: async () => {},
 
   tokens: [],
   tokensLoadingState: 'idle',
   perTokenStatuses: {},
   selectedToken: {} as TokenBaseInfo,
-  txHistory: [],
-  addTxHistoryItem: () => {},
 
   addToken: () => {},
   removeToken: () => {},
@@ -255,7 +251,6 @@ const useSelectedAccount = () => {
 };
 
 const useAccounts = () => {
-  const feePayerAccount = authStore.useFeePayerAccount();
   const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts);
   const walletAccounts = walletStore.useWalletAccounts();
   const switchActiveKeylessAccount = authStore.useAuthStore(
@@ -311,6 +306,7 @@ const useAccounts = () => {
     { loadArgs: [] },
   );
 
+  /*
   const {
     data: aptBalance,
     isLoading: isBalanceLoading,
@@ -320,6 +316,20 @@ const useAccounts = () => {
     0,
     () => {
       return getAptBalance(selectedAccount);
+    },
+    { loadArgs: [selectedAccount] },
+  );
+  */
+
+  const {
+    data: primaryTokenBalance,
+    isLoading: isBalanceLoading,
+    isLoadingError: isBalanceLoadingError,
+    update,
+  } = useLoading(
+    0,
+    () => {
+      return getPrimaryTokenBalance(selectedAccount);
     },
     { loadArgs: [selectedAccount] },
   );
@@ -419,23 +429,23 @@ const useAccounts = () => {
   return {
     accountsList: accountsList,
 
-    feePayerAccount,
     selectedAccount,
 
     setSelectedAccount: setSelectedAccount,
     addNewAccount,
     removeAccount,
 
-    aptBalance,
+    primaryTokenBalance,
 
     accountsLoadingState,
-    reloadAptBalance: update,
+    reloadPrimaryTokenBalance: update,
   };
 };
 
 const useSelectedAccountDecryptionKey = () => {
   const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts);
   const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
+  const gasStationArgs = useGasStationArgs();
 
   const selectedAccount = useSelectedAccount();
 
@@ -454,13 +464,13 @@ const useSelectedAccountDecryptionKey = () => {
     return registerConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.publicKey().toString(),
+      gasStationArgs,
       tokenAddress,
     );
   };
 
   return {
     selectedAccountDecryptionKey,
-
     registerAccountEncryptionKey,
   };
 };
@@ -469,15 +479,11 @@ const useTokens = (accountAddressHex: string | undefined) => {
   const accountAddrHexToTokenAddrMap = walletStore.useWalletStore(
     state => state.accountAddrHexToTokenAddrMap,
   );
-  const accountAddrHexPerTokenTxHistory = walletStore.useWalletStore(
-    state => state.accountAddrHexPerTokenTxHistory,
-  );
   const setSelectedTokenAddress = walletStore.useWalletStore(
     state => state.setSelectedTokenAddress,
   );
   const _addToken = walletStore.useWalletStore(state => state.addToken);
   const _removeToken = walletStore.useWalletStore(state => state.removeToken);
-  const _addTxHistoryItem = walletStore.useWalletStore(state => state.addTxHistoryItem);
 
   const selectedTokenAddress = walletStore.useSelectedTokenAddress();
 
@@ -495,13 +501,13 @@ const useTokens = (accountAddressHex: string | undefined) => {
     [],
     async () => {
       const filteredSavedTokens = savedTokensPerAccAddr.filter(el => {
-        return !config.DEFAULT_TOKEN_ADRESSES.map(i => i.toLowerCase()).includes(
+        return !appConfig.PRIMARY_TOKEN_ADDRESS.toLowerCase().includes(
           el.toLowerCase(),
         );
       });
 
       return Promise.all(
-        [...config.DEFAULT_TOKEN_ADRESSES, ...filteredSavedTokens].map(async addr => {
+        [appConfig.PRIMARY_TOKEN_ADDRESS, ...filteredSavedTokens].map(async addr => {
           const [metadatas, error] = await tryCatch(getFungibleAssetMetadata(addr));
           if (error || !metadatas?.length) {
             return {
@@ -540,7 +546,7 @@ const useTokens = (accountAddressHex: string | undefined) => {
 
   const selectedToken = useMemo<TokenBaseInfo>(() => {
     const defaultToken = {
-      address: config.DEFAULT_TOKEN_ADRESSES[0],
+      address: appConfig.PRIMARY_TOKEN_ADDRESS,
       name: '',
       symbol: '',
       decimals: 0,
@@ -551,17 +557,6 @@ const useTokens = (accountAddressHex: string | undefined) => {
 
     return tokens.find(token => token.address === selectedTokenAddress) || defaultToken;
   }, [accountAddressHex, tokens, selectedTokenAddress]);
-
-  const txHistory = useMemo(() => {
-    if (!accountAddressHex) return [];
-
-    if (!selectedToken) return [];
-
-    const mappedTxHistory =
-      accountAddrHexPerTokenTxHistory[accountAddressHex]?.[selectedToken.address];
-
-    return mappedTxHistory ?? [];
-  }, [accountAddressHex, selectedToken, accountAddrHexPerTokenTxHistory]);
 
   const addToken = useCallback(
     (token: TokenBaseInfo) => {
@@ -581,30 +576,17 @@ const useTokens = (accountAddressHex: string | undefined) => {
     [accountAddressHex, _removeToken],
   );
 
-  const addTxHistoryItem = useCallback(
-    (details: TxHistoryItem) => {
-      if (!accountAddressHex) throw new TypeError('accountAddressHex is not set');
-
-      _addTxHistoryItem(accountAddressHex, selectedToken.address, details);
-    },
-    [accountAddressHex, selectedToken.address, _addTxHistoryItem],
-  );
-
   return {
     tokens,
     tokensLoadingState,
     selectedToken,
-    txHistory,
     setSelectedTokenAddress: setSelectedTokenAddress,
     addToken,
     removeToken,
-    addTxHistoryItem: addTxHistoryItem,
   };
 };
 
 const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined) => {
-  const feePayerAccount = authStore.useFeePayerAccount();
-
   const { selectedAccountDecryptionKey } = useSelectedAccountDecryptionKey();
 
   const selectedTokenAddress = walletStore.useSelectedTokenAddress();
@@ -615,6 +597,8 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     state => state.accountAddrHexToTokenAddrMap,
   );
 
+  const gasStationArgs = useGasStationArgs();
+
   const currentTokensList = useMemo(() => {
     if (!selectedAccount.accountAddress) return [];
 
@@ -622,10 +606,10 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
       accountAddrHexToTokenAddrMap?.[selectedAccount.accountAddress.toString()];
 
     if (!savedTokensPerDK?.length) {
-      return config.DEFAULT_TOKEN_ADRESSES;
+      return [appConfig.PRIMARY_TOKEN_ADDRESS];
     }
 
-    return [...config.DEFAULT_TOKEN_ADRESSES, ...savedTokensPerDK];
+    return [appConfig.PRIMARY_TOKEN_ADDRESS, ...savedTokensPerDK];
   }, [selectedAccount.accountAddress, accountAddrHexToTokenAddrMap]);
 
   const {
@@ -636,7 +620,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   } = useLoading(
     [
       {
-        tokenAddress: config.DEFAULT_TOKEN_ADRESSES[0],
+        tokenAddress: appConfig.PRIMARY_TOKEN_ADDRESS,
         ...AccountDecryptionKeyStatusRawDefault,
       },
     ],
@@ -644,7 +628,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
       if (!selectedAccount.accountAddress || !currentTokensList.length) {
         return [
           {
-            tokenAddress: config.DEFAULT_TOKEN_ADRESSES[0],
+            tokenAddress: appConfig.PRIMARY_TOKEN_ADDRESS,
             ...AccountDecryptionKeyStatusRawDefault,
           },
         ];
@@ -798,7 +782,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     if (!perTokenStatusesRaw) return AccountDecryptionKeyStatusRawDefault;
 
     if (!tokenAddress) {
-      return perTokenStatusesRaw[config.DEFAULT_TOKEN_ADRESSES[0]];
+      return perTokenStatusesRaw[appConfig.PRIMARY_TOKEN_ADDRESS];
     }
 
     return perTokenStatusesRaw[tokenAddress];
@@ -807,7 +791,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   const selectedAccountDecryptionKeyStatus = useMemo(() => {
     if (!perTokenStatuses) return AccountDecryptionKeyStatusDefault;
 
-    if (!tokenAddress) return perTokenStatuses[config.DEFAULT_TOKEN_ADRESSES[0]];
+    if (!tokenAddress) return perTokenStatuses[appConfig.PRIMARY_TOKEN_ADDRESS];
 
     return perTokenStatuses[tokenAddress];
   }, [perTokenStatuses, tokenAddress]);
@@ -845,9 +829,10 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
       selectedAccountDecryptionKey.toString(),
       actualBalance.amountEncrypted,
       actualBalance.amount,
+      gasStationArgs,
       tokenAddress,
     );
-  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress]);
+  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress, gasStationArgs]);
 
   // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -859,45 +844,27 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     // mb: rotate keys with unfreeze
   }, [selectedAccountDecryptionKey]);
 
-  const buildRolloverAccountTx = useCallback(
-    async (isWithFeePayer = false) => {
-      if (!selectedAccountDecryptionKey)
-        throw new TypeError('Decryption key is not set');
+  const buildRolloverAccountTx = useCallback(async () => {
+    if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
-      return buildSafelyRolloverConfidentialBalanceTx(
-        selectedAccount,
-        selectedAccountDecryptionKey.toString(),
-        tokenAddress,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
-      );
-    },
-    [
-      feePayerAccount.accountAddress,
+    return buildSafelyRolloverConfidentialBalanceTx(
       selectedAccount,
-      selectedAccountDecryptionKey,
+      selectedAccountDecryptionKey.toString(),
+      gasStationArgs,
       tokenAddress,
-    ],
-  );
+    );
+  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress, gasStationArgs]);
 
-  const rolloverAccount = useCallback(
-    async (isWithFeePayer = false) => {
-      if (!selectedAccountDecryptionKey)
-        throw new TypeError('Decryption key is not set');
+  const rolloverAccount = useCallback(async () => {
+    if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
-      return safelyRolloverConfidentialBalance(
-        selectedAccount,
-        selectedAccountDecryptionKey.toString(),
-        tokenAddress,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
-      );
-    },
-    [
-      selectedAccountDecryptionKey,
+    return safelyRolloverConfidentialBalance(
       selectedAccount,
+      selectedAccountDecryptionKey.toString(),
+      gasStationArgs,
       tokenAddress,
-      feePayerAccount.accountAddress,
-    ],
-  );
+    );
+  }, [selectedAccountDecryptionKey, selectedAccount, tokenAddress, gasStationArgs]);
 
   return {
     perTokenStatusesRaw,
@@ -919,16 +886,17 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
 };
 
 export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren) => {
+  const gasStationArgs = useGasStationArgs();
+
   const {
-    feePayerAccount,
     accountsList,
     selectedAccount,
     setSelectedAccount,
     addNewAccount,
     removeAccount,
-    aptBalance,
+    primaryTokenBalance,
+    reloadPrimaryTokenBalance,
     accountsLoadingState,
-    reloadAptBalance,
   } = useAccounts();
 
   const { selectedAccountDecryptionKey, registerAccountEncryptionKey } =
@@ -938,10 +906,8 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     tokens,
     tokensLoadingState,
     selectedToken,
-    txHistory,
     addToken,
     removeToken,
-    addTxHistoryItem,
     setSelectedTokenAddress,
   } = useTokens(selectedAccount?.accountAddress.toString());
 
@@ -963,7 +929,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       amount: string,
       opts?: {
         auditorsEncryptionKeyHexList?: string[];
-        isWithFeePayer?: boolean;
+
         isSyncFirst?: boolean;
       },
     ) => {
@@ -991,16 +957,16 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
+        gasStationArgs,
         selectedToken.address,
-        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       );
     },
     [
-      feePayerAccount.accountAddress,
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
       selectedToken.address,
+      gasStationArgs,
     ],
   );
 
@@ -1010,7 +976,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       amount: string,
       opts?: {
         auditorsEncryptionKeyHexList?: string[];
-        isWithFeePayer?: boolean;
         isSyncFirst?: boolean;
       },
     ) => {
@@ -1038,16 +1003,16 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
+        gasStationArgs,
         selectedToken.address,
-        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       );
     },
     [
-      feePayerAccount.accountAddress,
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
       selectedToken.address,
+      gasStationArgs,
     ],
   );
 
@@ -1057,7 +1022,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       receiver: string,
       opts?: {
         isSyncFirst?: boolean;
-        isWithFeePayer?: boolean;
       },
     ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
@@ -1083,16 +1047,16 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
         amountEncrypted,
+        gasStationArgs,
         selectedToken.address,
-        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       );
     },
     [
-      feePayerAccount.accountAddress,
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
       selectedToken.address,
+      gasStationArgs,
     ],
   );
 
@@ -1102,7 +1066,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       receiver: string,
       opts?: {
         isSyncFirst?: boolean;
-        isWithFeePayer?: boolean;
       },
     ) => {
       if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
@@ -1128,8 +1091,8 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
         amountEncrypted,
+        gasStationArgs,
         selectedToken.address,
-        opts?.isWithFeePayer ? feePayerAccount.accountAddress.toString() : '',
       );
     },
     [
@@ -1137,75 +1100,79 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       selectedAccount,
       selectedAccountDecryptionKey,
       selectedToken.address,
-      feePayerAccount.accountAddress,
+      gasStationArgs,
     ],
   );
 
   const buildDepositToTx = useCallback(
-    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+    async (amount: bigint, to: string) => {
       if (!selectedToken) throw new TypeError('Token is not set');
 
       return buildDepositConfidentialBalanceTx(
         selectedAccount,
         amount,
         to,
+        gasStationArgs,
         selectedToken.address,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       );
     },
-    [feePayerAccount.accountAddress, selectedAccount, selectedToken],
+    [selectedAccount, selectedToken, gasStationArgs],
   );
 
   const depositTo = useCallback(
-    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+    async (amount: bigint, to: string) => {
       if (!selectedToken) throw new TypeError('Token is not set');
 
       return depositConfidentialBalance(
         selectedAccount,
         amount,
         to,
+        gasStationArgs,
         selectedToken.address,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       );
     },
-    [feePayerAccount.accountAddress, selectedAccount, selectedToken],
+    [selectedAccount, selectedToken, gasStationArgs],
   );
 
   const buildDepositCoinToTx = useCallback(
-    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+    async (amount: bigint, to: string) => {
       const coinType = await getCoinByFaAddress(selectedToken.address);
 
       return buildDepositConfidentialBalanceCoinTx(
         selectedAccount,
         amount,
         parseCoinTypeFromCoinStruct(coinType),
+        gasStationArgs,
         to,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       );
     },
-    [feePayerAccount.accountAddress, selectedAccount, selectedToken.address],
+    [selectedAccount, selectedToken.address, gasStationArgs],
   );
 
   const depositCoinTo = useCallback(
-    async (amount: bigint, to: string, isWithFeePayer?: boolean) => {
+    async (amount: bigint, to: string) => {
       const coinType = await getCoinByFaAddress(selectedToken.address);
 
       return depositConfidentialBalanceCoin(
         selectedAccount,
         amount,
         parseCoinTypeFromCoinStruct(coinType),
+        gasStationArgs,
         to,
-        isWithFeePayer ? feePayerAccount.accountAddress.toString() : undefined,
       );
     },
-    [feePayerAccount.accountAddress, selectedAccount, selectedToken.address],
+    [selectedAccount, selectedToken.address, gasStationArgs],
   );
 
   const testMintTokens = useCallback(
     async (mintAmount = '10'): Promise<CommittedTransactionResponse[]> => {
       const amountToDeposit = parseUnits(mintAmount, selectedToken.decimals);
 
-      const mintTxReceipt = await mintTokens(selectedAccount, amountToDeposit);
+      const mintTxReceipt = await mintPrimaryToken(
+        selectedAccount,
+        amountToDeposit,
+        gasStationArgs,
+      );
       const [depositTxReceipt, depositError] = await tryCatch(
         depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
       );
@@ -1216,7 +1183,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
       return [mintTxReceipt, depositTxReceipt];
     },
-    [depositTo, selectedAccount, selectedToken.decimals],
+    [depositTo, selectedAccount, selectedToken.decimals, gasStationArgs],
   );
 
   /**
@@ -1232,7 +1199,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     ConfidentialCoinContextType['ensureConfidentialBalanceReadyBeforeOp']
   >(
     async args => {
-      const txToExecute: SimpleTransaction[] = [];
+      const txnsToExecute: SimpleTransaction[] = [];
       let depositTransactionToExecute: SimpleTransaction | undefined = undefined;
       let rolloverTransactionsToExecute: InputGenerateTransactionPayloadData[] = [];
 
@@ -1271,94 +1238,50 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
             ? buildDepositCoinToTx(
                 amountToDeposit,
                 selectedAccount.accountAddress.toString(),
-                true,
               )
             : buildDepositToTx(
                 amountToDeposit,
                 selectedAccount.accountAddress.toString(),
-                true,
               ),
         );
         if (buildDepositTxError) {
           return buildDepositTxError;
         }
         depositTransactionToExecute = depositTx;
-        txToExecute.push(depositTx);
-
-        // addTxHistoryItem({
-        //   txHash: depositTxReceipt.hash,
-        //   txType: 'deposit',
-        //   createdAt: time().timestamp,
-        // })
+        txnsToExecute.push(depositTx);
       }
 
       if (actualAmountBN < formAmountBN) {
         const [rolloverTxx, buildRolloverTxError] = await tryCatch(
-          buildRolloverAccountTx(true),
+          buildRolloverAccountTx(),
         );
         if (buildRolloverTxError) {
           return buildRolloverTxError;
         }
         rolloverTransactionsToExecute = rolloverTxx;
-        txToExecute.push(
+        txnsToExecute.push(
           ...(await Promise.all(
             rolloverTxx.map(async el => {
               return aptos.transaction.build.simple({
                 sender: selectedAccount.accountAddress,
                 data: el,
+                withFeePayer: gasStationArgs.withGasStation,
               });
             }),
           )),
         );
-
-        // rolloverTxs.forEach(el => {
-        //   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        //   // @ts-ignore
-        //   if (el.payload.function.includes('rollover')) {
-        //     addTxHistoryItem({
-        //       txHash: el.hash,
-        //       txType: 'rollover',
-        //       createdAt: time().timestamp,
-        //     })
-
-        //     return
-        //   }
-
-        //   addTxHistoryItem({
-        //     txHash: el.hash,
-        //     txType: 'normalize',
-        //     createdAt: time().timestamp,
-        //   })
-        // })
       }
 
-      // const estimatedGas = (
-      //   await Promise.all(
-      //     [...txToExecute, args.opTx].map(async el => {
-      //       const [simRes] = await aptos.transaction.simulate.simple({
-      //         signerPublicKey: selectedAccount.publicKey,
-      //         transaction: el,
-      //       })
-
-      //       const estGasUsed = simRes.gas_used
-      //       const estGasPrice = simRes.gas_unit_price
-
-      //       return BigInt(estGasUsed) * BigInt(estGasPrice)
-      //     }),
-      //   )
-      // ).reduce((acc, el) => acc + el, BigInt(0))
-
-      // const [, mintError] = await tryCatch(
-      //   mintAptCoin(selectedAccount, estimatedGas * 2n),
-      // )
-      // if (mintError) {
-      //   args.onError(mintError)
-      //   return
-      // }
+      const [, error] = await tryCatch(
+        sendAndWaitBatchTxs(txnsToExecute, selectedAccount, gasStationArgs),
+      );
+      if (error) {
+        return error;
+      }
 
       if (depositTransactionToExecute) {
         const [, error] = await tryCatch(
-          sendAndWaitTx(depositTransactionToExecute, selectedAccount, feePayerAccount),
+          sendAndWaitTx(depositTransactionToExecute, selectedAccount, gasStationArgs),
         );
         if (error) {
           return error;
@@ -1370,18 +1293,11 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
           const simpleRolloverTx = await aptos.transaction.build.simple({
             sender: selectedAccount.accountAddress,
             data: rolloverTx,
-            withFeePayer: true,
+            withFeePayer: gasStationArgs.withGasStation,
           });
 
-          const senderAuthenticator =
-            selectedAccount.signTransactionWithAuthenticator(simpleRolloverTx);
-
           const [, error] = await tryCatch(
-            aptos.signAndSubmitAsFeePayer({
-              senderAuthenticator,
-              feePayer: feePayerAccount,
-              transaction: simpleRolloverTx,
-            }),
+            sendAndWaitTx(simpleRolloverTx, selectedAccount, gasStationArgs),
           );
           if (error) {
             return error;
@@ -1393,15 +1309,17 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       buildDepositCoinToTx,
       buildDepositToTx,
       buildRolloverAccountTx,
-      feePayerAccount,
       perTokenStatuses,
       selectedAccount,
+      gasStationArgs,
     ],
   );
 
+  // TODO: Replace this with Aptos Build No Code Indexing. Also just use react query
+  // with a hook.
+  /*
   useHarmonicIntervalFn(async () => {
     const eventType = `${config.CONFIDENTIAL_ASSET_MODULE_ADDR}::confidential_asset::Transferred`;
-
     const allEvents = await aptos.getEvents({
       options: {
         where: {
@@ -1414,66 +1332,12 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         },
       },
     });
-
-    const txHistoryItems = await Promise.all(
-      allEvents.map(async el => {
-        const tx = await aptos.getTransactionByVersion({
-          ledgerVersion: el.transaction_version,
-        });
-
-        const serializedEncryptedAmountBytes = getBytes(
-          get(tx, 'payload.arguments', [])[3],
-        );
-
-        const chunkedBytes: Uint8Array[] = [];
-        const chunkSize = Math.ceil(
-          serializedEncryptedAmountBytes.length / (ConfidentialAmount.CHUNKS_COUNT / 2),
-        );
-
-        for (let i = 0; i < serializedEncryptedAmountBytes.length; i += chunkSize) {
-          chunkedBytes.push(serializedEncryptedAmountBytes.slice(i, i + chunkSize));
-        }
-
-        // Create encrypted amount from the serialized bytes
-        const encrypted = chunkedBytes.map(el => {
-          const C = el.slice(0, el.length / 2);
-          const D = el.slice(el.length / 2);
-          return new TwistedElGamalCiphertext(C, D);
-        });
-
-        const amount = await ConfidentialAmount.fromEncrypted(
-          encrypted,
-          selectedAccountDecryptionKey,
-        );
-
-        const txHash = tx.hash;
-
-        const createdAt = time(Number(get(tx, 'timestamp', 0)) / 1000 / 1000);
-
-        return {
-          txHash: txHash,
-          createdAt: createdAt.timestamp,
-          message: `Received ${formatUnits(amount.amount, selectedToken.decimals)} ${selectedToken.symbol}`,
-          txType: 'receive' as TxHistoryItem['txType'],
-        };
-      }),
-    );
-
-    const txToAdd = txHistoryItems.filter(el => {
-      return !txHistory.some(item => item.txHash === el.txHash);
-    });
-
-    if (txToAdd.length) {
-      txToAdd.forEach(el => {
-        addTxHistoryItem(el);
-      });
-    }
   }, 25_000);
+  */
 
   return (
     <confidentialCoinContext.Provider
       value={{
-        feePayerAccount,
         accountsList,
 
         selectedAccount,
@@ -1483,17 +1347,15 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         removeAccount,
         accountsLoadingState,
 
-        aptBalance,
-        reloadAptBalance,
+        primaryTokenBalance,
+        reloadPrimaryTokenBalance,
 
         tokens,
         tokensLoadingState,
         perTokenStatuses,
         selectedToken,
-        txHistory,
         addToken,
         removeToken,
-        addTxHistoryItem,
         setSelectedTokenAddress,
 
         selectedAccountDecryptionKey,

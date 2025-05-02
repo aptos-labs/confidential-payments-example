@@ -11,8 +11,11 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@aptos-labs/confidential-assets':
-        specifier: ^0.1.0-rc.0
-        version: 0.1.0-rc.0(axios@1.8.2)(got@14.4.6)
+        specifier: ^0.2.2
+        version: 0.2.2(axios@1.8.2)(got@14.4.6)
+      '@aptos-labs/gas-station-client':
+        specifier: ^1.0.0
+        version: 1.0.0(axios@1.8.2)(got@14.4.6)
       '@aptos-labs/ts-sdk':
         specifier: ^1.38.0
         version: 1.38.0(axios@1.8.2)(got@14.4.6)
@@ -425,10 +428,16 @@ packages:
         integrity: sha512-xfgRVc4WX4N7hjSHP91a3o686gC4307PGa9eDT7eWhp2VN9YgYhDIKRFRITpKT5JC7IXbuh6pGq1MqrqTjBokA==,
       }
 
-  '@aptos-labs/confidential-assets@0.1.0-rc.0':
+  '@aptos-labs/confidential-assets@0.2.2':
     resolution:
       {
-        integrity: sha512-ppKIzWrXcHpicMhLm5rRmHFWNZ2Rb3GzKIG1/b+kuOg5ys0L9hYsyYeXsT7M53bcMwirxNi+Y0jReZUFjEwVig==,
+        integrity: sha512-Knc/NUx2Zz4Kx4s5j4bBNIRy1+PR5hotTa9giP6Q8EnCFEBUZwzYFKpKCulroTyi5FZDVyOdLVUvuFpdZ45g7g==,
+      }
+
+  '@aptos-labs/gas-station-client@1.0.0':
+    resolution:
+      {
+        integrity: sha512-8iN+nYIDKLCxshlbisIYuzlffDbx/mjgakyl5W/5XOC0exR74+YI513XHQO7o3VX6ENIEhPzOPcGk21lv4MdFw==,
       }
 
   '@aptos-labs/script-composer-pack@0.0.9':
@@ -11178,12 +11187,19 @@ snapshots:
 
   '@aptos-labs/confidential-asset-wasm-bindings@0.0.2': {}
 
-  '@aptos-labs/confidential-assets@0.1.0-rc.0(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/confidential-assets@0.2.2(axios@1.8.2)(got@14.4.6)':
     dependencies:
       '@aptos-labs/confidential-asset-wasm-bindings': 0.0.2
       '@aptos-labs/ts-sdk': 1.38.0(axios@1.8.2)(got@14.4.6)
       '@noble/curves': 1.9.0
       '@noble/hashes': 1.8.0
+    transitivePeerDependencies:
+      - axios
+      - got
+
+  '@aptos-labs/gas-station-client@1.0.0(axios@1.8.2)(got@14.4.6)':
+    dependencies:
+      '@aptos-labs/ts-sdk': 1.38.0(axios@1.8.2)(got@14.4.6)
     transitivePeerDependencies:
       - axios
       - got

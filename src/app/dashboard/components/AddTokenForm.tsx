@@ -1,6 +1,5 @@
 'use client';
 
-import { time } from '@distributedlab/tools';
 import Avatar from 'boring-avatars';
 import Image from 'next/image';
 import { useCallback, useState } from 'react';
@@ -40,7 +39,6 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     selectedAccount,
     addToken,
     registerAccountEncryptionKey,
-    addTxHistoryItem,
     setSelectedTokenAddress,
   } = useConfidentialCoinContext();
 
@@ -102,14 +100,7 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
       disableForm();
       try {
         try {
-          const txReceipt = await registerAccountEncryptionKey(
-            formData.tokenAddressOrNameOrSymbol,
-          );
-          addTxHistoryItem({
-            txHash: txReceipt.hash,
-            txType: 'register',
-            createdAt: time().timestamp,
-          });
+          await registerAccountEncryptionKey(formData.tokenAddressOrNameOrSymbol);
         } catch (error) {
           /* empty */
         }
@@ -124,7 +115,6 @@ export default function AddTokenForm({ onSubmit }: { onSubmit: () => void }) {
     },
     [
       addToken,
-      addTxHistoryItem,
       clearForm,
       disableForm,
       enableForm,

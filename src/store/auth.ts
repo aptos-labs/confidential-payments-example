@@ -7,25 +7,21 @@ import {
   KeylessAccount,
   ProofFetchStatus,
 } from '@aptos-labs/ts-sdk';
-import { config } from '@config';
-import { parseUnits } from 'ethers';
+import { appConfig } from '@config';
 import { useMemo } from 'react';
 import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import {
-  accountFromPrivateKey,
   buildRegisterConfidentialBalanceTx,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
   EncryptedScopedIdToken,
   EphemeralKeyPairEncoding,
-  getAptBalance,
   getIsAccountRegisteredWithToken,
   isValidEphemeralKeyPair,
   KeylessAccountEncoding,
-  mintAptCoin,
   sendAndWaitTx,
   validateEphemeralKeyPair,
   validateIdToken,
@@ -34,6 +30,8 @@ import {
 import { aptos } from '@/api/modules/aptos/client';
 import { sleep, tryCatch } from '@/helpers';
 import { walletStore } from '@/store/wallet';
+
+import { useGasStationArgs } from './gas-station';
 
 type StoredAccount = {
   idToken: { decoded: EncryptedScopedIdToken; raw: string };
@@ -291,41 +289,8 @@ const useEphemeralKeyPair = () => {
   }, [commitEphemeralKeyPair, getEphemeralKeyPair]);
 };
 
-const useFeePayerAccount = () => {
-  const feePayerAccountHex = useAuthStore(state => state.feePayerAccountHex);
-
-  return useMemo(() => {
-    if (!feePayerAccountHex) {
-      const newAccount = Account.generate();
-
-      useAuthStore.getState().setFeePayerAccountHex(newAccount.privateKey.toString());
-
-      return newAccount;
-    }
-
-    return accountFromPrivateKey(feePayerAccountHex);
-  }, [feePayerAccountHex]);
-};
-
-const useEnsureFeePayerCanAfford = () => {
-  const feePayerAccount = useFeePayerAccount();
-
-  return async (amount: bigint) => {
-    let aptBalance = await getAptBalance(feePayerAccount);
-
-    if (!aptBalance) {
-      await mintAptCoin(feePayerAccount, parseUnits('10', 8));
-      aptBalance = await getAptBalance(feePayerAccount);
-    }
-
-    if (aptBalance < amount) {
-      throw new Error('Insufficient balance');
-    }
-  };
-};
-
 const useEnsureConfidentialRegistered = () => {
-  const feePayerAccount = useFeePayerAccount();
+  const gasStationArgs = useGasStationArgs();
 
   return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0;
@@ -336,25 +301,19 @@ const useEnsureConfidentialRegistered = () => {
 
       if (isConfidentialAccountRegistered) return;
 
-      const aptBalance = await getAptBalance(account);
-
-      if (!aptBalance) {
-        await mintAptCoin(account, BigInt(10 * 10 ** 8));
-      }
-
       await sleep(500);
 
       const [tx] = await tryCatch(
         buildRegisterConfidentialBalanceTx(
           account,
           dk.publicKey().toString(),
-          config.DEFAULT_TOKEN_ADRESSES[0],
-          feePayerAccount.accountAddress.toString(),
+          gasStationArgs,
+          appConfig.PRIMARY_TOKEN_ADDRESS,
         ),
       );
 
       if (tx) {
-        await tryCatch(sendAndWaitTx(tx, account, feePayerAccount));
+        await tryCatch(sendAndWaitTx(tx, account, gasStationArgs));
       }
 
       attempts++;
@@ -370,7 +329,6 @@ const useLogin = (opts?: {
   onSuccess?: () => void;
   onError?: () => void;
 }) => {
-  const ensureFeePayerCanAfford = useEnsureFeePayerCanAfford();
   const ensureConfidentialRegistered = useEnsureConfidentialRegistered();
   const ephemeralKeyPair = useEphemeralKeyPair();
   const switchKeylessAccount = useAuthStore(state => state.switchKeylessAccount);
@@ -379,13 +337,13 @@ const useLogin = (opts?: {
     const redirectUrl = new URL('https://accounts.google.com/o/oauth2/v2/auth');
 
     const searchParams = new URLSearchParams({
-      client_id: config.GOOGLE_CLIENT_ID,
+      client_id: appConfig.GOOGLE_CLIENT_ID,
       /**
        * The redirect_uri must be registered in the Google Developer Console. This callback page
        * parses the id_token from the URL fragment and combines it with the ephemeral key pair to
        * derive the keyless account.
        *
-       * window.location.origin == http://localhost:5173
+       * window.location.origin == http://localhost:3020
        */
       redirect_uri: `${window.location.origin}`,
       /**
@@ -409,11 +367,7 @@ const useLogin = (opts?: {
 
     const keylessAccountDK = decryptionKeyFromPepper(keylessAccount.pepper);
 
-    await ensureFeePayerCanAfford(1n);
-
     await ensureConfidentialRegistered(keylessAccount, keylessAccountDK);
-
-    await ensureFeePayerCanAfford(1n);
 
     opts?.onSuccess?.();
   };
@@ -423,7 +377,7 @@ const useLogin = (opts?: {
     // const state = Math.random().toString(36).substring(2, 15)
 
     const searchParams = new URLSearchParams({
-      client_id: config.APPLE_CLIENT_ID,
+      client_id: appConfig.APPLE_CLIENT_ID,
       /**
        * The redirect_uri must be registered in the Google Developer Console. This callback page
        * parses the id_token from the URL fragment and combines it with the ephemeral key pair to
@@ -485,8 +439,6 @@ const useLogin = (opts?: {
 
     const dk = await decryptionKeyFromPrivateKey(account);
 
-    await ensureFeePayerCanAfford(1n);
-
     await ensureConfidentialRegistered(account, dk);
 
     walletStore.useWalletStore
@@ -523,7 +475,6 @@ const useLogout = (opts?: {
 
 export const authStore = {
   useAuthStore: useAuthStore,
-  useFeePayerAccount: useFeePayerAccount,
   useLogin: useLogin,
   useLogout: useLogout,
 };

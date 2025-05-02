@@ -36,6 +36,7 @@ stats.html
 !.yarn/sdks
 !.yarn/versions
 
+.env
 .env.*
 !.env.example
 tsconfig.tsbuildinfo

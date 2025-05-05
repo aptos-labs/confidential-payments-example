@@ -26,6 +26,7 @@ import {
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { abbrCenter, ErrorHandler, isMobile } from '@/helpers';
 import { useCopyToClipboard, useForm } from '@/hooks';
+import { useGetAnsSubdomains } from '@/hooks/ans';
 import { authStore } from '@/store/auth';
 import { useGasStationArgs } from '@/store/gas-station';
 import { cn } from '@/theme/utils';
@@ -62,6 +63,12 @@ export default function DashboardHeader({
     addNewAccount,
     removeAccount,
   } = useConfidentialCoinContext();
+
+  // Fetch ANS username data for the selected account
+  const { data: ansNameData } = useGetAnsSubdomains({
+    accountAddress: selectedAccount.accountAddress,
+    enabled: true,
+  });
 
   const [isAccountsBottomSheet, setIsAccountsBottomSheet] = useState(false);
   const [isAddAccountBottomSheet, setIsAddAccountBottomSheet] = useState(false);
@@ -101,6 +108,8 @@ export default function DashboardHeader({
 
   const { copy, isCopied } = useCopyToClipboard();
 
+  const subdomain = ansNameData?.subdomain;
+
   return (
     <div {...rest} className={cn('flex items-center', className)}>
       <UiDropdownMenu>
@@ -122,12 +131,14 @@ export default function DashboardHeader({
               <span
                 className={cn(
                   'typography-subtitle4 w-full whitespace-nowrap text-textPrimary',
-                  !keylessPubAcc && 'uppercase',
+                  !subdomain && !keylessPubAcc && 'uppercase',
                 )}
               >
-                {keylessPubAcc
-                  ? keylessPubAcc.name
-                  : abbrCenter(selectedAccount.accountAddress.toString())}
+                {subdomain
+                  ? `@${subdomain}`
+                  : keylessPubAcc
+                    ? keylessPubAcc.name
+                    : abbrCenter(selectedAccount.accountAddress.toString())}
               </span>
             </div>
 
@@ -155,10 +166,18 @@ export default function DashboardHeader({
           <UiDropdownMenuItem>
             <button
               className='flex w-full items-center justify-between gap-2'
-              onClick={() => copy(selectedAccount.accountAddress.toString())}
+              onClick={() =>
+                copy(
+                  subdomain
+                    ? `@${subdomain}`
+                    : selectedAccount.accountAddress.toString(),
+                )
+              }
             >
               <span className='typography-caption1 text-textPrimary'>
-                {abbrCenter(selectedAccount.accountAddress.toString())}
+                {subdomain
+                  ? `@${subdomain}`
+                  : abbrCenter(selectedAccount.accountAddress.toString())}
               </span>
 
               {isCopied ? (

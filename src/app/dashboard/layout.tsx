@@ -3,21 +3,20 @@
 import { QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { useRouter } from 'next/navigation';
+import { PropsWithChildren } from 'react';
 import { useState } from 'react';
 import { useTimeoutFn } from 'react-use';
 
 import { queryClient } from '@/api/client';
 import { preloadTables } from '@/api/modules/aptos/wasmPollardKangaroo';
-import DashboardClient from '@/app/dashboard/client';
-import { ConfidentialCoinContextProvider } from '@/app/dashboard/context';
 import Loading from '@/app/dashboard/loading';
 import { ErrorHandler } from '@/helpers';
 import { authStore } from '@/store/auth';
 import { walletStore } from '@/store/wallet';
 
-export default function DashboardPageContent() {
-  'use client';
+import { ConfidentialCoinContextProvider } from './context';
 
+export default function DashboardLayout({ children }: PropsWithChildren) {
   const walletAccounts = walletStore.useWalletAccounts();
 
   const [isInitialized, setIsInitialized] = useState(false);
@@ -55,9 +54,7 @@ export default function DashboardPageContent() {
   return (
     <QueryClientProvider client={queryClient}>
       <ConfidentialCoinContextProvider>
-        <ErrorBoundary errorComponent={() => <Loading />}>
-          <DashboardClient />
-        </ErrorBoundary>
+        <ErrorBoundary errorComponent={() => <Loading />}>{children}</ErrorBoundary>
       </ConfidentialCoinContextProvider>
     </QueryClientProvider>
   );

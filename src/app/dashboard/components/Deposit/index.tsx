@@ -3,7 +3,6 @@
 import QRCode from 'react-qr-code';
 
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { RoutePaths } from '@/enums';
 import { useCopyToClipboard } from '@/hooks';
 import { UiIcon } from '@/ui';
 import { UiTabs, UiTabsContent, UiTabsList, UiTabsTrigger } from '@/ui/UiTabs';
@@ -13,7 +12,7 @@ import DepositMint from './components/DepositMint';
 export default function Deposit({ onSubmit }: { onSubmit?: () => void }) {
   const { selectedAccount, selectedToken } = useConfidentialCoinContext();
 
-  const value = `${window.location.origin}${RoutePaths.Dashboard}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`;
+  const value = `${window.location.origin}${'/dashboard'}?action=send&asset=${selectedToken.address}&to=${selectedAccount.accountAddress.toString()}`;
 
   const { copy, isCopied } = useCopyToClipboard();
 

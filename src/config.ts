@@ -7,6 +7,16 @@ type AppConfig = {
   PRIMARY_TOKEN_ADDRESS: string;
   APTOS_NETWORK: string;
 
+  /** This is the address where the subdomain manager contract is deployed */
+  SUBDOMAIN_MANAGER_CONTRACT_ADDR: string;
+  /** This is the address where the subdomain manager object is deployed */
+  SUBDOMAIN_MANAGER_OBJECT_ADDR: string;
+  /**
+   * This is the domain we're using for the app. We could just derived this from the
+   * subdomain manager object but doing it here is safer and faster.
+   */
+  ANS_DOMAIN: string;
+
   APTOS_BUILD_API_KEY: string;
   APTOS_BUILD_GAS_STATION_KEY: string;
 
@@ -31,6 +41,11 @@ export const appConfig: AppConfig = {
     process.env.NEXT_PUBLIC_CONFIDENTIAL_ASSET_MODULE_ADDR!,
   PRIMARY_TOKEN_ADDRESS: USDT_TOKEN_ADDR,
   APTOS_NETWORK: 'testnet',
+
+  SUBDOMAIN_MANAGER_CONTRACT_ADDR:
+    process.env.NEXT_PUBLIC_SUBDOMAIN_MANAGER_CONTRACT_ADDR!,
+  SUBDOMAIN_MANAGER_OBJECT_ADDR: process.env.NEXT_PUBLIC_SUBDOMAIN_MANAGER_OBJECT_ADDR!,
+  ANS_DOMAIN: process.env.NEXT_PUBLIC_ANS_DOMAIN!,
 
   APTOS_BUILD_API_KEY: process.env.NEXT_PUBLIC_APTOS_BUILD_API_KEY!,
   APTOS_BUILD_GAS_STATION_KEY: process.env.NEXT_PUBLIC_APTOS_BUILD_GAS_STATION_KEY!,

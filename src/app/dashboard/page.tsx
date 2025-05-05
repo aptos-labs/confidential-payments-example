@@ -1,13 +1,12 @@
 import { Suspense } from 'react';
 
-import DashboardPageContent from '@/app/dashboard/content';
-
+import AnsSubdomainGuard from './ansSubdomainGuard';
 import Loading from './loading';
 
 export default function DashboardPage() {
   return (
     <Suspense fallback={<Loading />}>
-      <DashboardPageContent />
+      <AnsSubdomainGuard />
     </Suspense>
   );
 }

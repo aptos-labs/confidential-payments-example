@@ -18,21 +18,12 @@ export default function HomepageLinkContent() {
 
   const [isLoading, setIsLoading] = useState(false);
 
-  const { getGoogleRequestLoginUrl, loginWithGoogle, loginWithApple, loginTest } =
+  const { getGoogleRequestLoginUrl, loginWithGoogle, loginWithApple } =
     authStore.useLogin({
       onSuccess: () => {
         router.push('/dashboard');
       },
     });
-
-  // eslint-disable-next-line unused-imports/no-unused-vars
-  const tryLoginTest = async () => {
-    try {
-      await loginTest();
-    } catch (error) {
-      ErrorHandler.process(error);
-    }
-  };
 
   const fragmentParams = new URLSearchParams(window.location.hash.substring(1));
   const googleIdToken = fragmentParams.get('id_token');

@@ -11,8 +11,8 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@aptos-labs/confidential-assets':
-        specifier: ^0.2.2
-        version: 0.2.2(axios@1.8.2)(got@14.4.6)
+        specifier: ^0.2.6
+        version: 0.2.6(axios@1.8.2)(got@14.4.6)
       '@aptos-labs/gas-station-client':
         specifier: ^1.0.0
         version: 1.0.0(axios@1.8.2)(got@14.4.6)
@@ -428,10 +428,10 @@ packages:
         integrity: sha512-xfgRVc4WX4N7hjSHP91a3o686gC4307PGa9eDT7eWhp2VN9YgYhDIKRFRITpKT5JC7IXbuh6pGq1MqrqTjBokA==,
       }
 
-  '@aptos-labs/confidential-assets@0.2.2':
+  '@aptos-labs/confidential-assets@0.2.6':
     resolution:
       {
-        integrity: sha512-Knc/NUx2Zz4Kx4s5j4bBNIRy1+PR5hotTa9giP6Q8EnCFEBUZwzYFKpKCulroTyi5FZDVyOdLVUvuFpdZ45g7g==,
+        integrity: sha512-VzrTduFUWhPOJeX8ywBKvKptujNodMeySrphD1zDZW8EMYB9L0wh0G9/Umit6MaqeWkzrhkX7euBDsFZPObhQw==,
       }
 
   '@aptos-labs/gas-station-client@1.0.0':
@@ -11187,7 +11187,7 @@ snapshots:
 
   '@aptos-labs/confidential-asset-wasm-bindings@0.0.2': {}
 
-  '@aptos-labs/confidential-assets@0.2.2(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/confidential-assets@0.2.6(axios@1.8.2)(got@14.4.6)':
     dependencies:
       '@aptos-labs/confidential-asset-wasm-bindings': 0.0.2
       '@aptos-labs/ts-sdk': 1.38.0(axios@1.8.2)(got@14.4.6)

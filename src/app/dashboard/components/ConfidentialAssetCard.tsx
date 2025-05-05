@@ -159,8 +159,8 @@ export default function ConfidentialAssetCard({
 
                     <UiTooltipContent className='overflow-hidden text-ellipsis'>
                       <span className='typography-caption1 text-textSecondary'>
-                        make sure you have enough APT to send transactions, or you can
-                        buy some in deposit modal
+                        make sure you have enough {token.symbol} to send transactions,
+                        or you can buy some in deposit modal
                       </span>
                     </UiTooltipContent>
                   </UiTooltip>

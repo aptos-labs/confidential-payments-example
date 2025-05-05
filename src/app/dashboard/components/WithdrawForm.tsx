@@ -4,7 +4,8 @@ import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { formatUnits, parseUnits } from 'ethers';
 import { useCallback, useMemo } from 'react';
 
-import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
+import { sendAndWaitTx } from '@/api/modules/aptos';
+import { aptos } from '@/api/modules/aptos/client';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { ErrorHandler, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
@@ -57,7 +58,6 @@ export default function WithdrawForm({
             .required('Enter recipient address')
             .test('aptAddr', 'Invalid address', v => {
               if (!v) return false;
-
               return AccountAddress.isValid({
                 input: v,
               }).valid;
@@ -65,9 +65,13 @@ export default function WithdrawForm({
             .test('NoReceiverAddr', 'Receiver not found', async v => {
               if (!v) return false;
 
-              const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
-              if (ekError) return false;
-              return Boolean(ek);
+              const [accountInfo, accountInfoError] = await tryCatch(
+                aptos.account.getAccountInfo({
+                  accountAddress: AccountAddress.from(v),
+                }),
+              );
+              if (accountInfoError) return false;
+              return accountInfo !== null;
             })
             .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
               if (!v) return false;
@@ -113,7 +117,6 @@ export default function WithdrawForm({
           amountToEnsure: String(formData.amount),
           token: token,
           currentTokenStatus,
-          opTx: withdrawTx,
         });
         if (err) {
           ErrorHandler.process(err);

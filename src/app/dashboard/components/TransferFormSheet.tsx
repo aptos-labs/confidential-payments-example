@@ -1,6 +1,5 @@
 'use client';
 
-import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { formatUnits, isHexString, parseUnits } from 'ethers';
 import {
   ComponentProps,
@@ -67,13 +66,13 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     } = useConfidentialCoinContext();
     const gasStationArgs = useGasStationArgs();
 
-    const currTokenStatus = perTokenStatuses[token.address];
+    const currentTokenStatus = perTokenStatuses[token.address];
 
-    const publicBalanceBN = BigInt(currTokenStatus.fungibleAssetBalance || 0);
+    const publicBalanceBN = BigInt(currentTokenStatus.fungibleAssetBalance || 0);
 
-    const pendingAmountBN = BigInt(currTokenStatus.pendingAmount || 0);
+    const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0);
 
-    const actualAmountBN = BigInt(currTokenStatus?.actualAmount || 0);
+    const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0);
 
     const totalBalanceBN = useMemo(() => {
       return publicBalanceBN + pendingAmountBN + actualAmountBN;
@@ -148,7 +147,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
       debounceTimerRef.current = setTimeout(() => {
         setDebouncedUsername(username);
-      }, 300);
+      }, 250);
 
       return () => {
         if (debounceTimerRef.current) {
@@ -160,7 +159,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     // Query ANS to resolve username to address
     const { data: resolvedAddress, isLoading: isResolvingAddress } =
       useGetAnsSubdomainAddress({
-        subdomain: debouncedUsername,
+        subdomain: debouncedUsername.replace('@', ''),
         enabled: debouncedUsername !== '',
       });
 
@@ -227,9 +226,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
           const err = await ensureConfidentialBalanceReadyBeforeOp({
             amountToEnsure: String(formData.amount),
-            token: token,
-            currentTokenStatus: currTokenStatus,
-            opTx: transferTx,
+            token,
+            currentTokenStatus,
           });
           if (err) {
             enableForm();
@@ -257,7 +255,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       [
         buildTransferTx,
         clearForm,
-        currTokenStatus,
+        currentTokenStatus,
         disableForm,
         enableForm,
         ensureConfidentialBalanceReadyBeforeOp,
@@ -294,12 +292,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     // Show warning if the resolved address is the sender's address
     const showSelfWarning = Boolean(resolvedAddress) && isReceiverSelf;
 
-    // Format address for display
-    const formatAddress = (address: AccountAddress) => {
-      const addressStr = address.toString();
-      return `${addressStr.substring(0, 6)}...${addressStr.substring(addressStr.length - 4)}`;
-    };
-
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
         <UiSheetContent
@@ -320,27 +312,26 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                   placeholder='Enter recipient username'
                   disabled={isFormDisabled}
                 />
+                <div className='pb-2' />
                 {showUsernameWarning && (
-                  <div className='mt-4 text-sm text-yellow-500'>
+                  <div className='text-sm text-yellow-500'>
                     Username not found. Please check and try again.
                   </div>
                 )}
                 {showSelfWarning && (
-                  <div className='mt-4 text-sm text-red-500'>
+                  <div className='text-sm text-red-500'>
                     You cannot send to yourself.
                   </div>
                 )}
                 {resolvedAddress && !isReceiverSelf && (
-                  <div className='mt-1 text-sm text-green-500'>
-                    Resolved to: {formatAddress(resolvedAddress)}
-                  </div>
+                  <div className='text-sm text-green-500'>Recipient found.</div>
                 )}
               </div>
 
               <ControlledUiInput
                 control={control}
                 name='amount'
-                label='Amount'
+                label={`Amount (${token.symbol})`}
                 placeholder='Enter amount'
                 type='number'
                 disabled={isFormDisabled}
@@ -350,7 +341,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             {/* <AuditorsList className='mt-3 flex-1' control={control} /> */}
 
             <div className='mt-auto pt-4'>
-              <UiSeparator className='mb-4' />
+              <UiSeparator className='mb-6 mt-2' />
               <UiButton
                 className='w-full'
                 onClick={submit}

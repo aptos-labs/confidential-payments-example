@@ -159,7 +159,10 @@ export default function UsernamePage() {
           {ansSubdomain}
         </p>
         <UiSeparator className='my-6' />
-        <UiButton className='w-full' onClick={() => router.push('/dashboard')}>
+        <UiButton
+          className='w-full'
+          onClick={() => router.push('/dashboard?noRedirect=true')}
+        >
           Go to Dashboard
         </UiButton>
       </Container>
@@ -202,7 +205,10 @@ export default function UsernamePage() {
 
         <UiSeparator className='mb-6' />
 
-        <UiButton className='w-full' onClick={() => router.push('/dashboard')}>
+        <UiButton
+          className='w-full'
+          onClick={() => router.push('/dashboard?noRedirect=true')}
+        >
           Continue to dashboard
         </UiButton>
       </Container>

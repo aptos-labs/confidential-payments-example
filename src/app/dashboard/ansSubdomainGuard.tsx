@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
 
 import DashboardClient from '@/app/dashboard/client';
@@ -10,6 +10,8 @@ import { UiSpinner } from '@/ui';
 
 export default function AnsSubdomainGuard() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const noRedirect = searchParams.get('noRedirect') === 'true';
   const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
   const activeKeylessAccountAddress = activeKeylessAccount?.accountAddress;
 
@@ -22,10 +24,10 @@ export default function AnsSubdomainGuard() {
 
   // Handle redirection using useEffect instead of during render
   useEffect(() => {
-    if (!isCheckingUsername && !hasUsername) {
+    if (!isCheckingUsername && !hasUsername && !noRedirect) {
       router.push('/dashboard/username');
     }
-  }, [hasUsername, isCheckingUsername, router]);
+  }, [hasUsername, isCheckingUsername, router, noRedirect]);
 
   if (isCheckingUsername) {
     return (
@@ -36,8 +38,8 @@ export default function AnsSubdomainGuard() {
     );
   }
 
-  // If the user doesn't have a username, show loading until the redirect happens
-  if (!hasUsername) {
+  // If the user doesn't have a username and we're not skipping redirect, show loading until the redirect happens
+  if (!hasUsername && !noRedirect) {
     return (
       <div className='flex h-full flex-col items-center justify-center'>
         <UiSpinner />
@@ -48,6 +50,6 @@ export default function AnsSubdomainGuard() {
     );
   }
 
-  // User has a username, render the dashboard client.
+  // User has a username or noRedirect is true, render the dashboard client
   return <DashboardClient />;
 }

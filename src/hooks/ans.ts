@@ -63,23 +63,16 @@ export function useCheckIsSubdomainAvailable({
   return useQuery({
     queryKey: ['ansSubdomainAvailability', subdomain],
     queryFn: async () => {
-      const result = await aptos.ans.getDomainSubdomains({
-        domain: appConfig.ANS_DOMAIN,
-        options: {
-          where: {
-            subdomain: {
-              _eq: subdomain,
-            },
-          },
-        },
+      const result = await aptos.ans.getOwnerAddress({
+        name: `${subdomain}.${appConfig.ANS_DOMAIN}`,
       });
-      return result.length === 0;
+      return result === undefined;
     },
     enabled,
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
-    refetchOnReconnect: false,
-    staleTime: 60 * 60 * 1000,
+    refetchOnWindowFocus: true,
+    refetchOnMount: true,
+    refetchOnReconnect: true,
+    staleTime: 1000,
   });
 }
 

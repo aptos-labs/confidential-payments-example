@@ -39,7 +39,6 @@ import {
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
   safelyRolloverConfidentialBalance,
-  sendAndWaitBatchTxs,
   sendAndWaitTx,
   transferConfidentialAsset,
   withdrawConfidentialBalance,
@@ -179,7 +178,6 @@ type ConfidentialCoinContextType = {
     amountToEnsure: string;
     token: TokenBaseInfo;
     currentTokenStatus: AccountDecryptionKeyStatus;
-    opTx: SimpleTransaction;
   }) => Promise<Error | undefined>;
 };
 
@@ -933,8 +931,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
-      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
+      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted) {
         throw new TypeError('actual amount not loaded');
+      }
 
       const amountEncrypted = opts?.isSyncFirst
         ? await (async () => {
@@ -1199,7 +1198,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     ConfidentialCoinContextType['ensureConfidentialBalanceReadyBeforeOp']
   >(
     async args => {
-      const txnsToExecute: SimpleTransaction[] = [];
       let depositTransactionToExecute: SimpleTransaction | undefined = undefined;
       let rolloverTransactionsToExecute: InputGenerateTransactionPayloadData[] = [];
 
@@ -1248,7 +1246,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
           return buildDepositTxError;
         }
         depositTransactionToExecute = depositTx;
-        txnsToExecute.push(depositTx);
       }
 
       if (actualAmountBN < formAmountBN) {
@@ -1259,24 +1256,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
           return buildRolloverTxError;
         }
         rolloverTransactionsToExecute = rolloverTxx;
-        txnsToExecute.push(
-          ...(await Promise.all(
-            rolloverTxx.map(async el => {
-              return aptos.transaction.build.simple({
-                sender: selectedAccount.accountAddress,
-                data: el,
-                withFeePayer: gasStationArgs.withGasStation,
-              });
-            }),
-          )),
-        );
-      }
-
-      const [, error] = await tryCatch(
-        sendAndWaitBatchTxs(txnsToExecute, selectedAccount, gasStationArgs),
-      );
-      if (error) {
-        return error;
       }
 
       if (depositTransactionToExecute) {

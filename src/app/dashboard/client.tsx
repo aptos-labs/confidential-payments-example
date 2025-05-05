@@ -174,18 +174,17 @@ export default function DashboardClient() {
               }
 
               return tokens.map((token, idx) => {
-                const currTokenStatuses = perTokenStatuses[token.address];
-
+                const currTokenStatus = perTokenStatuses[token.address];
                 return (
                   <ConfidentialAssetCard
                     key={idx}
                     className='w-full'
                     token={token}
-                    pendingAmount={currTokenStatuses.pendingAmount}
-                    actualAmount={currTokenStatuses.actualAmount}
-                    isNormalized={currTokenStatuses.isNormalized}
-                    isFrozen={currTokenStatuses.isFrozen}
-                    isRegistered={currTokenStatuses.isRegistered}
+                    pendingAmount={currTokenStatus.pendingAmount}
+                    actualAmount={currTokenStatus.actualAmount}
+                    isNormalized={currTokenStatus.isNormalized}
+                    isFrozen={currTokenStatus.isFrozen}
+                    isRegistered={currTokenStatus.isRegistered}
                   />
                 );
               });

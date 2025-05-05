@@ -1,4 +1,3 @@
-/* eslint-disable unused-imports/no-unused-vars */
 'use client';
 
 import { AccountAddress } from '@aptos-labs/ts-sdk';
@@ -6,38 +5,36 @@ import { formatUnits, isHexString, parseUnits } from 'ethers';
 import {
   ComponentProps,
   forwardRef,
-  HTMLAttributes,
   useCallback,
+  useEffect,
   useImperativeHandle,
   useMemo,
   useRef,
   useState,
 } from 'react';
-import { Control, useFieldArray } from 'react-hook-form';
 
 import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { ErrorHandler, isMobile, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
+import { useGetAnsSubdomainAddress } from '@/hooks/ans';
 import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
-import { cn } from '@/theme/utils';
-import { UiIcon } from '@/ui';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
 import { UiSeparator } from '@/ui/UiSeparator';
 import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
 
 type TransferFormSheetRef = {
-  open: (prefillAddr?: string) => void;
+  open: (prefillUsername?: string) => void;
   close: () => void;
 };
 
 export const useTransferFormSheet = () => {
   const ref = useRef<TransferFormSheetRef>(null);
 
-  const open = (prefillAddr?: string) => {
-    ref.current?.open(prefillAddr);
+  const open = (prefillUsername?: string) => {
+    ref.current?.open(prefillUsername);
   };
 
   const close = () => {
@@ -83,74 +80,128 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false);
+    const [debouncedUsername, setDebouncedUsername] = useState('');
+    const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+    const [username, setUsername] = useState('');
 
-    const { isFormDisabled, handleSubmit, disableForm, enableForm, control, setValue } =
-      useForm(
-        {
-          receiverAddressHex: '',
-          amount: '',
-          auditorsAddresses: [] as string[],
-        },
-        yup =>
-          yup.object().shape({
-            receiverAddressHex: yup
+    const formSchema = useForm(
+      {
+        receiverUsername: '',
+        amount: '',
+        auditorsAddresses: [] as string[],
+      },
+      yup =>
+        yup.object().shape({
+          receiverUsername: yup
+            .string()
+            .required('Enter receiver username')
+            .test(
+              'usernameExists',
+              'Username not found',
+              () => Boolean(resolvedAddress) || debouncedUsername === '',
+            ),
+          amount: yup
+            .number()
+            .min(+formatUnits('1', token.decimals))
+            .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
+            .required('Enter amount'),
+          auditorsAddresses: yup.array().of(
+            yup
               .string()
               .test('aptAddr', 'Invalid address', v => {
                 if (!v) return false;
 
-                return AccountAddress.isValid({
-                  input: v,
-                }).valid;
+                return isHexString(v);
               })
-              .test('DRYAptAddr', 'You cannot send to yourself', v => {
-                if (!v) return false;
-
-                return (
-                  v.toLowerCase() !==
-                  selectedAccount.accountAddress.toString().toLowerCase()
-                );
-              })
-              .test('NoReceiverAddr', 'Receiver not found', async v => {
+              .test('audAddr', "Auditor's address not exist", async v => {
                 if (!v) return false;
 
                 const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
                 if (ekError) return false;
                 return Boolean(ek);
-              })
-              .required('Enter receiver'),
-            amount: yup
-              .number()
-              .min(+formatUnits('1', token.decimals))
-              .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
-              .required('Enter amount'),
-            auditorsAddresses: yup.array().of(
-              yup
-                .string()
-                .test('aptAddr', 'Invalid address', v => {
-                  if (!v) return false;
+              }),
+          ),
+        }),
+    );
 
-                  return isHexString(v);
-                })
-                .test('audAddr', "Auditor's address not exist", async v => {
-                  if (!v) return false;
+    const {
+      isFormDisabled,
+      handleSubmit,
+      disableForm,
+      enableForm,
+      control,
+      setValue,
+      formState,
+    } = formSchema;
 
-                  const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
-                  if (ekError) return false;
-                  return Boolean(ek);
-                }),
-            ),
-          }),
-      );
+    // Get the current username from form state
+    useEffect(() => {
+      const currentUsername = formState.receiverUsername || '';
+      setUsername(currentUsername);
+    }, [formState]);
+
+    // Debounce the username input
+    useEffect(() => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+
+      debounceTimerRef.current = setTimeout(() => {
+        setDebouncedUsername(username);
+      }, 300);
+
+      return () => {
+        if (debounceTimerRef.current) {
+          clearTimeout(debounceTimerRef.current);
+        }
+      };
+    }, [username]);
+
+    // Query ANS to resolve username to address
+    const { data: resolvedAddress, isLoading: isResolvingAddress } =
+      useGetAnsSubdomainAddress({
+        subdomain: debouncedUsername,
+        enabled: debouncedUsername !== '',
+      });
 
     const clearForm = useCallback(() => {
-      setValue('receiverAddressHex', '');
+      setValue('receiverUsername', '');
       setValue('amount', '');
     }, [setValue]);
+
+    const isReceiverSelf = useMemo(() => {
+      if (!resolvedAddress) return false;
+      return (
+        resolvedAddress.toString().toLowerCase() ===
+        selectedAccount.accountAddress.toString().toLowerCase()
+      );
+    }, [resolvedAddress, selectedAccount.accountAddress]);
 
     const submit = useCallback(
       () =>
         handleSubmit(async formData => {
+          if (!resolvedAddress) {
+            ErrorHandler.process(new Error('Username not found'));
+            return;
+          }
+
+          if (isReceiverSelf) {
+            ErrorHandler.process(new Error('You cannot send to yourself'));
+            return;
+          }
+
           disableForm();
+
+          // Check if receiver has an encryption key
+          const addressStr = resolvedAddress.toString();
+          const [ek, ekError] = await tryCatch(getEkByAddr(addressStr, token.address));
+          if (ekError || !ek) {
+            ErrorHandler.process(
+              new Error('Receiver not found or does not have an encryption key'),
+            );
+            enableForm();
+            return;
+          }
 
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
@@ -160,7 +211,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
           const [transferTx, buildTransferTxError] = await tryCatch(
             buildTransferTx(
-              formData.receiverAddressHex,
+              addressStr,
               parseUnits(String(formData.amount), token.decimals).toString(),
               {
                 isSyncFirst: true,
@@ -214,6 +265,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         loadSelectedDecryptionKeyState,
         onSubmit,
         reloadPrimaryTokenBalance,
+        resolvedAddress,
+        isReceiverSelf,
         selectedAccount,
         token,
         gasStationArgs,
@@ -221,11 +274,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     );
 
     useImperativeHandle(ref, () => ({
-      open: prefillAddr => {
+      open: prefillUsername => {
         setIsTransferSheetOpen(true);
 
-        if (prefillAddr) {
-          setValue('receiverAddressHex', prefillAddr);
+        if (prefillUsername) {
+          setValue('receiverUsername', prefillUsername);
         }
       },
       close: () => {
@@ -233,6 +286,19 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         clearForm();
       },
     }));
+
+    // Show warning if the username doesn't resolve to an address
+    const showUsernameWarning =
+      debouncedUsername !== '' && !resolvedAddress && !isResolvingAddress;
+
+    // Show warning if the resolved address is the sender's address
+    const showSelfWarning = Boolean(resolvedAddress) && isReceiverSelf;
+
+    // Format address for display
+    const formatAddress = (address: AccountAddress) => {
+      const addressStr = address.toString();
+      return `${addressStr.substring(0, 6)}...${addressStr.substring(addressStr.length - 4)}`;
+    };
 
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
@@ -246,13 +312,30 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           <UiSeparator className='mb-4 mt-2' />
           <div className='flex flex-col'>
             <div className='flex flex-col gap-4'>
-              <ControlledUiInput
-                control={control}
-                name='receiverAddressHex'
-                label='Recipient'
-                placeholder='Enter recipient address'
-                disabled={isFormDisabled}
-              />
+              <div className='space-y-1'>
+                <ControlledUiInput
+                  control={control}
+                  name='receiverUsername'
+                  label='Recipient Username'
+                  placeholder='Enter recipient username'
+                  disabled={isFormDisabled}
+                />
+                {showUsernameWarning && (
+                  <div className='mt-4 text-sm text-yellow-500'>
+                    Username not found. Please check and try again.
+                  </div>
+                )}
+                {showSelfWarning && (
+                  <div className='mt-4 text-sm text-red-500'>
+                    You cannot send to yourself.
+                  </div>
+                )}
+                {resolvedAddress && !isReceiverSelf && (
+                  <div className='mt-1 text-sm text-green-500'>
+                    Resolved to: {formatAddress(resolvedAddress)}
+                  </div>
+                )}
+              </div>
 
               <ControlledUiInput
                 control={control}
@@ -268,7 +351,16 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
             <div className='mt-auto pt-4'>
               <UiSeparator className='mb-4' />
-              <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
+              <UiButton
+                className='w-full'
+                onClick={submit}
+                disabled={
+                  isFormDisabled ||
+                  showUsernameWarning ||
+                  showSelfWarning ||
+                  !resolvedAddress
+                }
+              >
                 Send confidentially
               </UiButton>
             </div>
@@ -281,12 +373,13 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
 TransferFormSheet.displayName = 'TransferFormSheet';
 
+/*
 const AuditorsList = ({
   control,
   ...rest
 }: {
   control: Control<{
-    receiverAddressHex: string;
+    receiverUsername: string;
     amount: string;
     auditorsAddresses: string[];
   }>;
@@ -339,3 +432,4 @@ const AuditorsList = ({
     </div>
   );
 };
+*/

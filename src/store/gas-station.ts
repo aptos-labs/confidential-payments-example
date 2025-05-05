@@ -1,6 +1,7 @@
 /**
  * The gas station must be configured to allow all confidential_asset functions
- * and the 0x1::aptos_account::create_account function, and the USDT mint function.
+ * and the 0x1::aptos_account::create_account function, the USDT mint function,
+ * and the ANS subdomain manager claim subdomain function.
  */
 
 import {

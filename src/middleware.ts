@@ -1,7 +1,14 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo';
 import { NextResponse } from 'next/server';
 
-import { appConfig } from './config';
+import { AppConfig, appConfig } from './config';
+
+// Iterate through the config and ensure nothing is undefined.
+for (const key in appConfig) {
+  if (appConfig[key as keyof AppConfig] === undefined) {
+    throw new Error(`Required environment variable ${key} is not set.`);
+  }
+}
 
 async function shouldShowMaintenancePage() {
   if (appConfig.FORCE_MAINTENANCE_PAGE) {

@@ -1,4 +1,4 @@
-type AppConfig = {
+export type AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR: string;
   /**
    * This is the asset the user deals with in the app. For the demo they only use a
@@ -58,3 +58,14 @@ export const appConfig: AppConfig = {
 
   FORCE_MAINTENANCE_PAGE: process.env.FORCE_MAINTENANCE_PAGE === 'true',
 };
+
+// Iterate through the config and ensure nothing is undefined. This check runs client
+// side, so we only check NEXT_PUBLIC_ variables. We check everything in middleware.ts.
+for (const key in appConfig) {
+  if (
+    key.startsWith('NEXT_PUBLIC_') &&
+    appConfig[key as keyof AppConfig] === undefined
+  ) {
+    throw new Error(`Required environment variable ${key} is not set.`);
+  }
+}

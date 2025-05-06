@@ -1,6 +1,8 @@
 import { ConfidentialAsset } from '@aptos-labs/confidential-assets';
 import { Aptos, AptosConfig, NetworkToNetworkName } from '@aptos-labs/ts-sdk';
+import { GraphQLClient } from 'graphql-request';
 
+import { getSdk } from '@/codegen/indexer/generated/queries';
 import { appConfig } from '@/config';
 
 const aptosConfig = new AptosConfig({
@@ -13,3 +15,11 @@ export const aptos = new Aptos(aptosConfig);
 export const confidentialAssets = new ConfidentialAsset(aptosConfig, {
   confidentialAssetModuleAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
 });
+
+/** Do not forget to pass the API key when using this client. */
+export const noCodeClient = getSdk(
+  new GraphQLClient(
+    // TODO: Make this configurable.
+    'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql',
+  ),
+);

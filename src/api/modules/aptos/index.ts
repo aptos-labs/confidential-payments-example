@@ -28,9 +28,7 @@ import { z } from 'zod';
 
 import {
   genBatchRangeZKP,
-  generateRangeZKP,
   verifyBatchRangeZKP,
-  verifyRangeZKP,
 } from '@/api/modules/aptos/wasmRangeProof';
 import { appConfig } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
@@ -40,8 +38,6 @@ import { aptos, confidentialAssets } from './client';
 
 RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP);
 RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP);
-RangeProofExecutor.setGenerateRangeZKP(generateRangeZKP);
-RangeProofExecutor.setVerifyRangeZKP(verifyRangeZKP);
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
@@ -172,22 +168,6 @@ export const sendAndWaitBatchTxs = async (
   }
 
   return Promise.all(transactions);
-};
-
-export const getModuleMockedTokenAddr = async () => {
-  const [vec] = await aptos.view<
-    [
-      {
-        inner: string;
-      },
-    ]
-  >({
-    payload: {
-      function: `${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}::mock_token::get_token_metadata`,
-    },
-  });
-
-  return vec.inner;
 };
 
 export const mintPrimaryToken = async (

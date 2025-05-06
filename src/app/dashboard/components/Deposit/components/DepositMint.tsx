@@ -24,6 +24,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   } = useConfidentialCoinContext();
   const gasStationArgs = useGasStationArgs();
 
+  const [didSubmit, setDidSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currTokenStatus = perTokenStatuses[selectedToken?.address];
@@ -37,6 +38,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const isTestnetUsdt =
     selectedToken?.address ===
     '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050';
+
+  // This is a bandaid for the fact that `currTokenStatus` enters some weird partially
+  // undefined state after the user mints, where everything is false or undefined.
+  if (didSubmit && !currTokenStatus.isRegistered) {
+    return <UiSkeleton className='min-h-[36px] w-full' />;
+  }
 
   if (!currTokenStatus.isRegistered) {
     // The user needs to hit the start button first.
@@ -62,6 +69,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
   const tryMint = async () => {
     setIsSubmitting(true);
+    setDidSubmit(true);
     const amountToDeposit = parseUnits(`${MINT_AMOUNT}`, selectedToken.decimals);
 
     let mintAttempts = 0;

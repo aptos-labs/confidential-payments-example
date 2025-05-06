@@ -164,6 +164,7 @@ export default fixupConfigRules(
         'src/contexts/Web3Provider/types',
         'node_modules/',
         '.next',
+        'src/codegen',
       ],
     },
   ),

@@ -1294,24 +1294,21 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     ],
   );
 
-  // TODO: Replace this with Aptos Build No Code Indexing. Also just use react query
-  // with a hook.
   /*
+  Re-enable once this is fixed:
+  https://aptos-org.slack.com/archives/C07G7CT4AV6/p1746541487923559?thread_ts=1746523176.634849&cid=C07G7CT4AV6
+  // If we see that the balance isn't normalized, let's do that.
   useHarmonicIntervalFn(async () => {
-    const eventType = `${config.CONFIDENTIAL_ASSET_MODULE_ADDR}::confidential_asset::Transferred`;
-    const allEvents = await aptos.getEvents({
-      options: {
-        where: {
-          indexed_type: { _eq: eventType },
-          data: {
-            _contains: {
-              to: selectedAccount.accountAddress.toString(),
-            },
-          },
-        },
-      },
-    });
-  }, 25_000);
+    const currTokenStatus = perTokenStatuses[selectedToken.address];
+    if (currTokenStatus.isNormalized) return;
+    console.log('Normalizing account...');
+    try {
+      await normalizeAccount();
+      console.log('Successfully normalized account.');
+    } catch (error) {
+      console.error('Error normalizing account:', error);
+    }
+  }, 5_000);
   */
 
   return (

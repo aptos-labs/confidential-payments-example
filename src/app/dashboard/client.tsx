@@ -22,6 +22,7 @@ import { UiIcon } from '@/ui';
 import { UiSeparator } from '@/ui/UiSeparator';
 import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
 
+import ActivitiesFeed from './components/ActivitiesFeed';
 import ConfidentialAssetCardLoader from './components/ConfidentialAssetCardLoader';
 import Deposit from './components/Deposit';
 import {
@@ -314,31 +315,7 @@ export default function DashboardClient() {
           </div>
         )} */}
 
-          {/*
-          TODO: Do txn history properly with indexing.
-          <div
-            className={cn(
-              'mt-12 flex w-full flex-1 flex-col p-4',
-              'md:mx-auto md:max-w-[500px]',
-            )}
-          >
-            {txHistory.length ? (
-              <div className='flex flex-col gap-6'>
-                {txHistory
-                  .sort((a, b) => {
-                    return time(a.createdAt).isAfter(time(b.createdAt)) ? -1 : 1;
-                  })
-                  .map((el, idx) => (
-                    <TxItem key={idx} {...el} />
-                  ))}
-              </div>
-            ) : (
-              <div className='flex w-full flex-col items-center gap-4 self-center'>
-                <TxEmptyComponent />
-              </div>
-            )}
-          </div>
-        */}
+          <ActivitiesFeed />
         </div>
 
         <UiSheet open={isDepositSheetOpen} onOpenChange={setIsDepositSheetOpen}>
@@ -419,109 +396,6 @@ export default function DashboardClient() {
     </div>
   );
 }
-
-/*
-function TxItem({
-  createdAt,
-  txType,
-  txHash,
-  message,
-  ...rest
-}: HTMLAttributes<HTMLDivElement> & TxHistoryItem) {
-  const title = {
-    transfer: 'Transfer',
-    ['transfer-native']: `Send ${selectedToken.symbol}`,
-    deposit: 'Deposit',
-    withdraw: 'Withdraw',
-    rollover: 'Rollover',
-    'key-rotation': 'Key rotation',
-    freeze: 'Freeze',
-    unfreeze: 'Unfreeze',
-    register: 'Register',
-    normalize: 'Normalize',
-    mint: 'Mint',
-    receive: 'Receive',
-  }[txType];
-
-  const icon = {
-    transfer: <ArrowRightIcon size={24} className={cn('text-textPrimary')} />,
-    ['transfer-native']: (
-      <ArrowRightIcon size={24} className={cn('text-textPrimary')} />
-    ),
-    deposit: <ArrowDownIcon size={24} className={cn('text-textPrimary')} />,
-    withdraw: <ArrowUpIcon size={24} className={cn('text-textPrimary')} />,
-    rollover: <FolderSyncIcon size={24} className={cn('text-textPrimary')} />,
-    'key-rotation': <KeyIcon size={24} className={cn('text-textPrimary')} />,
-    freeze: <LockIcon size={24} className={cn('text-textPrimary')} />,
-    unfreeze: <UnlockIcon size={24} className={cn('text-textPrimary')} />,
-    register: <IdCardIcon size={24} className={cn('text-textPrimary')} />,
-    normalize: <EditIcon size={24} className={cn('text-textPrimary')} />,
-    mint: <HandCoinsIcon size={24} className={cn('text-textPrimary')} />,
-    receive: <ArrowDownIcon size={24} className={cn('text-textPrimary')} />,
-  }[txType];
-
-  return (
-    <div {...rest} className={cn('flex flex-row items-center gap-4', rest.className)}>
-      <div className='flex size-[48] flex-col items-center justify-center rounded-full bg-componentSelected'>
-        {icon}
-      </div>
-      <div className='flex flex-col gap-2'>
-        <span className='typography-subtitle3 text-textPrimary'>{title}</span>
-        {message && (
-          <span className='typography-body4 text-textSecondary'>{message}</span>
-        )}
-        <div className='flex items-center gap-2'>
-          <UiIcon name='CalendarIcon' size={14} className='text-textSecondary' />
-          {createdAt && (
-            <span className='typography-caption3 text-textSecondary'>
-              {formatDateDMYT(createdAt)}
-            </span>
-          )}
-        </div>
-      </div>
-
-      <Link href={getTxExplorerUrl(txHash)} target='_blank' className='ml-auto p-4'>
-        <ExternalLinkIcon size={18} className='text-textSecondary' />
-      </Link>
-    </div>
-  );
-}
-
-function TxEmptyComponent({ className, ...rest }: HTMLAttributes<HTMLDivElement>) {
-  return (
-    <div
-      {...rest}
-      className={cn('relative isolate flex w-full flex-col gap-4', className)}
-    >
-      {Array(5)
-        .fill(0)
-        .map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              'flex flex-row items-center gap-4 py-3 opacity-20',
-              className,
-            )}
-          >
-            <div className='size-[48px] rounded-full bg-muted' />
-            <div className='flex flex-1 flex-col gap-2'>
-              <div className='h-4 w-[120px] bg-muted' />
-              <div className='h-4 w-[80px] bg-muted' />
-            </div>
-            <div className='size-6 rounded-full bg-muted' />
-          </div>
-        ))}
-
-      <div className='absolute-center flex flex-col items-center'>
-        <FolderOpenIcon size={128} className='text-componentDisabled' />
-
-        <span className='typography-subtitle2 text-textSecondary'>
-          No transactions yet.
-        </span>
-      </div>
-    </div>
-  );
-}*/
 
 function CircleButton({
   caption,

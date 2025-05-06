@@ -117,8 +117,28 @@ export function useGetAnsSubdomainAddress({
   return useQuery({
     queryKey: ['ansSubdomainAddress', subdomain],
     queryFn: async () => {
-      const out = aptos.ans.getTargetAddress({
+      const out = await aptos.ans.getTargetAddress({
         name: `${subdomain}.${appConfig.ANS_DOMAIN}`,
+      });
+      return out ?? null;
+    },
+    enabled,
+  });
+}
+
+/** Look up the primary name an address resolves to. */
+export function useGetAnsPrimaryName({
+  accountAddress,
+  enabled = true,
+}: {
+  accountAddress: AccountAddressInput;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['ansPrimaryName', accountAddress],
+    queryFn: async () => {
+      const out = await aptos.ans.getPrimaryName({
+        address: accountAddress,
       });
       return out ?? null;
     },

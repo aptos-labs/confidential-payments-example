@@ -1,0 +1,37 @@
+query GetActivities($userAddress: String, $offset: Int) {
+  activities_public(
+    where: {
+      _or: [
+        { from_address: { _eq: $userAddress } }
+        { to_address: { _eq: $userAddress } }
+      ]
+    }
+    order_by: { txn_version: desc }
+    limit: 15
+    offset: $offset
+  ) {
+    activity_type
+    amount
+    from_address
+    to_address
+    txn_timestamp
+    txn_version
+  }
+  transfers_confidential(
+    where: {
+      _or: [
+        { from_address: { _eq: $userAddress } }
+        { to_address: { _eq: $userAddress } }
+      ]
+    }
+    limit: 15
+    order_by: { txn_version: desc }
+    offset: $offset
+  ) {
+    from_address
+    to_address
+    txn_timestamp
+    txn_version
+    amount_ciphertext
+  }
+}

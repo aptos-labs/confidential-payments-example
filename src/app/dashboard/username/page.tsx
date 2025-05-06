@@ -76,8 +76,10 @@ export default function UsernamePage() {
       return;
     }
 
-    if (!/^[a-zA-Z0-9_-]+$/.test(username)) {
-      setError('Username can only contain letters, numbers, underscores, and hyphens');
+    if (!/^[a-z][a-z0-9-]+[a-z0-9]*$/.test(username)) {
+      setError(
+        'Username can only contain lowercase letters, numbers, and hyphens. It must start with a letter. It cannot end with a hyphen.',
+      );
       return;
     }
 

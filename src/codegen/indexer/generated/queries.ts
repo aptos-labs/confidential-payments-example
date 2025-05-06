@@ -1,14 +1,14 @@
+import * as Types from './operations';
+
 import { GraphQLClient } from 'graphql-request';
 import * as Dom from 'graphql-request/dist/types.dom';
 
-import * as Types from './operations';
-
 export const GetActivities = `
-    query GetActivities($userAddress: String, $offset: Int) {
+    query GetActivities($userAddress: String, $offset: Int, $limit: Int) {
   activities_public(
     where: {_or: [{from_address: {_eq: $userAddress}}, {to_address: {_eq: $userAddress}}]}
     order_by: {txn_version: desc}
-    limit: 15
+    limit: $limit
     offset: $offset
   ) {
     activity_type
@@ -20,7 +20,7 @@ export const GetActivities = `
   }
   transfers_confidential(
     where: {_or: [{from_address: {_eq: $userAddress}}, {to_address: {_eq: $userAddress}}]}
-    limit: 15
+    limit: $limit
     order_by: {txn_version: desc}
     offset: $offset
   ) {

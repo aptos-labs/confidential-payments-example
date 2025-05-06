@@ -3,6 +3,7 @@ import * as Types from './types';
 export type GetActivitiesQueryVariables = Types.Exact<{
   userAddress?: Types.InputMaybe<Types.Scalars['String']>;
   offset?: Types.InputMaybe<Types.Scalars['Int']>;
+  limit?: Types.InputMaybe<Types.Scalars['Int']>;
 }>;
 
 export type GetActivitiesQuery = {

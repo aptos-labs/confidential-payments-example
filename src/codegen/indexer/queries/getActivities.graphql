@@ -1,4 +1,4 @@
-query GetActivities($userAddress: String, $offset: Int) {
+query GetActivities($userAddress: String, $offset: Int, $limit: Int) {
   activities_public(
     where: {
       _or: [
@@ -7,7 +7,7 @@ query GetActivities($userAddress: String, $offset: Int) {
       ]
     }
     order_by: { txn_version: desc }
-    limit: 15
+    limit: $limit
     offset: $offset
   ) {
     activity_type
@@ -24,7 +24,7 @@ query GetActivities($userAddress: String, $offset: Int) {
         { to_address: { _eq: $userAddress } }
       ]
     }
-    limit: 15
+    limit: $limit
     order_by: { txn_version: desc }
     offset: $offset
   ) {

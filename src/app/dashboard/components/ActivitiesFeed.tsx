@@ -57,11 +57,18 @@ const fetchActivities = async (
     {
       userAddress,
       offset: pageParam,
+      limit: PAGE_SIZE,
     },
     {
       authorization: `Bearer ${appConfig.APTOS_BUILD_NOCODE_API_KEY}`,
     },
   );
+
+  const nextCursor =
+    rawActivities.activities_public.length === PAGE_SIZE ||
+    rawActivities.transfers_confidential.length === PAGE_SIZE
+      ? pageParam + PAGE_SIZE
+      : undefined;
 
   const activities: Activity[] = [];
 
@@ -97,10 +104,6 @@ const fetchActivities = async (
       amountCiphertext: activity.amount_ciphertext,
     });
   }
-
-  // Determine if there should be a next page
-  const nextCursor =
-    activities.length === PAGE_SIZE ? pageParam + PAGE_SIZE : undefined;
 
   return {
     activities,

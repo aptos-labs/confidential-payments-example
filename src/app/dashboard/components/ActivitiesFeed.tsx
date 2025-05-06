@@ -3,7 +3,7 @@ import { useInfiniteQuery } from '@tanstack/react-query';
 import {
   ArrowDownIcon,
   ArrowUpIcon,
-  ExternalLinkIcon,
+  DollarSignIcon,
   FolderOpenIcon,
   RefreshCw,
 } from 'lucide-react';
@@ -253,7 +253,6 @@ export default function ActivitiesFeed() {
     </div>
   );
 }
-
 function TxItem({
   activityType,
   timestamp,
@@ -272,6 +271,10 @@ function TxItem({
   }) {
   const isOutgoing = fromAddress.toString() === currentAddress.toString();
 
+  // This case can only happen on testnet, courtesy of minting.
+  const isSelfDeposit =
+    activityType === 'deposit' && fromAddress.toString() === currentAddress.toString();
+
   let title = '';
   let icon;
   let amountDisplay = '';
@@ -283,10 +286,15 @@ function TxItem({
     ) : (
       <ArrowDownIcon size={18} className={cn('text-textPrimary')} />
     );
+    // TODO: Show the real amount.
     amountDisplay = 'Confidential';
   } else if (activityType === 'deposit') {
-    title = 'Deposit';
-    icon = <ArrowDownIcon size={18} className={cn('text-textPrimary')} />;
+    title = isSelfDeposit ? 'Mint' : 'Deposit';
+    icon = isSelfDeposit ? (
+      <DollarSignIcon size={18} className={cn('text-textPrimary')} />
+    ) : (
+      <ArrowDownIcon size={18} className={cn('text-textPrimary')} />
+    );
     // Cast rest to DepositActivity to access amount
     const { amount } = rest as unknown as DepositActivity;
     amountDisplay = formatAmount(amount, tokenSymbol, tokenDecimals);
@@ -316,31 +324,25 @@ function TxItem({
 
           {/* To/From information */}
           <div className='flex items-center gap-1'>
-            <span className='typography-caption2 text-textSecondary'>
+            <span className='typography-caption1 text-textSecondary'>
               {activityType === 'transfer' && (isOutgoing ? 'To: ' : 'From: ')}
               {activityType === 'deposit' && 'From: '}
               {activityType === 'withdraw' && 'To: '}
             </span>
-            <AddressDisplay
-              address={
-                activityType === 'transfer'
-                  ? isOutgoing
-                    ? toAddress
-                    : fromAddress
-                  : activityType === 'deposit'
-                    ? fromAddress
-                    : toAddress
-              }
-            />
-
-            <div className='ml-2 flex items-center gap-1'>
-              <UiIcon name='CalendarIcon' size={12} className='text-textSecondary' />
-              {timestamp && (
-                <span className='typography-caption2 text-textSecondary'>
-                  {timestamp.toLocaleString()}
-                </span>
-              )}
-            </div>
+            <>
+              <AddressDisplay
+                address={
+                  activityType === 'transfer'
+                    ? isOutgoing
+                      ? toAddress
+                      : fromAddress
+                    : activityType === 'deposit'
+                      ? fromAddress
+                      : toAddress
+                }
+              />
+              <div className='ml-2' />
+            </>
 
             <Link
               href={getTxExplorerUrl(txnVersion.toString())}
@@ -348,7 +350,14 @@ function TxItem({
               className='ml-auto'
               aria-label='View transaction details'
             >
-              <ExternalLinkIcon size={14} className='text-textSecondary' />
+              <div className='flex items-center gap-1'>
+                <UiIcon name='CalendarIcon' size={12} className='text-textSecondary' />
+                {timestamp && (
+                  <span className='typography-caption2 text-textSecondary'>
+                    {timestamp.toLocaleString()}
+                  </span>
+                )}
+              </div>
             </Link>
           </div>
         </div>
@@ -407,7 +416,7 @@ const AddressDisplay = ({ address }: { address: AccountAddress }) => {
     // Extract the part before the first dot if it's a valid name
     const formattedName = name.split('.')[0];
     return (
-      <span className='typography-caption1 text-textPrimary'>{formattedName}</span>
+      <span className='typography-caption1 text-textPrimary'>@{formattedName}</span>
     );
   }
 

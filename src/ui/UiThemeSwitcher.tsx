@@ -14,7 +14,7 @@ export default function UiThemeSwitcher() {
   }, [currentTheme, setTheme]);
 
   return (
-    <div className='mr-auto flex items-center gap-2'>
+    <div className='flex w-full items-center justify-between gap-2'>
       <SunIcon className='size-4' />
       <UiSwitch
         checked={currentTheme === 'dark'}

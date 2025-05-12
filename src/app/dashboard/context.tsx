@@ -304,21 +304,6 @@ const useAccounts = () => {
     { loadArgs: [] },
   );
 
-  /*
-  const {
-    data: aptBalance,
-    isLoading: isBalanceLoading,
-    isLoadingError: isBalanceLoadingError,
-    update,
-  } = useLoading(
-    0,
-    () => {
-      return getAptBalance(selectedAccount);
-    },
-    { loadArgs: [selectedAccount] },
-  );
-  */
-
   const {
     data: primaryTokenBalance,
     isLoading: isBalanceLoading,

@@ -90,7 +90,7 @@ export default function ConfidentialAssetCard({
       if (+currTokenStatus.fungibleAssetBalance >= 0) {
         ErrorHandler.process(
           error,
-          'Insufficient APT balance, try funding your account',
+          `Insufficient ${token.symbol} balance, try funding your account`,
         );
       } else {
         ErrorHandler.process(error);
@@ -159,8 +159,8 @@ export default function ConfidentialAssetCard({
 
                     <UiTooltipContent className='overflow-hidden text-ellipsis'>
                       <span className='typography-caption1 text-textSecondary'>
-                        make sure you have enough {token.symbol} to send transactions,
-                        or you can buy some in deposit modal
+                        make sure you have enough {token.symbol} to send transactions.
+                        If not, mint some.
                       </span>
                     </UiTooltipContent>
                   </UiTooltip>

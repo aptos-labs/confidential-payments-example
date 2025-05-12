@@ -256,6 +256,7 @@ export default function ActivitiesFeed() {
     </div>
   );
 }
+
 function TxItem({
   activityType,
   timestamp,
@@ -415,7 +416,7 @@ const AddressDisplay = ({ address }: { address: AccountAddress }) => {
     return <span className='typography-caption1 text-textSecondary'>Loading...</span>;
   }
 
-  if (name) {
+  if (name && name.includes(appConfig.ANS_DOMAIN)) {
     // Extract the part before the first dot if it's a valid name
     const formattedName = name.split('.')[0];
     return (

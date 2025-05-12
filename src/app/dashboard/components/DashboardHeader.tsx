@@ -154,14 +154,9 @@ export default function DashboardHeader({
         </UiDropdownMenuTrigger>
         <UiDropdownMenuContent>
           <UiDropdownMenuItem>
-            <Link
-              className='flex w-full items-center gap-2'
-              href={getAccountExplorerUrl(selectedAccount.accountAddress.toString())}
-              target='_blank'
-            >
-              <UiIcon name='ExternalLinkIcon' className='size-4' />
-              <span className='typography-caption1 text-textPrimary'>Account</span>
-            </Link>
+            <div className='mx-auto'>
+              <UiThemeSwitcher />
+            </div>
           </UiDropdownMenuItem>
           <UiDropdownMenuItem>
             <button
@@ -188,9 +183,14 @@ export default function DashboardHeader({
             </button>
           </UiDropdownMenuItem>
           <UiDropdownMenuItem>
-            <div className='mx-auto'>
-              <UiThemeSwitcher />
-            </div>
+            <Link
+              className='flex w-full items-center justify-between gap-2'
+              href={getAccountExplorerUrl(selectedAccount.accountAddress.toString())}
+              target='_blank'
+            >
+              <span className='typography-caption1 text-textPrimary'>Explorer</span>
+              <UiIcon name='ExternalLinkIcon' className='size-4' />
+            </Link>
           </UiDropdownMenuItem>
           <UiDropdownMenuItem onClick={logout}>
             Logout

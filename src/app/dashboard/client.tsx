@@ -75,6 +75,8 @@ export default function DashboardClient() {
 
   const [, setIsRefreshing] = useState(false);
 
+  // TODO: I think there is a race here, at least on the first mint, where the balance
+  // is shown as 2x what it really is. See also the Deposit component.
   const tryRefresh = useCallback(async () => {
     setIsSubmitting(true);
     setIsRefreshing(true);

@@ -13,6 +13,7 @@ import { HTMLAttributes, useCallback, useEffect, useRef } from 'react';
 import { getTxExplorerUrl } from '@/api/modules/aptos';
 import { noCodeClient } from '@/api/modules/aptos/client';
 import { appConfig } from '@/config';
+import { useDecryptedAmount } from '@/hooks/amount-decryption';
 import { useGetAnsPrimaryName } from '@/hooks/ans';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
@@ -266,85 +267,117 @@ function TxItem({
   currentAddress,
   tokenSymbol,
   tokenDecimals,
-  ...rest
-}: HTMLAttributes<HTMLDivElement> &
-  Activity & {
-    currentAddress: AccountAddress;
-    tokenSymbol: string;
-    tokenDecimals: number;
-  }) {
+  amount: amountRaw,
+  amountCiphertext,
+}: Activity & {
+  currentAddress: AccountAddress;
+  tokenSymbol: string;
+  tokenDecimals: number;
+  amount?: number;
+  amountCiphertext?: string;
+}) {
+  const { selectedAccountDecryptionKey } = useConfidentialCoinContext();
+
   const isOutgoing = fromAddress.toString() === currentAddress.toString();
 
   // This case can only happen on testnet, courtesy of minting.
   const isSelfDeposit =
     activityType === 'deposit' && fromAddress.toString() === currentAddress.toString();
 
+  // Use the safe wrapper hook which handles undefined values internally
+  const {
+    amount: decryptedAmount,
+    isLoading: isDecrypting,
+    error: decryptionError,
+  } = useDecryptedAmount(amountCiphertext, selectedAccountDecryptionKey);
+
   let title = '';
   let icon;
+  let statusText = '';
   let amountDisplay = '';
+  let showError = false;
 
   if (activityType === 'transfer') {
     title = isOutgoing ? 'Sent' : 'Received';
     icon = isOutgoing ? (
-      <ArrowUpIcon size={18} className={cn('text-textPrimary')} />
+      <ArrowUpIcon size={18} className='text-textPrimary' />
     ) : (
-      <ArrowDownIcon size={18} className={cn('text-textPrimary')} />
+      <ArrowDownIcon size={18} className='text-textPrimary' />
     );
-    // TODO: Show the real amount.
-    amountDisplay = 'Confidential';
+
+    if (isDecrypting) {
+      statusText = 'Decrypting...';
+    } else if (decryptionError || decryptedAmount === undefined) {
+      statusText = 'Decryption failed';
+      showError = true;
+    } else {
+      amountDisplay = formatAmount(decryptedAmount, tokenSymbol, tokenDecimals);
+    }
   } else if (activityType === 'deposit') {
     title = isSelfDeposit ? 'Mint' : 'Deposit';
     icon = isSelfDeposit ? (
-      <DollarSignIcon size={18} className={cn('text-textPrimary')} />
+      <DollarSignIcon size={18} className='text-textPrimary' />
     ) : (
-      <ArrowDownIcon size={18} className={cn('text-textPrimary')} />
+      <ArrowDownIcon size={18} className='text-textPrimary' />
     );
-    // Cast rest to DepositActivity to access amount
-    const { amount } = rest as unknown as DepositActivity;
-    amountDisplay = formatAmount(amount, tokenSymbol, tokenDecimals);
+    amountDisplay = formatAmount(amountRaw, tokenSymbol, tokenDecimals);
   } else if (activityType === 'withdraw') {
     title = 'Withdraw';
-    icon = <ArrowUpIcon size={18} className={cn('text-textPrimary')} />;
-    // Cast rest to WithdrawActivity to access amount
-    const { amount } = rest as unknown as WithdrawActivity;
-    amountDisplay = formatAmount(amount, tokenSymbol, tokenDecimals);
+    icon = <ArrowUpIcon size={18} className='text-textPrimary' />;
+    amountDisplay = formatAmount(amountRaw, tokenSymbol, tokenDecimals);
   }
+
+  const counterpartyAddress =
+    activityType === 'transfer'
+      ? isOutgoing
+        ? toAddress
+        : fromAddress
+      : activityType === 'deposit'
+        ? fromAddress
+        : toAddress;
+
+  const directionLabel =
+    (activityType === 'transfer' && (isOutgoing ? 'To: ' : 'From: ')) ||
+    (activityType === 'deposit' && 'From: ') ||
+    (activityType === 'withdraw' && 'To: ') ||
+    '';
 
   return (
     <div className='flex flex-col'>
-      <div
-        {...rest}
-        className={cn('flex flex-row items-center gap-3 py-3', rest.className)}
-      >
-        <div className='flex size-[36px] flex-col items-center justify-center rounded-full bg-componentSelected'>
+      <div className='flex flex-row items-center gap-3 py-3'>
+        <div
+          className={cn(
+            'flex size-[36px] flex-col items-center justify-center rounded-full',
+            'bg-componentSelected',
+          )}
+        >
           {icon}
         </div>
 
         <div className='flex flex-1 flex-col gap-1.5'>
           <div className='flex items-center justify-between'>
             <span className='typography-subtitle3 text-textPrimary'>{title}</span>
-            <span className='typography-body3 text-textPrimary'>{amountDisplay}</span>
+            {isDecrypting || showError ? (
+              <span
+                className={cn(
+                  'typography-body3',
+                  showError ? 'text-red-500' : 'text-textSecondary',
+                )}
+              >
+                {statusText}
+              </span>
+            ) : (
+              <span className='typography-body3 text-textPrimary'>{amountDisplay}</span>
+            )}
           </div>
 
           {/* To/From information */}
           <div className='flex items-center gap-1'>
             <span className='typography-caption1 text-textSecondary'>
-              {activityType === 'transfer' && (isOutgoing ? 'To: ' : 'From: ')}
-              {activityType === 'deposit' && 'From: '}
-              {activityType === 'withdraw' && 'To: '}
+              {directionLabel}
             </span>
             <>
-              <AddressDisplay
-                address={
-                  activityType === 'transfer'
-                    ? isOutgoing
-                      ? toAddress
-                      : fromAddress
-                    : activityType === 'deposit'
-                      ? fromAddress
-                      : toAddress
-                }
-              />
+              <AddressDisplay address={counterpartyAddress} />
               <div className='ml-2' />
             </>
 

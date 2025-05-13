@@ -1,3 +1,4 @@
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets';
 import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
@@ -8,7 +9,7 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import Link from 'next/link';
-import { HTMLAttributes, useCallback, useEffect, useRef } from 'react';
+import { HTMLAttributes, useCallback, useEffect, useRef, useState } from 'react';
 
 import { getTxExplorerUrl } from '@/api/modules/aptos';
 import { noCodeClient } from '@/api/modules/aptos/client';
@@ -45,6 +46,7 @@ type TransferActivity = BaseActivity & {
 type Activity = DepositActivity | WithdrawActivity | TransferActivity;
 
 const PAGE_SIZE = 10;
+const REFRESH_INTERVAL_MS = 10000;
 
 const fetchActivities = async (
   userAddress: string,
@@ -78,7 +80,7 @@ const fetchActivities = async (
     let activityType: Activity['activityType'];
     if (activity.activity_type.toLowerCase().includes('deposit')) {
       activityType = 'deposit';
-    } else if (activity.activity_type.includes('withdraw')) {
+    } else if (activity.activity_type.toLowerCase().includes('withdraw')) {
       activityType = 'withdraw';
     } else {
       console.warn('Unknown activity type: ', activity.activity_type);
@@ -120,6 +122,8 @@ export default function ActivitiesFeed() {
   // Reference to the load more trigger element
   const observerTarget = useRef<HTMLDivElement>(null);
 
+  const [countdown, setCountdown] = useState(REFRESH_INTERVAL_MS / 1000);
+
   const {
     data,
     isLoading,
@@ -130,15 +134,37 @@ export default function ActivitiesFeed() {
     isFetchingNextPage,
     refetch,
     isRefetching,
+    dataUpdatedAt,
   } = useInfiniteQuery({
     queryKey: ['activities', selectedAccount.accountAddress.toString()],
     queryFn: ({ pageParam = 0 }) =>
       fetchActivities(selectedAccount.accountAddress.toString(), pageParam),
     getNextPageParam: lastPage => lastPage.nextCursor,
     initialPageParam: 0,
-    refetchInterval: 5000,
-    staleTime: 5000,
+    refetchInterval: REFRESH_INTERVAL_MS,
+    staleTime: REFRESH_INTERVAL_MS,
   });
+
+  // Add countdown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+
+    const updateCountdown = () => {
+      setCountdown(prev => {
+        if (prev <= 0) return REFRESH_INTERVAL_MS / 1000;
+        return prev - 1;
+      });
+    };
+
+    // Reset countdown when data is fetched or refetching starts
+    setCountdown(REFRESH_INTERVAL_MS / 1000);
+    // eslint-disable-next-line prefer-const
+    timer = setInterval(updateCountdown, 1000);
+
+    return () => {
+      if (timer) clearInterval(timer);
+    };
+  }, [isRefetching, dataUpdatedAt]); // Add dataUpdatedAt to dependencies
 
   // Flatten the activities from all pages
   const allActivities = data?.pages.flatMap(page => page.activities) || [];
@@ -180,32 +206,35 @@ export default function ActivitiesFeed() {
     >
       <div className='mb-3 flex items-center justify-between'>
         <h2 className='typography-h5 text-textPrimary'>Activity</h2>
-        <button
-          onClick={() => refetch()}
-          className={cn(
-            'hover:bg-componentHover flex items-center justify-center gap-2 rounded-md py-1.5',
-            isRefetching && 'opacity-60',
-          )}
-          disabled={isRefetching}
-          aria-label='Refresh activities'
-        >
-          <RefreshCw
-            size={16}
-            className={cn('text-textSecondary', isRefetching && 'animate-spin')}
-          />
-          {isRefetching ? (
-            <span className='typography-body3 text-textSecondary'>Loading...</span>
-          ) : (
-            <span className='typography-body3 text-textSecondary'>Refresh</span>
-          )}
-        </button>
+        <div className='flex items-center gap-2'>
+          <span className='typography-caption1 text-textSecondary'>{countdown}s</span>
+          <button
+            onClick={() => refetch()}
+            className={cn(
+              'hover:bg-componentHover flex items-center justify-center gap-2 rounded-md py-1.5',
+              isRefetching && 'opacity-60',
+            )}
+            disabled={isRefetching}
+            aria-label='Refresh activities'
+          >
+            <RefreshCw
+              size={16}
+              className={cn('text-textSecondary', isRefetching && 'animate-spin')}
+            />
+            {isRefetching ? (
+              <span className='typography-body3 text-textSecondary'>Loading...</span>
+            ) : (
+              <span className='typography-body3 text-textSecondary'>Refresh</span>
+            )}
+          </button>
+        </div>
       </div>
 
       {isError && (
         <div className='mb-3 rounded-md bg-red-100 p-3 text-red-800'>
           <p>
             Failed to load activities.{' '}
-            {error instanceof Error ? error.message : 'Please try again.'}
+            {error instanceof Error ? error.message : 'Unexpected error.'}
           </p>
         </div>
       )}
@@ -284,18 +313,8 @@ function TxItem({
   const isSelfDeposit =
     activityType === 'deposit' && fromAddress.toString() === currentAddress.toString();
 
-  // Use the safe wrapper hook which handles undefined values internally
-  const {
-    amount: decryptedAmount,
-    isLoading: isDecrypting,
-    error: decryptionError,
-  } = useDecryptedAmount(amountCiphertext, selectedAccountDecryptionKey);
-
   let title = '';
   let icon;
-  let statusText = '';
-  let amountDisplay = '';
-  let showError = false;
 
   if (activityType === 'transfer') {
     title = isOutgoing ? 'Sent' : 'Received';
@@ -304,15 +323,6 @@ function TxItem({
     ) : (
       <ArrowDownIcon size={18} className='text-textPrimary' />
     );
-
-    if (isDecrypting) {
-      statusText = 'Decrypting...';
-    } else if (decryptionError || decryptedAmount === undefined) {
-      statusText = 'Decryption failed';
-      showError = true;
-    } else {
-      amountDisplay = formatAmount(decryptedAmount, tokenSymbol, tokenDecimals);
-    }
   } else if (activityType === 'deposit') {
     title = isSelfDeposit ? 'Mint' : 'Deposit';
     icon = isSelfDeposit ? (
@@ -320,11 +330,9 @@ function TxItem({
     ) : (
       <ArrowDownIcon size={18} className='text-textPrimary' />
     );
-    amountDisplay = formatAmount(amountRaw, tokenSymbol, tokenDecimals);
   } else if (activityType === 'withdraw') {
     title = 'Withdraw';
     icon = <ArrowUpIcon size={18} className='text-textPrimary' />;
-    amountDisplay = formatAmount(amountRaw, tokenSymbol, tokenDecimals);
   }
 
   const counterpartyAddress =
@@ -357,18 +365,20 @@ function TxItem({
         <div className='flex flex-1 flex-col gap-1.5'>
           <div className='flex items-center justify-between'>
             <span className='typography-subtitle3 text-textPrimary'>{title}</span>
-            {isDecrypting || showError ? (
-              <span
-                className={cn(
-                  'typography-body3',
-                  showError ? 'text-red-500' : 'text-textSecondary',
-                )}
-              >
-                {statusText}
-              </span>
-            ) : (
-              <span className='typography-body3 text-textPrimary'>{amountDisplay}</span>
-            )}
+            {amountCiphertext ? (
+              <EncryptedAmountDisplay
+                amountCiphertext={amountCiphertext}
+                decryptionKey={selectedAccountDecryptionKey}
+                tokenSymbol={tokenSymbol}
+                tokenDecimals={tokenDecimals}
+              />
+            ) : amountRaw !== undefined ? (
+              <PlainAmountDisplay
+                amount={amountRaw}
+                tokenSymbol={tokenSymbol}
+                tokenDecimals={tokenDecimals}
+              />
+            ) : null}
           </div>
 
           {/* To/From information */}
@@ -400,6 +410,60 @@ function TxItem({
         </div>
       </div>
     </div>
+  );
+}
+
+// Component for displaying plain (unencrypted) amounts
+function PlainAmountDisplay({
+  amount,
+  tokenSymbol,
+  tokenDecimals,
+}: {
+  amount: number;
+  tokenSymbol: string;
+  tokenDecimals: number;
+}) {
+  return (
+    <span className='typography-body3 text-textPrimary'>
+      {formatAmount(amount, tokenSymbol, tokenDecimals)}
+    </span>
+  );
+}
+
+// Component for displaying encrypted amounts with decryption handling
+function EncryptedAmountDisplay({
+  amountCiphertext,
+  decryptionKey,
+  tokenSymbol,
+  tokenDecimals,
+}: {
+  amountCiphertext: string;
+  decryptionKey: TwistedEd25519PrivateKey;
+  tokenSymbol: string;
+  tokenDecimals: number;
+}) {
+  const {
+    amount: decryptedAmount,
+    isLoading: isDecrypting,
+    error: decryptionError,
+  } = useDecryptedAmount(amountCiphertext, decryptionKey);
+
+  if (isDecrypting) {
+    return (
+      <span className='typography-body3 text-textPrimary'>
+        <RefreshCw size={12} className='animate-spin' />
+      </span>
+    );
+  }
+
+  if (decryptionError || decryptedAmount === undefined) {
+    return <span className='typography-body3 text-red-500'>Decryption failed</span>;
+  }
+
+  return (
+    <span className='typography-body3 text-textPrimary'>
+      {formatAmount(decryptedAmount, tokenSymbol, tokenDecimals)}
+    </span>
   );
 }
 
@@ -446,7 +510,11 @@ const AddressDisplay = ({ address }: { address: AccountAddress }) => {
   });
 
   if (isLoading) {
-    return <span className='typography-caption1 text-textSecondary'>Loading...</span>;
+    return (
+      <span className='typography-caption1 flex items-center text-textSecondary'>
+        <RefreshCw size={12} className='mr-1 animate-spin' />
+      </span>
+    );
   }
 
   if (name && name.includes(appConfig.ANS_DOMAIN)) {
@@ -458,10 +526,9 @@ const AddressDisplay = ({ address }: { address: AccountAddress }) => {
   }
 
   // Shorten address for display (0x123...789)
-  const addressStr = address.toString();
-  const shortAddress = `${addressStr.slice(0, 4)}...${addressStr.slice(-3)}`;
+  const shortAddress = trimAddress(address.toString());
 
-  return <span className='typography-caption1 text-textSecondary'>{shortAddress}</span>;
+  return <span className='typography-caption1 text-textPrimary'>{shortAddress}</span>;
 };
 
 // Format amount with token symbol
@@ -469,3 +536,10 @@ const formatAmount = (amount: number, symbol: string, decimals: number) => {
   const properAmount = amount / 10 ** decimals;
   return `${properAmount.toLocaleString()} ${symbol}`;
 };
+
+function trimAddress(address: string): string {
+  if (address.length < 4) {
+    return address;
+  }
+  return address.slice(0, 6) + '...' + address.slice(-6);
+}

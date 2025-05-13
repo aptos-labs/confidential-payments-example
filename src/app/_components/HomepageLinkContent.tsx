@@ -14,7 +14,7 @@ export default function HomepageLinkContent() {
 
   const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
 
-  const isInitialing = useRef(false);
+  const isInitializing = useRef(false);
 
   const [isLoading, setIsLoading] = useState(false);
 
@@ -30,8 +30,8 @@ export default function HomepageLinkContent() {
   const appleIdToken = fragmentParams.get('token');
 
   useEffect(() => {
-    if (isInitialing.current) return;
-    isInitialing.current = true;
+    if (isInitializing.current) return;
+    isInitializing.current = true;
 
     if (activeKeylessAccount) {
       router.push('/dashboard');

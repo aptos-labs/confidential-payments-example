@@ -18,35 +18,10 @@ const POLLARD_KANGAROO_WASM_URL =
 
 export async function createKangaroo(secret_size: number) {
   await initWasm({ module_or_path: POLLARD_KANGAROO_WASM_URL });
-
   return create_kangaroo(secret_size);
 }
 
 export const preloadTables = async () => {
-  const kangaroo16 = await createKangaroo(16);
-  const kangaroo32 = await createKangaroo(32);
-  const kangaroo48 = await createKangaroo(48);
-
-  TwistedElGamal.setDecryptionFn(async pk => {
-    if (bytesToNumberLE(pk) === 0n) return 0n;
-
-    let result = kangaroo16.solve_dlp(pk, 500n);
-
-    if (!result) {
-      result = kangaroo32.solve_dlp(pk, 1500n);
-    }
-
-    if (!result) {
-      result = kangaroo48.solve_dlp(pk);
-    }
-
-    if (!result) throw new TypeError('Decryption failed');
-
-    return result;
-  });
-};
-
-export const preloadTablesForBalances = async () => {
   const kangaroo16 = await createKangaroo(16);
   const kangaroo32 = await createKangaroo(32);
 

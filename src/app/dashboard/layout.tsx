@@ -4,8 +4,7 @@ import { QueryClientProvider } from '@tanstack/react-query';
 import { ErrorBoundary } from 'next/dist/client/components/error-boundary';
 import { useRouter } from 'next/navigation';
 import { PropsWithChildren } from 'react';
-import { useState } from 'react';
-import { useTimeoutFn } from 'react-use';
+import { useAsync, useTimeoutFn } from 'react-use';
 
 import { queryClient } from '@/api/client';
 import { preloadTables } from '@/api/modules/aptos/wasmPollardKangaroo';
@@ -19,30 +18,36 @@ import { ConfidentialCoinContextProvider } from './context';
 export default function DashboardLayout({ children }: PropsWithChildren) {
   const walletAccounts = walletStore.useWalletAccounts();
 
-  const [isInitialized, setIsInitialized] = useState(false);
-
   const keylessAccounts = authStore.useAuthStore(state => state.accounts);
   const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
   const switchKeylessAccount = authStore.useAuthStore(
     state => state.switchKeylessAccount,
   );
 
-  useTimeoutFn(async () => {
-    setIsInitialized(false);
+  const state = useAsync(async () => {
     try {
-      // await preloadTablesForBalances()
+      // console.log('[layout] Preloading tables...');
       await preloadTables();
+      // await preloadTables();
+      // console.log('[layout] Tables preloaded');
 
       if (!activeKeylessAccount && keylessAccounts.length) {
+        // console.log('[layout] Switching to keyless account...');
         await switchKeylessAccount(keylessAccounts[0].idToken.raw);
+        // console.log('[layout] Keyless account switched');
       }
     } catch (error) {
+      console.error('[layout] Failed to initialize:', error);
       ErrorHandler.processWithoutFeedback(error);
+      throw error;
     }
-    setIsInitialized(true);
-  }, 10);
+  }, []);
 
-  if (!isInitialized) return <Loading />;
+  if (state.loading) return <Loading />;
+
+  if (state.error) {
+    return <div>Error initializing: {state.error.message}</div>;
+  }
 
   if (
     (!walletAccounts.length && !activeKeylessAccount) ||

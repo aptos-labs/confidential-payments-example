@@ -328,7 +328,8 @@ export type timestamp_comparison_exp = {
 /** columns and relationships of "transfers_confidential" */
 export type transfers_confidential = {
   __typename?: 'transfers_confidential';
-  amount_ciphertext: Scalars['String'];
+  amount_ciphertext_recipient: Scalars['String'];
+  amount_ciphertext_sender: Scalars['String'];
   from_address: Scalars['String'];
   to_address: Scalars['String'];
   txn_timestamp: Scalars['timestamp'];
@@ -340,7 +341,8 @@ export type transfers_confidential_bool_exp = {
   _and: InputMaybe<Array<transfers_confidential_bool_exp>>;
   _not: InputMaybe<transfers_confidential_bool_exp>;
   _or: InputMaybe<Array<transfers_confidential_bool_exp>>;
-  amount_ciphertext: InputMaybe<String_comparison_exp>;
+  amount_ciphertext_recipient: InputMaybe<String_comparison_exp>;
+  amount_ciphertext_sender: InputMaybe<String_comparison_exp>;
   from_address: InputMaybe<String_comparison_exp>;
   to_address: InputMaybe<String_comparison_exp>;
   txn_timestamp: InputMaybe<timestamp_comparison_exp>;
@@ -349,7 +351,8 @@ export type transfers_confidential_bool_exp = {
 
 /** Ordering options when selecting data from "transfers_confidential". */
 export type transfers_confidential_order_by = {
-  amount_ciphertext: InputMaybe<order_by>;
+  amount_ciphertext_recipient: InputMaybe<order_by>;
+  amount_ciphertext_sender: InputMaybe<order_by>;
   from_address: InputMaybe<order_by>;
   to_address: InputMaybe<order_by>;
   txn_timestamp: InputMaybe<order_by>;
@@ -359,7 +362,9 @@ export type transfers_confidential_order_by = {
 /** select columns of table "transfers_confidential" */
 export enum transfers_confidential_select_column {
   /** column name */
-  amount_ciphertext = 'amount_ciphertext',
+  amount_ciphertext_recipient = 'amount_ciphertext_recipient',
+  /** column name */
+  amount_ciphertext_sender = 'amount_ciphertext_sender',
   /** column name */
   from_address = 'from_address',
   /** column name */
@@ -380,7 +385,8 @@ export type transfers_confidential_stream_cursor_input = {
 
 /** Initial value of the column from where the streaming should start */
 export type transfers_confidential_stream_cursor_value_input = {
-  amount_ciphertext: InputMaybe<Scalars['String']>;
+  amount_ciphertext_recipient: InputMaybe<Scalars['String']>;
+  amount_ciphertext_sender: InputMaybe<Scalars['String']>;
   from_address: InputMaybe<Scalars['String']>;
   to_address: InputMaybe<Scalars['String']>;
   txn_timestamp: InputMaybe<Scalars['timestamp']>;

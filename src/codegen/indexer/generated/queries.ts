@@ -28,7 +28,8 @@ export const GetActivities = `
     to_address
     txn_timestamp
     txn_version
-    amount_ciphertext
+    amount_ciphertext_sender
+    amount_ciphertext_recipient
   }
 }
     `;

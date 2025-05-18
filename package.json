@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@aptos-labs/confidential-asset-wasm-bindings": "^0.0.2",
-    "@aptos-labs/confidential-assets": "^0.2.6",
+    "@aptos-labs/confidential-assets": "^0.2.7",
     "@aptos-labs/gas-station-client": "^1.0.0",
     "@aptos-labs/ts-sdk": "^1.38.0",
     "@distributedlab/tools": "^1.0.0-rc.17",

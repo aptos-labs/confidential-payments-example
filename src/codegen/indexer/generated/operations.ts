@@ -23,6 +23,7 @@ export type GetActivitiesQuery = {
     to_address: string;
     txn_timestamp: any;
     txn_version: any;
-    amount_ciphertext: string;
+    amount_ciphertext_sender: string;
+    amount_ciphertext_recipient: string;
   }>;
 };

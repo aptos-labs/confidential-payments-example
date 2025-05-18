@@ -98,13 +98,17 @@ const fetchActivities = async (
 
   // Convert the confidential activities.
   for (const activity of rawActivities.transfers_confidential) {
+    const amountCiphertext =
+      activity.from_address === userAddress
+        ? activity.amount_ciphertext_sender
+        : activity.amount_ciphertext_recipient;
     activities.push({
       activityType: 'transfer',
       timestamp: new Date(activity.txn_timestamp + 'Z'), // Ensure UTC timezone is used
       txnVersion: activity.txn_version,
       fromAddress: AccountAddress.from(activity.from_address),
       toAddress: AccountAddress.from(activity.to_address),
-      amountCiphertext: activity.amount_ciphertext,
+      amountCiphertext,
     });
   }
 

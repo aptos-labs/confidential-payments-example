@@ -912,7 +912,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       amount: string,
       opts?: {
         auditorsEncryptionKeyHexList?: string[];
-
         isSyncFirst?: boolean;
       },
     ) => {
@@ -927,7 +926,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
               selectedAccountDecryptionKey.toString(),
               selectedToken.address,
             );
-
             return actual?.amountEncrypted;
           })()
         : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted;

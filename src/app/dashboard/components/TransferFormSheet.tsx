@@ -208,6 +208,16 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             }),
           );
 
+          const err = await ensureConfidentialBalanceReadyBeforeOp({
+            amountToEnsure: String(formData.amount),
+            token,
+            currentTokenStatus,
+          });
+          if (err) {
+            enableForm();
+            return;
+          }
+
           const [transferTx, buildTransferTxError] = await tryCatch(
             buildTransferTx(
               addressStr,
@@ -220,16 +230,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           );
           if (buildTransferTxError) {
             ErrorHandler.process(buildTransferTxError);
-            enableForm();
-            return;
-          }
-
-          const err = await ensureConfidentialBalanceReadyBeforeOp({
-            amountToEnsure: String(formData.amount),
-            token,
-            currentTokenStatus,
-          });
-          if (err) {
             enableForm();
             return;
           }

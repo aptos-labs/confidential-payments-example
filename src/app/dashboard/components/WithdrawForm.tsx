@@ -98,6 +98,17 @@ export default function WithdrawForm({
       handleSubmit(async formData => {
         disableForm();
 
+        const err = await ensureConfidentialBalanceReadyBeforeOp({
+          amountToEnsure: String(formData.amount),
+          token: token,
+          currentTokenStatus,
+        });
+        if (err) {
+          ErrorHandler.process(err);
+          enableForm();
+          return;
+        }
+
         const [withdrawTx, buildWithdrawError] = await tryCatch(
           buildWithdrawToTx(
             parseUnits(String(formData.amount), token.decimals).toString(),
@@ -109,17 +120,6 @@ export default function WithdrawForm({
         );
         if (buildWithdrawError) {
           ErrorHandler.process(buildWithdrawError);
-          enableForm();
-          return;
-        }
-
-        const err = await ensureConfidentialBalanceReadyBeforeOp({
-          amountToEnsure: String(formData.amount),
-          token: token,
-          currentTokenStatus,
-        });
-        if (err) {
-          ErrorHandler.process(err);
           enableForm();
           return;
         }

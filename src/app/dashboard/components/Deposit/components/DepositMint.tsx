@@ -19,8 +19,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     selectedToken,
     depositTo,
     depositCoinTo,
-    reloadPrimaryTokenBalance,
-    loadSelectedDecryptionKeyState,
+    reloadBalances,
     perTokenStatuses,
   } = useConfidentialCoinContext();
   const gasStationArgs = useGasStationArgs();
@@ -139,10 +138,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       }
 
       const minimumLedgerVersion = BigInt(depositTxReceipt.version);
-      await Promise.all([
-        reloadPrimaryTokenBalance(minimumLedgerVersion),
-        loadSelectedDecryptionKeyState(minimumLedgerVersion),
-      ]);
+      const [, reloadError] = await tryCatch(reloadBalances(minimumLedgerVersion));
+      if (reloadError) {
+        ErrorHandler.process(reloadError);
+        setIsSubmitting(false);
+        return;
+      }
       bus.emit(
         BusEvents.Success,
         `Successfully funded your balance with ${MINT_AMOUNT} ${selectedToken.symbol} and veiled it`,

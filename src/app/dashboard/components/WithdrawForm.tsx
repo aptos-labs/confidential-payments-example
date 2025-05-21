@@ -27,8 +27,7 @@ export default function WithdrawForm({
     selectedToken,
     selectedAccount,
     buildWithdrawToTx,
-    loadSelectedDecryptionKeyState,
-    reloadPrimaryTokenBalance,
+    reloadBalances,
     perTokenStatuses,
     ensureConfidentialBalanceReadyBeforeOp,
   } = useConfidentialCoinContext();
@@ -129,7 +128,7 @@ export default function WithdrawForm({
           return;
         }
 
-        const [_txReceipt, withdrawError] = await tryCatch(
+        const [txReceipt, withdrawError] = await tryCatch(
           sendAndWaitTx(withdrawTx, selectedAccount, gasStationArgs),
         );
         if (withdrawError) {
@@ -140,7 +139,7 @@ export default function WithdrawForm({
         }
 
         const [, reloadError] = await tryCatch(
-          Promise.all([loadSelectedDecryptionKeyState(), reloadPrimaryTokenBalance()]),
+          reloadBalances(BigInt(txReceipt.version)),
         );
         if (reloadError) {
           ErrorHandler.process(reloadError);
@@ -162,9 +161,8 @@ export default function WithdrawForm({
       enableForm,
       ensureConfidentialBalanceReadyBeforeOp,
       handleSubmit,
-      loadSelectedDecryptionKeyState,
       onSubmit,
-      reloadPrimaryTokenBalance,
+      reloadBalances,
       selectedAccount,
       token,
       gasStationArgs,

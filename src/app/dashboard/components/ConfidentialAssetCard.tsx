@@ -45,8 +45,7 @@ export default function ConfidentialAssetCard({
   const {
     selectedAccount,
     registerAccountEncryptionKey,
-    reloadPrimaryTokenBalance,
-    loadSelectedDecryptionKeyState,
+    reloadBalances,
     perTokenStatuses,
   } = useConfidentialCoinContext();
   const gasStationArgs = useGasStationArgs();
@@ -82,10 +81,7 @@ export default function ConfidentialAssetCard({
 
     try {
       await registerAccountEncryptionKey(token.address);
-      await Promise.all([
-        loadSelectedDecryptionKeyState(),
-        reloadPrimaryTokenBalance(),
-      ]);
+      await reloadBalances();
     } catch (error) {
       if (+currTokenStatus.fungibleAssetBalance >= 0) {
         ErrorHandler.process(
@@ -105,21 +101,9 @@ export default function ConfidentialAssetCard({
         <div className='flex size-full flex-col items-center gap-4 rounded-2xl p-4'>
           <div className='relative flex items-center gap-2'>
             <Avatar name={token.address} size={20} variant='pixel' />
-
             <span className='typography-subtitle1 text-textPrimary'>
               {token.symbol} Balance
             </span>
-
-            {/* <button
-                  className='absolute left-full top-1/2 -translate-y-1/2'
-                  onClick={() => copy(token.address)}
-                >
-                  {isCopied ? (
-                    <Check size={24} className={'pl-2 text-textSecondary'} />
-                  ) : (
-                    <Copy size={24} className={'pl-2 text-textSecondary'} />
-                  )}
-                </button> */}
           </div>
 
           <div className='flex items-center'>

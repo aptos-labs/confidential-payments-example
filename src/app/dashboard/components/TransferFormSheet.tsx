@@ -60,8 +60,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     const {
       selectedAccount,
       buildTransferTx,
-      loadSelectedDecryptionKeyState,
-      reloadPrimaryTokenBalance,
+      reloadBalances,
       perTokenStatuses,
       ensureConfidentialBalanceReadyBeforeOp,
     } = useConfidentialCoinContext();
@@ -241,13 +240,10 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             return;
           }
 
-          await sendAndWaitTx(transferTx, selectedAccount, gasStationArgs);
+          const res = await sendAndWaitTx(transferTx, selectedAccount, gasStationArgs);
 
           const [, reloadError] = await tryCatch(
-            Promise.all([
-              loadSelectedDecryptionKeyState(),
-              reloadPrimaryTokenBalance(),
-            ]),
+            Promise.all([reloadBalances(BigInt(res.version))]),
           );
           if (reloadError) {
             ErrorHandler.process(reloadError);
@@ -269,9 +265,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         enableForm,
         ensureConfidentialBalanceReadyBeforeOp,
         handleSubmit,
-        loadSelectedDecryptionKeyState,
         onSubmit,
-        reloadPrimaryTokenBalance,
+        reloadBalances,
         resolvedAddress,
         isReceiverSelf,
         selectedAccount,

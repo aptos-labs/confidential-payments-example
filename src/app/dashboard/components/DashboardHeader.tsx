@@ -494,7 +494,7 @@ function TransferNativeBottomSheet({
   onSubmit,
   ...rest
 }: TransferNativeBottomSheetProps) {
-  const { selectedAccount, primaryTokenBalance, reloadPrimaryTokenBalance } =
+  const { selectedAccount, primaryTokenBalance, reloadBalances } =
     useConfidentialCoinContext();
   const gasStationArgs = useGasStationArgs();
 
@@ -537,7 +537,7 @@ function TransferNativeBottomSheet({
             formData.amount,
             gasStationArgs,
           );
-          await reloadPrimaryTokenBalance();
+          await reloadBalances();
           onSubmit();
           clearForm();
         } catch (error) {
@@ -551,7 +551,7 @@ function TransferNativeBottomSheet({
       enableForm,
       handleSubmit,
       onSubmit,
-      reloadPrimaryTokenBalance,
+      reloadBalances,
       selectedAccount,
       gasStationArgs,
     ],

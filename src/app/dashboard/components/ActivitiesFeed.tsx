@@ -121,10 +121,17 @@ const fetchActivities = async (
 export default function ActivitiesFeed() {
   // TODO: Instead of using selected token here we should use the token from the
   // activity, if we support multiple assets down the line.
-  const { selectedAccount, selectedToken } = useConfidentialCoinContext();
+  const { selectedAccount, selectedToken, reloadBalances } =
+    useConfidentialCoinContext();
 
   // Reference to the load more trigger element
   const observerTarget = useRef<HTMLDivElement>(null);
+
+  // Keep track of the latest activity to detect changes.
+  const [latestIncomingActivity, setLatestIncomingActivity] = useState<{
+    txnVersion: number;
+    timestamp: Date;
+  } | null>(null);
 
   const [countdown, setCountdown] = useState(REFRESH_INTERVAL_MS / 1000);
 
@@ -141,13 +148,60 @@ export default function ActivitiesFeed() {
     dataUpdatedAt,
   } = useInfiniteQuery({
     queryKey: ['activities', selectedAccount.accountAddress.toString()],
-    queryFn: ({ pageParam = 0 }) =>
-      fetchActivities(selectedAccount.accountAddress.toString(), pageParam),
+    queryFn: async ({ pageParam = 0 }) => {
+      const out = await fetchActivities(
+        selectedAccount.accountAddress.toString(),
+        pageParam,
+      );
+      conditionallyReloadBalances(out.activities, pageParam);
+      return out;
+    },
     getNextPageParam: lastPage => lastPage.nextCursor,
     initialPageParam: 0,
     refetchInterval: REFRESH_INTERVAL_MS,
     staleTime: REFRESH_INTERVAL_MS,
   });
+
+  /**
+   * Call this function to conditionally reload the balance. The reload will occur if
+   * there are new activites that we didn't initiate (e.g. receiving funds).
+   */
+  function conditionallyReloadBalances(activities: Activity[], pageParam: number) {
+    if (activities.length === 0 || pageParam !== 0) {
+      return;
+    }
+
+    // Sort activities by timestamp (newest first)
+    const sortedActivities = [...activities].sort(
+      (a, b) => b.timestamp.getTime() - a.timestamp.getTime(),
+    );
+    const newestActivity = sortedActivities[0];
+
+    const currentAccountAddress = selectedAccount.accountAddress.toString();
+
+    // Find if there are any new incoming transactions among all activities
+    let newIncomingTransactionPresent = false;
+    for (const activity of sortedActivities) {
+      if (
+        activity.activityType === 'transfer' &&
+        activity.fromAddress.toString() !== currentAccountAddress &&
+        (latestIncomingActivity === null ||
+          activity.timestamp.getTime() > latestIncomingActivity.timestamp.getTime())
+      ) {
+        newIncomingTransactionPresent = true;
+        break;
+      }
+    }
+
+    // Only reload balances if we found a new incoming transaction.
+    if (newIncomingTransactionPresent) {
+      setLatestIncomingActivity({
+        txnVersion: newestActivity.txnVersion,
+        timestamp: newestActivity.timestamp,
+      });
+      reloadBalances();
+    }
+  }
 
   // Add countdown timer effect
   useEffect(() => {

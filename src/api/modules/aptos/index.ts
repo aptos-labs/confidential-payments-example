@@ -611,14 +611,13 @@ export const getConfidentialBalances = async (
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
-  const publicKey = decryptionKey.publicKey();
-
-  const { pending, actual } = await confidentialAssets.getBalance({
-    accountAddress: account.accountAddress,
-    tokenAddress,
-  });
 
   try {
+    const { pending, actual } = await confidentialAssets.getBalance({
+      accountAddress: account.accountAddress,
+      tokenAddress,
+    });
+
     const [confidentialAmountPending, confidentialAmountActual] = await Promise.all([
       ConfidentialAmount.fromEncrypted(pending, decryptionKey),
       ConfidentialAmount.fromEncrypted(actual, decryptionKey),
@@ -629,15 +628,8 @@ export const getConfidentialBalances = async (
       actual: confidentialAmountActual,
     };
   } catch (error) {
-    console.error('Failed to get confidential balances', error);
-    const pending = ConfidentialAmount.fromAmount(0n);
-    const actual = ConfidentialAmount.fromAmount(0n);
-    pending.encrypt(publicKey);
-    actual.encrypt(publicKey);
-    return {
-      pending,
-      actual,
-    };
+    console.error('Error getting confidential balances', error);
+    throw error;
   }
 };
 

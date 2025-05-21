@@ -96,7 +96,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             .required('Enter receiver username')
             .test(
               'usernameExists',
-              'Username not found',
+              '',
               () => Boolean(resolvedAddress) || debouncedUsername === '',
             ),
           amount: yup

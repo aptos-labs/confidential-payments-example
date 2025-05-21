@@ -1,4 +1,5 @@
 import { FixedNumber, parseUnits } from 'ethers';
+import { RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
 import { getFABalance, mintPrimaryToken } from '@/api/modules/aptos';
@@ -158,7 +159,11 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         return (
           <>
             <UiButton className='w-full' onClick={tryMint} disabled={isSubmitting}>
-              Get {MINT_AMOUNT} free {selectedToken?.symbol} tokens!
+              {isSubmitting ? (
+                <RefreshCw size={12} className='animate-spin' />
+              ) : (
+                `Get ${MINT_AMOUNT} free ${selectedToken?.symbol} tokens!`
+              )}
             </UiButton>
           </>
         );

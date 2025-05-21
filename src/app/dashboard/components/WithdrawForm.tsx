@@ -2,7 +2,8 @@
 
 import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { formatUnits, parseUnits } from 'ethers';
-import { useCallback, useMemo } from 'react';
+import { RefreshCw } from 'lucide-react';
+import { useCallback, useMemo, useState } from 'react';
 
 import { sendAndWaitTx } from '@/api/modules/aptos';
 import { aptos } from '@/api/modules/aptos/client';
@@ -44,6 +45,8 @@ export default function WithdrawForm({
   const totalBalanceBN = useMemo(() => {
     return publicBalanceBN + pendingAmountBN + actualAmountBN;
   }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
+
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const { isFormDisabled, handleSubmit, disableForm, enableForm, control, setValue } =
     useForm(
@@ -96,6 +99,7 @@ export default function WithdrawForm({
   const submit = useCallback(
     () =>
       handleSubmit(async formData => {
+        setIsSubmitting(true);
         disableForm();
 
         const err = await ensureConfidentialBalanceReadyBeforeOp({
@@ -106,6 +110,7 @@ export default function WithdrawForm({
         if (err) {
           ErrorHandler.process(err);
           enableForm();
+          setIsSubmitting(false);
           return;
         }
 
@@ -130,6 +135,7 @@ export default function WithdrawForm({
         if (withdrawError) {
           ErrorHandler.process(withdrawError);
           enableForm();
+          setIsSubmitting(false);
           return;
         }
 
@@ -139,12 +145,14 @@ export default function WithdrawForm({
         if (reloadError) {
           ErrorHandler.process(reloadError);
           enableForm();
+          setIsSubmitting(false);
           return;
         }
 
         onSubmit();
         clearForm();
         enableForm();
+        setIsSubmitting(false);
       })(),
     [
       buildWithdrawToTx,
@@ -190,7 +198,11 @@ export default function WithdrawForm({
       <div className='pt-4'>
         <UiSeparator className='mb-4' />
         <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
-          Withdraw publicly
+          {isSubmitting ? (
+            <RefreshCw size={12} className='animate-spin' />
+          ) : (
+            'Withdraw publicly'
+          )}
         </UiButton>
       </div>
     </div>

@@ -1,6 +1,7 @@
 'use client';
 
 import { formatUnits, isHexString, parseUnits } from 'ethers';
+import { RefreshCw } from 'lucide-react';
 import {
   ComponentProps,
   forwardRef,
@@ -82,6 +83,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     const [debouncedUsername, setDebouncedUsername] = useState('');
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
     const [username, setUsername] = useState('');
+
+    const [isSubmitting, setIsSubmitting] = useState(false);
 
     const formSchema = useForm(
       {
@@ -190,6 +193,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           }
 
           disableForm();
+          setIsSubmitting(true);
 
           // Check if receiver has an encryption key
           const addressStr = resolvedAddress.toString();
@@ -199,6 +203,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               new Error('Receiver not found or does not have an encryption key'),
             );
             enableForm();
+            setIsSubmitting(false);
             return;
           }
 
@@ -215,6 +220,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           });
           if (err) {
             enableForm();
+            setIsSubmitting(false);
             return;
           }
 
@@ -231,6 +237,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           if (buildTransferTxError) {
             ErrorHandler.process(buildTransferTxError);
             enableForm();
+            setIsSubmitting(false);
             return;
           }
 
@@ -245,12 +252,14 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           if (reloadError) {
             ErrorHandler.process(reloadError);
             enableForm();
+            setIsSubmitting(false);
             return;
           }
 
           onSubmit();
           clearForm();
           enableForm();
+          setIsSubmitting(false);
         })(),
       [
         buildTransferTx,
@@ -352,7 +361,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                   !resolvedAddress
                 }
               >
-                Send confidentially
+                {isSubmitting ? (
+                  <RefreshCw size={12} className='animate-spin' />
+                ) : (
+                  'Send confidentially'
+                )}
               </UiButton>
             </div>
           </div>

@@ -801,7 +801,11 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
 
     if (!actualBalance) throw new TypeError('actual balance not loaded');
 
-    if (!actualBalance?.amountEncrypted)
+    const amountEncrypted = actualBalance.getAmountEncrypted(
+      selectedAccountDecryptionKey.publicKey(),
+    );
+
+    if (!amountEncrypted)
       throw new TypeError('actualBalance?.amountEncrypted is not defined');
 
     if (!actualBalance?.amount)
@@ -810,7 +814,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     return normalizeConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
-      actualBalance.amountEncrypted,
+      amountEncrypted,
       actualBalance.amount,
       gasStationArgs,
       tokenAddress,
@@ -906,16 +910,13 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address);
 
-  const buildTransferTx = useCallback(
-    async (
-      receiverAddressHex: string,
-      amount: string,
-      opts?: {
-        auditorsEncryptionKeyHexList?: string[];
-        isSyncFirst?: boolean;
-      },
-    ) => {
-      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted) {
+  const getEncryptedAmount = useCallback(
+    async (opts?: { isSyncFirst?: boolean }) => {
+      const amountEncryptedRaw =
+        selectedAccountDecryptionKeyStatusRaw.actual?.getAmountEncrypted(
+          selectedAccountDecryptionKey.publicKey(),
+        );
+      if (!amountEncryptedRaw) {
         throw new TypeError('actual amount not loaded');
       }
 
@@ -926,11 +927,32 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
               selectedAccountDecryptionKey.toString(),
               selectedToken.address,
             );
-            return actual?.amountEncrypted;
+            return actual?.getAmountEncrypted(selectedAccountDecryptionKey.publicKey());
           })()
-        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted;
+        : amountEncryptedRaw;
 
       if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded');
+
+      return amountEncrypted;
+    },
+    [
+      selectedAccount,
+      selectedAccountDecryptionKey,
+      selectedAccountDecryptionKeyStatusRaw.actual,
+      selectedToken.address,
+    ],
+  );
+
+  const buildTransferTx = useCallback(
+    async (
+      receiverAddressHex: string,
+      amount: string,
+      opts?: {
+        auditorsEncryptionKeyHexList?: string[];
+        isSyncFirst?: boolean;
+      },
+    ) => {
+      const amountEncrypted = await getEncryptedAmount(opts);
 
       return buildTransferConfidentialAsset(
         selectedAccount,
@@ -946,7 +968,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
-      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
@@ -961,22 +983,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
-      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
-        throw new TypeError('actual amount not loaded');
-
-      const amountEncrypted = opts?.isSyncFirst
-        ? await (async () => {
-            const { actual } = await getConfidentialBalances(
-              selectedAccount,
-              selectedAccountDecryptionKey.toString(),
-              selectedToken.address,
-            );
-
-            return actual?.amountEncrypted;
-          })()
-        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted;
-
-      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded');
+      const amountEncrypted = await getEncryptedAmount(opts);
 
       return transferConfidentialAsset(
         selectedAccount,
@@ -992,7 +999,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
-      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
@@ -1006,22 +1013,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
-      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
-        throw new TypeError('actual amount not loaded');
-
-      const amountEncrypted = opts?.isSyncFirst
-        ? await (async () => {
-            const { actual } = await getConfidentialBalances(
-              selectedAccount,
-              selectedAccountDecryptionKey.toString(),
-              selectedToken.address,
-            );
-
-            return actual?.amountEncrypted;
-          })()
-        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted;
-
-      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded');
+      const amountEncrypted = await getEncryptedAmount(opts);
 
       return buildWithdrawConfidentialBalance(
         selectedAccount,
@@ -1036,7 +1028,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
-      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
@@ -1050,22 +1042,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
-      if (!selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted)
-        throw new TypeError('actual amount not loaded');
-
-      const amountEncrypted = opts?.isSyncFirst
-        ? await (async () => {
-            const { actual } = await getConfidentialBalances(
-              selectedAccount,
-              selectedAccountDecryptionKey.toString(),
-              selectedToken.address,
-            );
-
-            return actual?.amountEncrypted;
-          })()
-        : selectedAccountDecryptionKeyStatusRaw.actual.amountEncrypted;
-
-      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded');
+      const amountEncrypted = await getEncryptedAmount(opts);
 
       return withdrawConfidentialBalance(
         selectedAccount,
@@ -1078,9 +1055,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       );
     },
     [
-      selectedAccountDecryptionKeyStatusRaw.actual?.amountEncrypted,
       selectedAccount,
       selectedAccountDecryptionKey,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],

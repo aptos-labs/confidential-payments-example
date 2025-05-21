@@ -6,6 +6,7 @@ import {
 } from '@aptos-labs/confidential-assets';
 import {
   Account,
+  AnyNumber,
   CommittedTransactionResponse,
   InputGenerateTransactionPayloadData,
   KeylessAccount,
@@ -113,7 +114,7 @@ type ConfidentialCoinContextType = {
   // reloadAptBalance: () => Promise<void>;
 
   primaryTokenBalance: number;
-  reloadPrimaryTokenBalance: () => Promise<void>;
+  reloadPrimaryTokenBalance: (minimumLedgerVersion?: AnyNumber) => Promise<void>;
 
   tokens: TokenBaseInfo[];
   tokensLoadingState: LoadingState;
@@ -171,7 +172,7 @@ type ConfidentialCoinContextType = {
   // TODO: rotate keys
 
   decryptionKeyStatusLoadingState: LoadingState;
-  loadSelectedDecryptionKeyState: () => Promise<void>;
+  loadSelectedDecryptionKeyState: (minimumLedgerVersion?: AnyNumber) => Promise<void>;
 
   testMintTokens: (amount: string) => Promise<CommittedTransactionResponse[]>;
   ensureConfidentialBalanceReadyBeforeOp: (args: {
@@ -311,8 +312,8 @@ const useAccounts = () => {
     update,
   } = useLoading(
     0,
-    () => {
-      return getPrimaryTokenBalance(selectedAccount);
+    (minimumLedgerVersion?: AnyNumber) => {
+      return getPrimaryTokenBalance(selectedAccount, minimumLedgerVersion);
     },
     { loadArgs: [selectedAccount] },
   );
@@ -607,7 +608,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
         ...AccountDecryptionKeyStatusRawDefault,
       },
     ],
-    async () => {
+    async (minimumLedgerVersion?: AnyNumber) => {
       if (!selectedAccount.accountAddress || !currentTokensList.length) {
         return [
           {
@@ -639,7 +640,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
           const assetType = coin ? parseCoinTypeFromCoinStruct(coin) : el;
 
           const [fungibleAssetBalance, getFABalanceError] = await tryCatch(
-            getFABalance(selectedAccount, assetType),
+            getFABalance(selectedAccount, assetType, minimumLedgerVersion),
           );
           if (getFABalanceError) {
             return {
@@ -860,8 +861,8 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     selectedAccountDecryptionKeyStatus,
 
     decryptionKeyStatusLoadingState,
-    loadSelectedDecryptionKeyState: async () => {
-      await reload();
+    loadSelectedDecryptionKeyState: async (minimumLedgerVersion?: AnyNumber) => {
+      await reload(minimumLedgerVersion);
     },
 
     normalizeAccount,

@@ -5,19 +5,19 @@ import { useEffect, useMemo, useState } from 'react';
 
 import { ErrorHandler } from '@/helpers';
 
-type LoadingControl<T> = {
+type LoadingControl<T, A = void> = {
   data: T;
   isLoading: boolean;
   isLoadingError: boolean;
-  reload: () => Promise<void>;
+  reload: (args?: A) => Promise<void>;
   isEmpty: boolean;
-  update: () => Promise<void>;
+  update: (args?: A) => Promise<void>;
   reset: () => void;
 };
 
-export const useLoading = <T>(
+export const useLoading = <T, A = void>(
   initialState: T,
-  loadFn: () => Promise<T>,
+  loadFn: (args?: A) => Promise<T>,
   options?: {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     loadArgs?: any[] | null;
@@ -25,7 +25,7 @@ export const useLoading = <T>(
     // in case if we need to paginate through all pages and concat in to one array
     loadAllPages?: boolean;
   },
-): LoadingControl<T> => {
+): LoadingControl<T, A> => {
   const { loadArgs, loadOnMount: _loadOnMount } = options ?? {};
   const loadOnMount = useMemo(() => _loadOnMount ?? true, [_loadOnMount]);
   const [isLoading, setIsLoading] = useState(loadOnMount);

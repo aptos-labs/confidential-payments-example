@@ -8,6 +8,7 @@ import { RangeProofExecutor } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AccountAddress,
+  AnyNumber,
   type CommittedTransactionResponse,
   Ed25519PrivateKey,
   EphemeralKeyPair,
@@ -579,10 +580,15 @@ export const getFAByCoinType = async (coinType: string): Promise<string> => {
   return fungibleAsset?.vec[0].inner;
 };
 
-export const getCoinBalanceByFaAddress = (account: Account, tokenAddress: string) => {
+export const getCoinBalanceByFaAddress = (
+  account: Account,
+  tokenAddress: string,
+  minimumLedgerVersion?: AnyNumber,
+) => {
   return aptos.account.getAccountCoinAmount({
     accountAddress: account.accountAddress,
     faMetadataAddress: tokenAddress,
+    minimumLedgerVersion,
   });
 };
 
@@ -596,10 +602,14 @@ export const getAptBalance = async (account: Account) => {
 };
 */
 
-export const getPrimaryTokenBalance = async (account: Account) => {
+export const getPrimaryTokenBalance = async (
+  account: Account,
+  minimumLedgerVersion?: AnyNumber,
+) => {
   const primaryTokenBalance = await aptos.getAccountCoinAmount({
     accountAddress: account.accountAddress,
     faMetadataAddress: appConfig.PRIMARY_TOKEN_ADDRESS,
+    minimumLedgerVersion,
   });
 
   return primaryTokenBalance;
@@ -706,7 +716,11 @@ export const getFungibleAssetMetadata = async (
   }));
 };
 
-export const getFABalance = async (account: Account, tokenAddressHex: string) => {
+export const getFABalance = async (
+  account: Account,
+  tokenAddressHex: string,
+  minimumLedgerVersion?: AnyNumber,
+) => {
   return aptos.fungibleAsset.getCurrentFungibleAssetBalances({
     options: {
       where: {
@@ -718,6 +732,9 @@ export const getFABalance = async (account: Account, tokenAddressHex: string) =>
         },
       },
     },
+    // We pass this to ensure that the indexer has synced up to the point where the
+    // changes we made have been indexed.
+    minimumLedgerVersion,
   });
 };
 

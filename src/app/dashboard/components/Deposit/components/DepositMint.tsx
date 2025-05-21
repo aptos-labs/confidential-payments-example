@@ -74,8 +74,9 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
     let mintAttempts = 0;
 
+    let firstMinimumLedgerVersion = undefined;
     do {
-      const [, mintError] = await tryCatch(
+      const [res, mintError] = await tryCatch(
         mintPrimaryToken(selectedAccount, amountToDeposit, gasStationArgs),
       );
       if (mintError) {
@@ -90,6 +91,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         continue;
       }
 
+      firstMinimumLedgerVersion = BigInt(res.version);
       break;
     } while (mintAttempts < 5);
 
@@ -98,7 +100,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
     do {
       const [faOnlyBalanceResponse, getFAError] = await tryCatch(
-        getFABalance(selectedAccount, selectedToken.address),
+        getFABalance(selectedAccount, selectedToken.address, firstMinimumLedgerVersion),
       );
       if (getFAError) {
         if (depositAttempts >= 5) {
@@ -118,7 +120,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         faOnlyBalance?.amount || '0',
       ).lt(FixedNumber.fromValue(amountToDeposit));
 
-      const [_depositTxReceipt, depositError] = await tryCatch(
+      const [depositTxReceipt, depositError] = await tryCatch(
         isInsufficientFAOnlyBalance
           ? depositCoinTo(amountToDeposit, selectedAccount.accountAddress.toString())
           : depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
@@ -135,9 +137,10 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         continue;
       }
 
+      const minimumLedgerVersion = BigInt(depositTxReceipt.version);
       await Promise.all([
-        reloadPrimaryTokenBalance(),
-        loadSelectedDecryptionKeyState(),
+        reloadPrimaryTokenBalance(minimumLedgerVersion),
+        loadSelectedDecryptionKeyState(minimumLedgerVersion),
       ]);
       bus.emit(
         BusEvents.Success,

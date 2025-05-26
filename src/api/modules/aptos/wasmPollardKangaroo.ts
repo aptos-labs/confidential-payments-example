@@ -24,15 +24,35 @@ export async function createKangaroo(secret_size: number) {
 export const preloadTables = async () => {
   const kangaroo16 = await createKangaroo(16);
   const kangaroo32 = await createKangaroo(32);
+  const kangaroo48 = await createKangaroo(48);
 
-  const decryptChunk = (
-    pk: Uint8Array,
-    instance: WASMKangaroo,
-    timeoutMillis: bigint,
-  ) => {
+  TwistedElGamal.setDecryptionFn(async pk => {
     if (bytesToNumberLE(pk) === 0n) return 0n;
 
-    const result = instance.solve_dlp(pk, timeoutMillis);
+    let result = kangaroo16.solve_dlp(pk, 30n);
+
+    if (!result) {
+      result = kangaroo32.solve_dlp(pk, 120n);
+    }
+
+    if (!result) {
+      result = kangaroo48.solve_dlp(pk);
+    }
+
+    if (!result) throw new TypeError('Decryption failed');
+
+    return result;
+  });
+};
+
+export const preloadTablesForBalances = async () => {
+  const kangaroo16 = await createKangaroo(16);
+  const kangaroo32 = await createKangaroo(32);
+
+  const decryptChunk = (pk: Uint8Array, instance: WASMKangaroo) => {
+    if (bytesToNumberLE(pk) === 0n) return 0n;
+
+    const result = instance.solve_dlp(pk);
 
     if (!result) throw new TypeError('Decryption failed');
 
@@ -48,29 +68,13 @@ export const preloadTables = async () => {
         TwistedElGamal.calculateCiphertextMG(el, privateKey),
       );
 
-      const olderChunks = mGs.slice(0, encrypted.length / 2).map(el => el.toRawBytes());
-      const yongerChunks = mGs
-        .slice(-(encrypted.length / 2))
-        .map(el => el.toRawBytes());
+      const olderChunks = mGs.slice(0, 4).map(el => el.toRawBytes());
+      const yongerChunks = mGs.slice(-4).map(el => el.toRawBytes());
 
-      return new Promise((resolve, reject) => {
-        const timeout = setTimeout(() => {
-          reject(new Error('Decryption timed out after 5 seconds'));
-        }, 5000);
-
-        Promise.all([
-          ...olderChunks.map(el => decryptChunk(el, kangaroo16, 1500n)),
-          ...yongerChunks.map(el => decryptChunk(el, kangaroo32, 3500n)),
-        ])
-          .then(result => {
-            clearTimeout(timeout);
-            resolve(result);
-          })
-          .catch(err => {
-            clearTimeout(timeout);
-            reject(err);
-          });
-      });
+      return Promise.all([
+        ...(await olderChunks.map(el => decryptChunk(el, kangaroo16))),
+        ...(await yongerChunks.map(el => decryptChunk(el, kangaroo32))),
+      ]);
     },
   );
 };

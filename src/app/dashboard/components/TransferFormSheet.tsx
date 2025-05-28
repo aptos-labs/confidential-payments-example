@@ -98,8 +98,33 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             .required('Enter receiver username')
             .test(
               'usernameExists',
-              '',
-              () => Boolean(resolvedAddress) || debouncedUsername === '',
+              'Username not found. Please check and try again.',
+              () => {
+                // Only validate if we have a debounced username and it's not currently loading
+                if (debouncedUsername === '' || isResolvingAddress) return true;
+                return Boolean(resolvedAddress);
+              },
+            )
+            .test('selfTransfer', 'You cannot send to yourself.', () => {
+              if (!resolvedAddress) return true;
+              return (
+                resolvedAddress.toString().toLowerCase() !==
+                selectedAccount.accountAddress.toString().toLowerCase()
+              );
+            })
+            .test(
+              'hasEncryptionKey',
+              'Receiver does not have an encryption key.',
+              async () => {
+                if (!resolvedAddress) return true;
+
+                const addressStr = resolvedAddress.toString();
+                const [ek, ekError] = await tryCatch(
+                  getEkByAddr(addressStr, token.address),
+                );
+                if (ekError || !ek) return false;
+                return true;
+              },
             ),
           amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
           auditorsAddresses: yup.array().of(
@@ -122,13 +147,15 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     );
 
     const {
-      isFormDisabled,
+      canSubmitForm,
       handleSubmit,
       disableForm,
       enableForm,
       control,
       setValue,
       formState,
+      formErrors,
+      trigger,
     } = formSchema;
 
     // Get the current username from form state
@@ -161,46 +188,27 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         enabled: debouncedUsername !== '',
       });
 
+    // Trigger validation when external dependencies change
+    useEffect(() => {
+      if (debouncedUsername !== '') {
+        trigger('receiverUsername');
+      }
+    }, [resolvedAddress, isResolvingAddress, debouncedUsername, trigger]);
+
     const clearForm = useCallback(() => {
       setValue('receiverUsername', '');
       setValue('amount', '');
     }, [setValue]);
 
-    const isReceiverSelf = useMemo(() => {
-      if (!resolvedAddress) return false;
-      return (
-        resolvedAddress.toString().toLowerCase() ===
-        selectedAccount.accountAddress.toString().toLowerCase()
-      );
-    }, [resolvedAddress, selectedAccount.accountAddress]);
-
     const submit = useCallback(
       () =>
         handleSubmit(async formData => {
           if (!resolvedAddress) {
-            ErrorHandler.process(new Error('Username not found'));
-            return;
-          }
-
-          if (isReceiverSelf) {
-            ErrorHandler.process(new Error('You cannot send to yourself'));
             return;
           }
 
           disableForm();
           setIsSubmitting(true);
-
-          // Check if receiver has an encryption key
-          const addressStr = resolvedAddress.toString();
-          const [ek, ekError] = await tryCatch(getEkByAddr(addressStr, token.address));
-          if (ekError || !ek) {
-            ErrorHandler.process(
-              new Error('Receiver not found or does not have an encryption key'),
-            );
-            enableForm();
-            setIsSubmitting(false);
-            return;
-          }
 
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
@@ -218,6 +226,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             setIsSubmitting(false);
             return;
           }
+
+          const addressStr = resolvedAddress.toString();
 
           const [transferTx, buildTransferTxError] = await tryCatch(
             buildTransferTx(
@@ -264,7 +274,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         onSubmit,
         reloadBalances,
         resolvedAddress,
-        isReceiverSelf,
         selectedAccount,
         token,
         gasStationArgs,
@@ -285,13 +294,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       },
     }));
 
-    // Show warning if the username doesn't resolve to an address
-    const showUsernameWarning =
-      debouncedUsername !== '' && !resolvedAddress && !isResolvingAddress;
-
-    // Show warning if the resolved address is the sender's address
-    const showSelfWarning = Boolean(resolvedAddress) && isReceiverSelf;
-
     return (
       <UiSheet open={isTransferSheetOpen} onOpenChange={setIsTransferSheetOpen}>
         <UiSheetContent
@@ -310,22 +312,14 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                   name='receiverUsername'
                   label='Recipient Username'
                   placeholder='Enter recipient username'
-                  disabled={isFormDisabled}
                 />
                 <div className='pb-2' />
-                {showUsernameWarning && (
-                  <div className='text-sm text-yellow-500'>
-                    Username not found. Please check and try again.
-                  </div>
-                )}
-                {showSelfWarning && (
-                  <div className='text-sm text-red-500'>
-                    You cannot send to yourself.
-                  </div>
-                )}
-                {resolvedAddress && !isReceiverSelf && (
-                  <div className='text-sm text-green-500'>Recipient found.</div>
-                )}
+                {resolvedAddress &&
+                  debouncedUsername !== '' &&
+                  !isResolvingAddress &&
+                  !formErrors.receiverUsername && (
+                    <div className='text-sm text-green-500'>Recipient found.</div>
+                  )}
               </div>
 
               <ControlledUiInput
@@ -334,7 +328,6 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 label={`Amount (${token.symbol})`}
                 placeholder='Enter amount'
                 type='number'
-                disabled={isFormDisabled}
               />
             </div>
 
@@ -342,16 +335,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
             <div className='mt-auto pt-4'>
               <UiSeparator className='mb-6 mt-2' />
-              <UiButton
-                className='w-full'
-                onClick={submit}
-                disabled={
-                  isFormDisabled ||
-                  showUsernameWarning ||
-                  showSelfWarning ||
-                  !resolvedAddress
-                }
-              >
+              <UiButton className='w-full' onClick={submit} disabled={!canSubmitForm}>
                 {isSubmitting ? (
                   <RefreshCw size={12} className='animate-spin' />
                 ) : (

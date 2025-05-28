@@ -15,7 +15,7 @@ export function getYupAmountField(
     .max(totalBalanceBN ? +formatUnits(totalBalanceBN, decimals) : 0)
     .test(
       'maxDecimals',
-      `Amount cannot have more than ${decimals} decimal places`,
+      `Amount cannot have more than ${decimals} decimal places.`,
       value => {
         if (value === undefined || value === null) return true;
         const valueStr = value.toString();

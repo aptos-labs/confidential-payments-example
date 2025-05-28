@@ -14,6 +14,7 @@ import { HTMLAttributes, useCallback, useEffect, useRef, useState } from 'react'
 import { getTxExplorerUrl } from '@/api/modules/aptos';
 import { noCodeClient } from '@/api/modules/aptos/client';
 import { appConfig } from '@/config';
+import { trimAddress } from '@/helpers';
 import { useDecryptedAmount } from '@/hooks/amount-decryption';
 import { useGetAnsPrimaryName } from '@/hooks/ans';
 import { cn } from '@/theme/utils';
@@ -594,10 +595,3 @@ const formatAmount = (amount: number, symbol: string, decimals: number) => {
   const properAmount = amount / 10 ** decimals;
   return `${properAmount.toLocaleString()} ${symbol}`;
 };
-
-function trimAddress(address: string): string {
-  if (address.length < 4) {
-    return address;
-  }
-  return address.slice(0, 6) + '...' + address.slice(-6);
-}

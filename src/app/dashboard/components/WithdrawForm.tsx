@@ -3,13 +3,13 @@
 import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { parseUnits } from 'ethers';
 import { RefreshCw } from 'lucide-react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 import { sendAndWaitTx } from '@/api/modules/aptos';
-import { aptos } from '@/api/modules/aptos/client';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, getYupAmountField, tryCatch } from '@/helpers';
+import { ErrorHandler, getYupAmountField, trimAddress, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
+import { useGetTargetAddress } from '@/hooks/ans';
 import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
@@ -47,45 +47,99 @@ export default function WithdrawForm({
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { isFormDisabled, handleSubmit, disableForm, enableForm, control, setValue } =
-    useForm(
-      {
-        recipient: '',
-        amount: '',
-      },
-      yup =>
-        yup.object().shape({
-          recipient: yup
-            .string()
-            .required('Enter recipient address')
-            .test('aptAddr', 'Invalid address', v => {
-              if (!v) return false;
-              return AccountAddress.isValid({
-                input: v,
-              }).valid;
-            })
-            .test('NoReceiverAddr', 'Receiver not found', async v => {
-              if (!v) return false;
+  const [debouncedRecipient, setDebouncedRecipient] = useState('');
+  const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const [recipient, setRecipient] = useState('');
 
-              const [accountInfo, accountInfoError] = await tryCatch(
-                aptos.account.getAccountInfo({
-                  accountAddress: AccountAddress.from(v),
-                }),
-              );
-              if (accountInfoError) return false;
-              return accountInfo !== null;
-            })
-            .test('DRYAptAddr', 'You cannot withdraw to yourself', v => {
-              if (!v) return false;
+  const {
+    isFormDisabled,
+    canSubmitForm,
+    handleSubmit,
+    disableForm,
+    enableForm,
+    control,
+    setValue,
+    formState,
+    trigger,
+  } = useForm(
+    {
+      recipient: '',
+      amount: '',
+    },
+    yup =>
+      yup.object().shape({
+        recipient: yup
+          .string()
+          .required('Enter recipient address')
+          .test('ValidAddress', 'Invalid address.', v => {
+            if (!v) return false;
 
-              return (
-                v.toLowerCase() !==
-                selectedAccount.accountAddress.toString().toLowerCase()
-              );
-            }),
-          amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
-        }),
-    );
+            // If it's an ANS name (.apt), check if it resolves
+            if (v.endsWith('.apt')) {
+              // Only validate if we have a debounced recipient and it's not currently loading
+              if (debouncedRecipient === '' || isResolvingAddress) return true;
+              return Boolean(resolvedAddress);
+            }
+
+            // Otherwise validate as regular address
+            return AccountAddress.isValid({
+              input: v,
+            }).valid;
+          })
+          .test('SelfWithdraw', 'You cannot withdraw to yourself.', v => {
+            if (!v) return false;
+
+            let addressToCheck = v;
+
+            // If it's an ANS name, use the resolved address
+            if (v.endsWith('.apt') && resolvedAddress) {
+              addressToCheck = resolvedAddress.toString();
+            }
+
+            return (
+              addressToCheck.toLowerCase() !==
+              selectedAccount.accountAddress.toString().toLowerCase()
+            );
+          }),
+        amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
+      }),
+  );
+
+  // Get the current recipient from form state.
+  useEffect(() => {
+    const currentRecipient = formState.recipient || '';
+    setRecipient(currentRecipient);
+  }, [formState]);
+
+  // Debounce the recipient input.
+  useEffect(() => {
+    if (debounceTimerRef.current) {
+      clearTimeout(debounceTimerRef.current);
+    }
+
+    debounceTimerRef.current = setTimeout(() => {
+      setDebouncedRecipient(recipient);
+    }, 250);
+
+    return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current);
+      }
+    };
+  }, [recipient]);
+
+  // Query ANS to resolve recipient to address (only if it ends with .apt).
+  const { data: resolvedAddress, isLoading: isResolvingAddress } = useGetTargetAddress({
+    name: debouncedRecipient.endsWith('.apt') ? debouncedRecipient : '',
+    enabled: debouncedRecipient.endsWith('.apt'),
+  });
+
+  // Trigger validation when external dependencies change.
+  useEffect(() => {
+    if (debouncedRecipient !== '') {
+      trigger('recipient');
+    }
+  }, [resolvedAddress, isResolvingAddress, debouncedRecipient, trigger]);
 
   const clearForm = useCallback(() => {
     setValue('amount', '');
@@ -96,6 +150,18 @@ export default function WithdrawForm({
       handleSubmit(async formData => {
         setIsSubmitting(true);
         disableForm();
+
+        // Determine the actual recipient address.
+        let recipientAddress = formData.recipient;
+        if (formData.recipient.endsWith('.apt')) {
+          if (!resolvedAddress) {
+            ErrorHandler.process(new Error('ANS name could not be resolved'));
+            enableForm();
+            setIsSubmitting(false);
+            return;
+          }
+          recipientAddress = resolvedAddress.toString();
+        }
 
         const err = await ensureConfidentialBalanceReadyBeforeOp({
           amountToEnsure: String(formData.amount),
@@ -112,7 +178,7 @@ export default function WithdrawForm({
         const [withdrawTx, buildWithdrawError] = await tryCatch(
           buildWithdrawToTx(
             parseUnits(String(formData.amount), token.decimals).toString(),
-            formData.recipient,
+            recipientAddress,
             {
               isSyncFirst: true,
             },
@@ -159,6 +225,7 @@ export default function WithdrawForm({
       handleSubmit,
       onSubmit,
       reloadBalances,
+      resolvedAddress,
       selectedAccount,
       token,
       gasStationArgs,
@@ -168,13 +235,23 @@ export default function WithdrawForm({
   return (
     <div className='flex flex-col'>
       <div className='flex flex-col justify-between gap-4'>
-        <ControlledUiInput
-          control={control}
-          name='recipient'
-          label='Recipient Address / ANS Name'
-          placeholder='Enter recipient address / ANS name'
-          disabled={isFormDisabled}
-        />
+        <div className='space-y-1'>
+          <ControlledUiInput
+            control={control}
+            name='recipient'
+            label='Recipient Address / ANS Name'
+            placeholder='Enter recipient address / ANS name'
+            disabled={isFormDisabled}
+          />
+          <div className='pb-2' />
+          {debouncedRecipient.endsWith('.apt') &&
+            resolvedAddress &&
+            !isResolvingAddress && (
+              <div className='text-sm text-green-500'>
+                ANS name resolved to {trimAddress(resolvedAddress.toString())}.
+              </div>
+            )}
+        </div>
         <ControlledUiInput
           control={control}
           name='amount'
@@ -189,13 +266,14 @@ export default function WithdrawForm({
           Withdraw {selectedToken?.symbol} to public account
         </h4>
         <p className='text-sm text-textSecondary'>
-          By sending to an address or ANS name.
+          By sending to an address or ANS name. ANS names must have the{' '}
+          <code>.apt</code> suffix.
         </p>
       </div>
 
       <div className='pt-4'>
         <UiSeparator className='mb-4' />
-        <UiButton className='w-full' onClick={submit} disabled={isFormDisabled}>
+        <UiButton className='w-full' onClick={submit} disabled={!canSubmitForm}>
           {isSubmitting ? (
             <RefreshCw size={12} className='animate-spin' />
           ) : (

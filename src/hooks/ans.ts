@@ -145,3 +145,22 @@ export function useGetAnsPrimaryName({
     enabled,
   });
 }
+
+export function useGetTargetAddress({
+  name,
+  enabled = true,
+}: {
+  name: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['ansTargetAddress', name],
+    queryFn: async () => {
+      const out = await aptos.ans.getTargetAddress({
+        name,
+      });
+      return out ?? null;
+    },
+    enabled,
+  });
+}

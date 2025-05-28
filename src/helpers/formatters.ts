@@ -153,3 +153,10 @@ export function formatBalance(
 export function abbrCenter(addr: string, start = 4, end = 4) {
   return `${addr.slice(0, start)}...${addr.slice(-end)}`;
 }
+
+export function trimAddress(address: string): string {
+  if (address.length < 4) {
+    return address;
+  }
+  return address.slice(0, 6) + '...' + address.slice(-6);
+}

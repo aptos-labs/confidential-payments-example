@@ -1,5 +1,5 @@
 import { yupResolver } from '@hookform/resolvers/yup';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import type {
   Control,
   DefaultValues,
@@ -10,6 +10,7 @@ import type {
   UseFormRegister,
   UseFormSetError,
   UseFormSetValue,
+  UseFormTrigger,
 } from 'react-hook-form';
 import { useForm as useFormHook } from 'react-hook-form';
 import * as Yup from 'yup';
@@ -26,6 +27,8 @@ export type Form<T extends FieldValues> = {
   setError: UseFormSetError<T>;
   setValue: UseFormSetValue<T>;
   control: Control<T>;
+  canSubmitForm: boolean;
+  trigger: UseFormTrigger<T>;
 };
 
 export const useForm = <T extends Yup.AnyObjectSchema, R extends FieldValues>(
@@ -41,14 +44,15 @@ export const useForm = <T extends Yup.AnyObjectSchema, R extends FieldValues>(
     watch,
     setError,
     setValue,
-    formState: { errors },
+    trigger,
+    formState: { errors, isValid },
   } = useFormHook<R>({
     mode: 'onTouched',
     reValidateMode: 'onChange',
     criteriaMode: 'firstError',
     shouldUseNativeValidation: false,
     defaultValues: defaultValues as DefaultValues<R>,
-    resolver: yupResolver(schemaBuilder(Yup)),
+    resolver: yupResolver(schemaBuilder(Yup), { abortEarly: false }),
   });
 
   const getErrorMessage = (fieldName: FieldPath<R>): string => {
@@ -63,6 +67,10 @@ export const useForm = <T extends Yup.AnyObjectSchema, R extends FieldValues>(
     setIsFormDisabled(false);
   };
 
+  const canSubmitForm = useMemo(() => {
+    return isValid && !isFormDisabled;
+  }, [isValid, isFormDisabled]);
+
   return {
     isFormDisabled,
     getErrorMessage,
@@ -75,5 +83,7 @@ export const useForm = <T extends Yup.AnyObjectSchema, R extends FieldValues>(
     setError,
     setValue,
     control,
+    canSubmitForm,
+    trigger,
   };
 };

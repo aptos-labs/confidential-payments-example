@@ -56,10 +56,14 @@ function ControlledUiInput<T extends FieldValues>({
           rest.onChange?.(e);
           field.onChange(e);
         }}
+        onBlur={e => {
+          rest.onBlur?.(e);
+          field.onBlur();
+        }}
         value={field.value}
       />
       {fieldState.error?.message && (
-        <span className='typography-caption3 text-errorMain'>
+        <span className='typography-caption1 text-warningMain'>
           {fieldState.error.message}
         </span>
       )}

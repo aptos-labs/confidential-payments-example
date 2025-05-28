@@ -8,11 +8,14 @@ export function getYupAmountField(
   yup: typeof Yup,
   decimals: number,
   totalBalanceBN: bigint,
+  symbol: string,
 ) {
   return yup
     .number()
-    .min(+formatUnits('1', decimals))
-    .max(totalBalanceBN ? +formatUnits(totalBalanceBN, decimals) : 0)
+    .min(
+      +formatUnits('1', decimals),
+      `Amount must be greater than ${formatUnits('1', decimals)} ${symbol}.`,
+    )
     .test(
       'maxDecimals',
       `Amount cannot have more than ${decimals} decimal places.`,
@@ -25,5 +28,14 @@ export function getYupAmountField(
         return decimalPlaces <= decimals;
       },
     )
+    .test('maxAmount', (value, { createError, path }) => {
+      if (value === undefined || value === null) return true;
+      if (value > +formatUnits(totalBalanceBN, decimals))
+        return createError({
+          path,
+          message: `Amount cannot be greater than current balance: ${formatUnits(totalBalanceBN, decimals)} ${symbol}.`,
+        });
+      else return true;
+    })
     .required('Enter amount');
 }

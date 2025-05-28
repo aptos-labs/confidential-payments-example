@@ -126,7 +126,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 return true;
               },
             ),
-          amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
+          amount: getYupAmountField(yup, token.decimals, totalBalanceBN, token.symbol),
           auditorsAddresses: yup.array().of(
             yup
               .string()

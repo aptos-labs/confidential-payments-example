@@ -63,9 +63,7 @@ function ControlledUiInput<T extends FieldValues>({
         value={field.value}
       />
       {fieldState.error?.message && (
-        <span className='typography-caption1 text-warningMain'>
-          {fieldState.error.message}
-        </span>
+        <div className='pt-2 text-sm text-warningMain'>{fieldState.error.message}</div>
       )}
     </div>
   );

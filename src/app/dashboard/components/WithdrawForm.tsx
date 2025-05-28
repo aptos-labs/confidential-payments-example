@@ -71,17 +71,18 @@ export default function WithdrawForm({
         recipient: yup
           .string()
           .required('Enter recipient address')
+          .test('ValidAnsName', 'ANS name does not resolve to an address.', v => {
+            if (!v) return false;
+            if (!v.endsWith('.apt')) return true;
+
+            // If it's an ANS name (.apt), check if it resolves. Only validate if we
+            // have a debounced recipient and it's not currently loading.
+            if (debouncedRecipient === '' || isResolvingAddress) return true;
+            return Boolean(resolvedAddress);
+          })
           .test('ValidAddress', 'Invalid address.', v => {
             if (!v) return false;
-
-            // If it's an ANS name (.apt), check if it resolves
-            if (v.endsWith('.apt')) {
-              // Only validate if we have a debounced recipient and it's not currently loading
-              if (debouncedRecipient === '' || isResolvingAddress) return true;
-              return Boolean(resolvedAddress);
-            }
-
-            // Otherwise validate as regular address
+            if (v.endsWith('.apt')) return true;
             return AccountAddress.isValid({
               input: v,
             }).valid;
@@ -101,7 +102,7 @@ export default function WithdrawForm({
               selectedAccount.accountAddress.toString().toLowerCase()
             );
           }),
-        amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
+        amount: getYupAmountField(yup, token.decimals, totalBalanceBN, token.symbol),
       }),
   );
 

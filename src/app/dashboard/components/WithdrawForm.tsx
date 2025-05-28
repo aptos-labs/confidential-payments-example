@@ -1,14 +1,14 @@
 'use client';
 
 import { AccountAddress } from '@aptos-labs/ts-sdk';
-import { formatUnits, parseUnits } from 'ethers';
+import { parseUnits } from 'ethers';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useMemo, useState } from 'react';
 
 import { sendAndWaitTx } from '@/api/modules/aptos';
 import { aptos } from '@/api/modules/aptos/client';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, tryCatch } from '@/helpers';
+import { ErrorHandler, getYupAmountField, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
@@ -83,11 +83,7 @@ export default function WithdrawForm({
                 selectedAccount.accountAddress.toString().toLowerCase()
               );
             }),
-          amount: yup
-            .number()
-            .min(+formatUnits('1', token.decimals))
-            .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
-            .required('Enter amount'),
+          amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
         }),
     );
 
@@ -175,12 +171,14 @@ export default function WithdrawForm({
         <ControlledUiInput
           control={control}
           name='recipient'
-          placeholder='Enter recipient address'
+          label='Recipient Address / ANS Name'
+          placeholder='Enter recipient address / ANS name'
           disabled={isFormDisabled}
         />
         <ControlledUiInput
           control={control}
           name='amount'
+          label={`Amount (${token.symbol})`}
           placeholder='Enter amount'
           disabled={isFormDisabled}
         />
@@ -190,7 +188,9 @@ export default function WithdrawForm({
         <h4 className='font-semibold text-textPrimary'>
           Withdraw {selectedToken?.symbol} to public account
         </h4>
-        <p className='text-sm text-textSecondary'>By sending to the address.</p>
+        <p className='text-sm text-textSecondary'>
+          By sending to an address or ANS name.
+        </p>
       </div>
 
       <div className='pt-4'>

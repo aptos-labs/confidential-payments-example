@@ -1,6 +1,6 @@
 'use client';
 
-import { formatUnits, isHexString, parseUnits } from 'ethers';
+import { isHexString, parseUnits } from 'ethers';
 import { RefreshCw } from 'lucide-react';
 import {
   ComponentProps,
@@ -15,7 +15,7 @@ import {
 
 import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, isMobile, tryCatch } from '@/helpers';
+import { ErrorHandler, getYupAmountField, isMobile, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGetAnsSubdomainAddress } from '@/hooks/ans';
 import { useGasStationArgs } from '@/store/gas-station';
@@ -101,11 +101,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               '',
               () => Boolean(resolvedAddress) || debouncedUsername === '',
             ),
-          amount: yup
-            .number()
-            .min(+formatUnits('1', token.decimals))
-            .max(totalBalanceBN ? +formatUnits(totalBalanceBN, token.decimals) : 0)
-            .required('Enter amount'),
+          amount: getYupAmountField(yup, token.decimals, totalBalanceBN),
           auditorsAddresses: yup.array().of(
             yup
               .string()

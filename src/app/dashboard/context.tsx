@@ -114,9 +114,9 @@ type ConfidentialCoinContextType = {
   // reloadAptBalance: () => Promise<void>;
 
   primaryTokenBalance: number;
-  reloadPrimaryTokenBalance: (minimumLedgerVersion?: AnyNumber) => Promise<void>;
+  reloadPrimaryTokenBalance: (minimumLedgerVersion?: bigint) => Promise<void>;
 
-  reloadBalances: (minimumLedgerVersion?: AnyNumber) => Promise<void>;
+  reloadBalances: (minimumLedgerVersion?: bigint) => Promise<void>;
 
   tokens: TokenBaseInfo[];
   tokensLoadingState: LoadingState;
@@ -1276,13 +1276,14 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   */
 
   const reloadBalances = useCallback(
-    async (minimumLedgerVersion?: AnyNumber) => {
+    async (minimumLedgerVersion?: bigint) => {
       // TODO: We could optimize this by just manually calling waitForIndexer
       // first before then doing these other functions, otherwise both of them
       // will wait for the indexer to catch up.
+      const min = minimumLedgerVersion ? minimumLedgerVersion + 1n : undefined;
       await Promise.all([
-        reloadPrimaryTokenBalance(minimumLedgerVersion),
-        loadSelectedDecryptionKeyState(minimumLedgerVersion),
+        reloadPrimaryTokenBalance(min),
+        loadSelectedDecryptionKeyState(min),
       ]);
     },
     [reloadPrimaryTokenBalance, loadSelectedDecryptionKeyState],

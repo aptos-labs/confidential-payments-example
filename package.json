@@ -11,6 +11,7 @@
     "start": "next start",
     "lint": "eslint \"{src,config}/**/*.{js,ts,jsx,tsx}\" --fix --max-warnings=0",
     "lint:check": "eslint \"{src,config}/**/*.{js,ts,jsx,tsx}\" --max-warnings=0",
+    "fmt": "pnpm format",
     "format": "prettier . --write --log-level=warn",
     "format:check": "prettier . --check",
     "type-check": "tsc --noEmit",
@@ -18,7 +19,7 @@
   },
   "dependencies": {
     "@aptos-labs/confidential-asset-wasm-bindings": "^0.0.2",
-    "@aptos-labs/confidential-assets": "=0.2.10",
+    "@aptos-labs/confidential-assets": "=0.2.12",
     "@aptos-labs/gas-station-client": "^1.0.0",
     "@aptos-labs/ts-sdk": "^1.38.0",
     "@distributedlab/tools": "^1.0.0-rc.17",

@@ -22,7 +22,7 @@ export default function ConfidentialAssetCard({
   token,
   // encryptionKey,
   pendingAmount,
-  actualAmount,
+  availableAmount,
 
   /* eslint-disable unused-imports/no-unused-vars */
   isNormalized,
@@ -36,7 +36,7 @@ export default function ConfidentialAssetCard({
   token: TokenBaseInfo;
 
   pendingAmount: string;
-  actualAmount: string;
+  availableAmount: string;
 
   isNormalized: boolean;
   isFrozen: boolean;
@@ -55,10 +55,10 @@ export default function ConfidentialAssetCard({
   const amountsSumBN = useMemo(() => {
     return (
       BigInt(pendingAmount || 0) +
-      BigInt(actualAmount || 0) +
+      BigInt(availableAmount || 0) +
       BigInt(perTokenStatuses[token.address].fungibleAssetBalance || 0)
     );
-  }, [actualAmount, pendingAmount, perTokenStatuses, token.address]);
+  }, [availableAmount, pendingAmount, perTokenStatuses, token.address]);
 
   const tryRegister = async () => {
     setIsSubmitting(true);
@@ -111,7 +111,7 @@ export default function ConfidentialAssetCard({
               <>
                 <div className='flex items-end gap-1'>
                   <div className='typography-h2 text-textPrimary'>
-                    {actualAmount &&
+                    {availableAmount &&
                       pendingAmount &&
                       formatBalance(amountsSumBN, token.decimals)}
                   </div>

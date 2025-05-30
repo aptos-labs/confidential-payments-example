@@ -1,10 +1,10 @@
 import {
   ConfidentialAmount,
+  RangeProofExecutor,
   TwistedEd25519PrivateKey,
   TwistedEd25519PublicKey,
   TwistedElGamalCiphertext,
 } from '@aptos-labs/confidential-assets';
-import { RangeProofExecutor } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AccountAddress,
@@ -220,7 +220,7 @@ export const buildWithdrawConfidentialBalance = async (
     to: receiver,
     tokenAddress,
     decryptionKey: decryptionKey,
-    encryptedActualBalance,
+    encryptedCurrentBalance: encryptedActualBalance,
     amountToWithdraw: withdrawAmount,
     withFeePayer: gasStationArgs.withGasStation,
   });
@@ -275,7 +275,7 @@ export const buildTransferConfidentialAsset = async (
   return confidentialAssets.transferCoin({
     senderDecryptionKey: decryptionKey,
     recipientEncryptionKey: new TwistedEd25519PublicKey(recipientEncryptionKeyHex),
-    encryptedActualBalance: encryptedActualBalance,
+    encryptedSenderBalance: encryptedActualBalance,
     amountToTransfer,
     sender: account.accountAddress,
     tokenAddress,

@@ -72,11 +72,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
     const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0);
 
-    const availableAmountBN = BigInt(currentTokenStatus?.availableAmount || 0);
+    const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0);
 
     const totalBalanceBN = useMemo(() => {
-      return publicBalanceBN + pendingAmountBN + availableAmountBN;
-    }, [availableAmountBN, pendingAmountBN, publicBalanceBN]);
+      return publicBalanceBN + pendingAmountBN + actualAmountBN;
+    }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false);
     const [debouncedUsername, setDebouncedUsername] = useState('');
@@ -235,9 +235,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               parseUnits(String(formData.amount), token.decimals).toString(),
               {
                 isSyncFirst: true,
-                auditorsEncryptionKeyHexList: auditorsEncryptionKeyHexList.map(ek =>
-                  ek.toString(),
-                ),
+                auditorsEncryptionKeyHexList,
               },
             ),
           );

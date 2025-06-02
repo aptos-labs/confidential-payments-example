@@ -1,6 +1,5 @@
 import {
-  AVAILABLE_BALANCE_CHUNK_COUNT,
-  EncryptedAmount,
+  ConfidentialAmount,
   TwistedEd25519PrivateKey,
   TwistedElGamalCiphertext,
 } from '@aptos-labs/confidential-assets';
@@ -38,7 +37,7 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
     const serializedEncryptedAmountBytes = getBytes(amountCiphertext);
     const chunkedBytes: Uint8Array[] = [];
     const chunkSize = Math.ceil(
-      serializedEncryptedAmountBytes.length / (AVAILABLE_BALANCE_CHUNK_COUNT / 2),
+      serializedEncryptedAmountBytes.length / (ConfidentialAmount.CHUNKS_COUNT / 2),
     );
 
     for (let i = 0; i < serializedEncryptedAmountBytes.length; i += chunkSize) {
@@ -52,7 +51,7 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
       return new TwistedElGamalCiphertext(C, D);
     });
 
-    const confidentialAmount = await EncryptedAmount.fromCipherTextAndPrivateKey(
+    const confidentialAmount = await ConfidentialAmount.fromEncrypted(
       encrypted,
       decryptionKey,
     );
@@ -60,7 +59,7 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
     // Send the decrypted amount back to the main thread.
     const response: DecryptionWorkerResponse = {
       id,
-      amount: Number(confidentialAmount.getAmount()),
+      amount: Number(confidentialAmount.amount),
     };
     self.postMessage(response);
   } catch (error) {

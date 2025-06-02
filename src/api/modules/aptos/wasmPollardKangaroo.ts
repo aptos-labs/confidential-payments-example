@@ -6,7 +6,7 @@ import initWasm, {
   WASMKangaroo,
 } from '@aptos-labs/confidential-asset-wasm-bindings/pollard-kangaroo';
 import {
-  EncryptedAmount,
+  ConfidentialAmount,
   TwistedEd25519PrivateKey,
   TwistedElGamal,
   TwistedElGamalCiphertext,
@@ -59,7 +59,7 @@ export const preloadTablesForBalances = async () => {
     return result;
   };
 
-  EncryptedAmount.setDecryptBalanceFn(
+  ConfidentialAmount.setDecryptBalanceFn(
     async (
       encrypted: TwistedElGamalCiphertext[],
       privateKey: TwistedEd25519PrivateKey,

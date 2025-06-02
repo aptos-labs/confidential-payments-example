@@ -306,7 +306,7 @@ const useEnsureConfidentialRegistered = () => {
       const [tx] = await tryCatch(
         buildRegisterConfidentialBalanceTx(
           account,
-          dk.publicKey().toString(),
+          dk.toString(),
           gasStationArgs,
           appConfig.PRIMARY_TOKEN_ADDRESS,
         ),

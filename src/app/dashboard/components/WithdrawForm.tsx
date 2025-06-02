@@ -39,11 +39,11 @@ export default function WithdrawForm({
 
   const pendingAmountBN = BigInt(currentTokenStatus.pendingAmount || 0);
 
-  const actualAmountBN = BigInt(currentTokenStatus?.actualAmount || 0);
+  const availableAmountBN = BigInt(currentTokenStatus?.availableAmount || 0);
 
   const totalBalanceBN = useMemo(() => {
-    return publicBalanceBN + pendingAmountBN + actualAmountBN;
-  }, [actualAmountBN, pendingAmountBN, publicBalanceBN]);
+    return publicBalanceBN + pendingAmountBN + availableAmountBN;
+  }, [availableAmountBN, pendingAmountBN, publicBalanceBN]);
 
   const [isSubmitting, setIsSubmitting] = useState(false);
 

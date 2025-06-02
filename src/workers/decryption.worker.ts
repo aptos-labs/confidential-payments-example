@@ -1,5 +1,5 @@
 import {
-  ChunkedAmount,
+  AVAILABLE_BALANCE_CHUNK_COUNT,
   EncryptedAmount,
   TwistedEd25519PrivateKey,
   TwistedElGamalCiphertext,
@@ -38,7 +38,7 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
     const serializedEncryptedAmountBytes = getBytes(amountCiphertext);
     const chunkedBytes: Uint8Array[] = [];
     const chunkSize = Math.ceil(
-      serializedEncryptedAmountBytes.length / (ChunkedAmount.CHUNKS_COUNT / 2),
+      serializedEncryptedAmountBytes.length / (AVAILABLE_BALANCE_CHUNK_COUNT / 2),
     );
 
     for (let i = 0; i < serializedEncryptedAmountBytes.length; i += chunkSize) {

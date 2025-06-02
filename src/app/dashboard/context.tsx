@@ -1,13 +1,14 @@
 'use client';
 
 import {
-  EncryptedAmount,
+  ConfidentialAmount,
   TwistedEd25519PrivateKey,
 } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AnyNumber,
   CommittedTransactionResponse,
+  InputGenerateTransactionPayloadData,
   KeylessAccount,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
@@ -43,6 +44,7 @@ import {
   transferConfidentialAsset,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos';
+import { aptos } from '@/api/modules/aptos/client';
 import { ErrorHandler, tryCatch } from '@/helpers';
 import { useLoading } from '@/hooks';
 import { authStore } from '@/store/auth';
@@ -55,23 +57,23 @@ type AccountDecryptionKeyStatus = {
   isRegistered: boolean;
 
   pendingAmount: string;
-  availableAmount: string;
+  actualAmount: string;
   fungibleAssetBalance: string;
 };
 
 const AccountDecryptionKeyStatusRawDefault: Omit<
   AccountDecryptionKeyStatus,
-  'pendingAmount' | 'availableAmount'
+  'pendingAmount' | 'actualAmount'
 > & {
-  pending: EncryptedAmount | undefined;
-  available: EncryptedAmount | undefined;
+  pending: ConfidentialAmount | undefined;
+  actual: ConfidentialAmount | undefined;
 } = {
   isFrozen: false,
   isNormalized: false,
   isRegistered: false,
 
   pending: undefined,
-  available: undefined,
+  actual: undefined,
   fungibleAssetBalance: '',
 };
 
@@ -81,7 +83,7 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
   isRegistered: false,
 
   pendingAmount: '0',
-  availableAmount: '0',
+  actualAmount: '0',
   fungibleAssetBalance: '0',
 };
 
@@ -134,7 +136,7 @@ type ConfidentialCoinContextType = {
   ) => Promise<CommittedTransactionResponse>;
   normalizeAccount: () => Promise<CommittedTransactionResponse>;
   unfreezeAccount: () => Promise<CommittedTransactionResponse>;
-  rolloverAccount: () => Promise<CommittedTransactionResponse>;
+  rolloverAccount: () => Promise<CommittedTransactionResponse[]>;
   buildTransferTx: (
     receiverEncryptionKeyHex: string,
     amount: string,
@@ -214,14 +216,14 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
     isNormalized: true,
     isRegistered: true,
     pendingAmount: '0',
-    availableAmount: '0',
+    actualAmount: '0',
     fungibleAssetBalance: '0',
   },
 
   registerAccountEncryptionKey: async () => ({}) as CommittedTransactionResponse,
   normalizeAccount: async () => ({}) as CommittedTransactionResponse,
   unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
-  rolloverAccount: async () => ({}) as CommittedTransactionResponse,
+  rolloverAccount: async () => [] as CommittedTransactionResponse[],
   buildTransferTx: async () => ({}) as SimpleTransaction,
   transfer: async () => ({}) as CommittedTransactionResponse,
   buildWithdrawToTx: async () => ({}) as SimpleTransaction,
@@ -628,7 +630,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
             return {
               tokenAddress: el,
               pending: undefined,
-              available: undefined,
+              actual: undefined,
               isRegistered: false,
               isNormalized: false,
               isFrozen: false,
@@ -647,7 +649,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
             return {
               tokenAddress: el,
               pending: undefined,
-              available: undefined,
+              actual: undefined,
               isRegistered,
               isNormalized: false,
               isFrozen: false,
@@ -659,7 +661,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
             return {
               tokenAddress: el,
               pending: undefined,
-              available: undefined,
+              actual: undefined,
               isRegistered,
               isNormalized: false,
               isFrozen: false,
@@ -682,7 +684,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
             return {
               tokenAddress: el,
               pending: undefined,
-              available: undefined,
+              actual: undefined,
               isRegistered,
               isNormalized: false,
               isFrozen: false,
@@ -690,12 +692,12 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
             };
           }
 
-          const [{ pending, available }, isNormalized, isFrozen] = registeredDetails;
+          const [{ pending, actual }, isNormalized, isFrozen] = registeredDetails;
 
           return {
             tokenAddress: el,
             pending,
-            available,
+            actual,
             isRegistered,
             isNormalized,
             isFrozen,
@@ -732,9 +734,9 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
       {} as Record<
         string,
         {
-          pending: EncryptedAmount | undefined;
-          available: EncryptedAmount | undefined;
-        } & Omit<AccountDecryptionKeyStatus, 'pendingAmount' | 'availableAmount'>
+          pending: ConfidentialAmount | undefined;
+          actual: ConfidentialAmount | undefined;
+        } & Omit<AccountDecryptionKeyStatus, 'pendingAmount' | 'actualAmount'>
       >,
     );
   }, [currentTokensList, loadedTokens]);
@@ -742,14 +744,14 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   const perTokenStatuses = useMemo(() => {
     return Object.entries(perTokenStatusesRaw)
       .map<[string, AccountDecryptionKeyStatus]>(([key, value]) => {
-        const { pending, available, ...rest } = value;
+        const { pending, actual, ...rest } = value;
 
         return [
           key,
           {
             ...rest,
-            pendingAmount: pending?.getAmount()?.toString(),
-            availableAmount: available?.getAmount()?.toString(),
+            pendingAmount: pending?.amount?.toString(),
+            actualAmount: actual?.amount?.toString(),
           } as AccountDecryptionKeyStatus,
         ];
       })
@@ -793,9 +795,31 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     if (!selectedAccountDecryptionKey || !tokenAddress)
       throw new TypeError('Decryption key is not set');
 
+    const currBalanceState = await getConfidentialBalances(
+      selectedAccount,
+      selectedAccountDecryptionKey.toString(),
+      tokenAddress,
+    );
+
+    const actualBalance = currBalanceState.actual;
+
+    if (!actualBalance) throw new TypeError('actual balance not loaded');
+
+    const amountEncrypted = actualBalance.getAmountEncrypted(
+      selectedAccountDecryptionKey.publicKey(),
+    );
+
+    if (!amountEncrypted)
+      throw new TypeError('actualBalance?.amountEncrypted is not defined');
+
+    if (!actualBalance?.amount)
+      throw new TypeError('actualBalance?.amount is not defined');
+
     return normalizeConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
+      amountEncrypted,
+      actualBalance.amount,
       gasStationArgs,
       tokenAddress,
     );
@@ -881,6 +905,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   const {
     perTokenStatuses,
     decryptionKeyStatusLoadingState,
+    selectedAccountDecryptionKeyStatusRaw,
     selectedAccountDecryptionKeyStatus,
     loadSelectedDecryptionKeyState,
     normalizeAccount,
@@ -888,6 +913,39 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     buildRolloverAccountTx,
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address);
+
+  const getEncryptedAmount = useCallback(
+    async (opts?: { isSyncFirst?: boolean }) => {
+      const amountEncryptedRaw =
+        selectedAccountDecryptionKeyStatusRaw.actual?.getAmountEncrypted(
+          selectedAccountDecryptionKey.publicKey(),
+        );
+      if (!amountEncryptedRaw) {
+        throw new TypeError('actual amount not loaded');
+      }
+
+      const amountEncrypted = opts?.isSyncFirst
+        ? await (async () => {
+            const { actual } = await getConfidentialBalances(
+              selectedAccount,
+              selectedAccountDecryptionKey.toString(),
+              selectedToken.address,
+            );
+            return actual?.getAmountEncrypted(selectedAccountDecryptionKey.publicKey());
+          })()
+        : amountEncryptedRaw;
+
+      if (!amountEncrypted) throw new TypeError('amountEncrypted is not loaded');
+
+      return amountEncrypted;
+    },
+    [
+      selectedAccount,
+      selectedAccountDecryptionKey,
+      selectedAccountDecryptionKeyStatusRaw.actual,
+      selectedToken.address,
+    ],
+  );
 
   const buildTransferTx = useCallback(
     async (
@@ -898,9 +956,12 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
+      const amountEncrypted = await getEncryptedAmount(opts);
+
       return buildTransferConfidentialAsset(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
+        amountEncrypted,
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
@@ -911,6 +972,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
@@ -925,9 +987,12 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         isSyncFirst?: boolean;
       },
     ) => {
+      const amountEncrypted = await getEncryptedAmount(opts);
+
       return transferConfidentialAsset(
         selectedAccount,
         selectedAccountDecryptionKey.toString(),
+        amountEncrypted,
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
@@ -938,18 +1003,28 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
   );
 
   const buildWithdrawToTx = useCallback(
-    async (amount: string, receiver: string) => {
+    async (
+      amount: string,
+      receiver: string,
+      opts?: {
+        isSyncFirst?: boolean;
+      },
+    ) => {
+      const amountEncrypted = await getEncryptedAmount(opts);
+
       return buildWithdrawConfidentialBalance(
         selectedAccount,
         receiver,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
+        amountEncrypted,
         gasStationArgs,
         selectedToken.address,
       );
@@ -957,18 +1032,28 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
   );
 
   const withdrawTo = useCallback(
-    async (amount: string, receiver: string) => {
+    async (
+      amount: string,
+      receiver: string,
+      opts?: {
+        isSyncFirst?: boolean;
+      },
+    ) => {
+      const amountEncrypted = await getEncryptedAmount(opts);
+
       return withdrawConfidentialBalance(
         selectedAccount,
         receiver,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
+        amountEncrypted,
         gasStationArgs,
         selectedToken.address,
       );
@@ -976,6 +1061,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       selectedAccount,
       selectedAccountDecryptionKey,
+      getEncryptedAmount,
       selectedToken.address,
       gasStationArgs,
     ],
@@ -1028,10 +1114,12 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
   const depositCoinTo = useCallback(
     async (amount: bigint, to: string) => {
+      const coinType = await getCoinByFaAddress(selectedToken.address);
+
       return depositConfidentialBalanceCoin(
         selectedAccount,
         amount,
-        selectedToken.address,
+        parseCoinTypeFromCoinStruct(coinType),
         gasStationArgs,
         to,
       );
@@ -1068,14 +1156,14 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
    * 1. Checks if the confidential balance is enough for the operation
    * 2. Implement "emulating-a-fee-payer-via-devnet-faucet" logic
    * 3. Deposit whole public balance except the fee, that was emulated
-   * 4. Rollover the account if there is not enough "available" amount in user's balance
+   * 4. Rollover the account if there is not enough "actual" amount in user's balance
    */
   const ensureConfidentialBalanceReadyBeforeOp = useCallback<
     ConfidentialCoinContextType['ensureConfidentialBalanceReadyBeforeOp']
   >(
     async args => {
       let depositTransactionToExecute: SimpleTransaction | undefined = undefined;
-      let rolloverTransactionsToExecute: SimpleTransaction | undefined = undefined;
+      let rolloverTransactionsToExecute: InputGenerateTransactionPayloadData[] = [];
 
       const publicBalanceBN = BigInt(
         perTokenStatuses[args.token.address].fungibleAssetBalance || 0,
@@ -1083,9 +1171,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
       const pendingAmountBN = BigInt(args.currentTokenStatus.pendingAmount || 0);
 
-      const availableAmountBN = BigInt(args.currentTokenStatus?.availableAmount || 0);
+      const actualAmountBN = BigInt(args.currentTokenStatus?.actualAmount || 0);
 
-      const confidentialAmountsSumBN = pendingAmountBN + availableAmountBN;
+      const confidentialAmountsSumBN = pendingAmountBN + actualAmountBN;
 
       const formAmountBN = parseUnits(args.amountToEnsure, args.token.decimals);
 
@@ -1124,7 +1212,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         depositTransactionToExecute = depositTx;
       }
 
-      if (availableAmountBN < formAmountBN) {
+      if (actualAmountBN < formAmountBN) {
         const [rolloverTxx, buildRolloverTxError] = await tryCatch(
           buildRolloverAccountTx(),
         );
@@ -1143,12 +1231,20 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         }
       }
 
-      if (rolloverTransactionsToExecute) {
-        const [, error] = await tryCatch(
-          sendAndWaitTx(rolloverTransactionsToExecute, selectedAccount, gasStationArgs),
-        );
-        if (error) {
-          return error;
+      if (rolloverTransactionsToExecute.length) {
+        for await (const rolloverTx of rolloverTransactionsToExecute) {
+          const simpleRolloverTx = await aptos.transaction.build.simple({
+            sender: selectedAccount.accountAddress,
+            data: rolloverTx,
+            withFeePayer: gasStationArgs.withGasStation,
+          });
+
+          const [, error] = await tryCatch(
+            sendAndWaitTx(simpleRolloverTx, selectedAccount, gasStationArgs),
+          );
+          if (error) {
+            return error;
+          }
         }
       }
     },

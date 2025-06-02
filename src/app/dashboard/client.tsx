@@ -184,7 +184,7 @@ export default function DashboardClient() {
                     className='w-full'
                     token={token}
                     pendingAmount={currTokenStatus.pendingAmount}
-                    availableAmount={currTokenStatus.availableAmount}
+                    actualAmount={currTokenStatus.actualAmount}
                     isNormalized={currTokenStatus.isNormalized}
                     isFrozen={currTokenStatus.isFrozen}
                     isRegistered={currTokenStatus.isRegistered}
@@ -210,7 +210,7 @@ export default function DashboardClient() {
                       tokensLoadingState,
                     ].includes('loading')}
                     pendingAmount={currTokenStatuses.pendingAmount}
-                    availableAmount={currTokenStatuses.availableAmount}
+                    actualAmount={currTokenStatuses.actualAmount}
                     isNormalized={currTokenStatuses.isNormalized}
                     isFrozen={currTokenStatuses.isFrozen}
                     isRegistered={currTokenStatuses.isRegistered}

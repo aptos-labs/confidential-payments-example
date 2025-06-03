@@ -13,7 +13,6 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import {
-  buildRegisterConfidentialBalanceTx,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
@@ -22,7 +21,7 @@ import {
   getIsAccountRegisteredWithToken,
   isValidEphemeralKeyPair,
   KeylessAccountEncoding,
-  sendAndWaitTx,
+  registerConfidentialBalance,
   validateEphemeralKeyPair,
   validateIdToken,
   validateKeylessAccount,
@@ -303,18 +302,14 @@ const useEnsureConfidentialRegistered = () => {
 
       await sleep(500);
 
-      const [tx] = await tryCatch(
-        buildRegisterConfidentialBalanceTx(
+      await tryCatch(
+        registerConfidentialBalance(
           account,
           dk.toString(),
           gasStationArgs,
           appConfig.PRIMARY_TOKEN_ADDRESS,
         ),
       );
-
-      if (tx) {
-        await tryCatch(sendAndWaitTx(tx, account, gasStationArgs));
-      }
 
       attempts++;
       await sleep(500);

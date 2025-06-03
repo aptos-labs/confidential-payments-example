@@ -22,8 +22,6 @@ import {
   buildDepositConfidentialBalanceCoinTx,
   buildDepositConfidentialBalanceTx,
   buildSafelyRolloverConfidentialBalanceTx,
-  buildTransferConfidentialAsset,
-  buildWithdrawConfidentialBalance,
   depositConfidentialBalance,
   depositConfidentialBalanceCoin,
   getCoinByFaAddress,
@@ -38,7 +36,7 @@ import {
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
-  safelyRolloverConfidentialBalance,
+  rolloverConfidentialBalance,
   sendAndWaitTx,
   transferConfidentialAsset,
   withdrawConfidentialBalance,
@@ -134,16 +132,7 @@ type ConfidentialCoinContextType = {
   ) => Promise<CommittedTransactionResponse>;
   normalizeAccount: () => Promise<CommittedTransactionResponse>;
   unfreezeAccount: () => Promise<CommittedTransactionResponse>;
-  rolloverAccount: () => Promise<CommittedTransactionResponse>;
-  buildTransferTx: (
-    receiverEncryptionKeyHex: string,
-    amount: string,
-    opts?: {
-      isSyncFirst?: boolean;
-
-      auditorsEncryptionKeyHexList?: string[];
-    },
-  ) => Promise<SimpleTransaction>;
+  rolloverAccount: () => Promise<CommittedTransactionResponse[]>;
   transfer: (
     receiverEncryptionKeyHex: string,
     amount: string,
@@ -221,8 +210,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   registerAccountEncryptionKey: async () => ({}) as CommittedTransactionResponse,
   normalizeAccount: async () => ({}) as CommittedTransactionResponse,
   unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
-  rolloverAccount: async () => ({}) as CommittedTransactionResponse,
-  buildTransferTx: async () => ({}) as SimpleTransaction,
+  rolloverAccount: async () => ({}) as CommittedTransactionResponse[],
   transfer: async () => ({}) as CommittedTransactionResponse,
   buildWithdrawToTx: async () => ({}) as SimpleTransaction,
   withdrawTo: async () => ({}) as CommittedTransactionResponse,
@@ -448,7 +436,7 @@ const useSelectedAccountDecryptionKey = () => {
   const registerAccountEncryptionKey = async (tokenAddress: string) => {
     return registerConfidentialBalance(
       selectedAccount,
-      selectedAccountDecryptionKey.publicKey().toString(),
+      selectedAccountDecryptionKey.toString(),
       gasStationArgs,
       tokenAddress,
     );
@@ -825,7 +813,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   const rolloverAccount = useCallback(async () => {
     if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
-    return safelyRolloverConfidentialBalance(
+    return rolloverConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
       gasStationArgs,
@@ -889,33 +877,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address);
 
-  const buildTransferTx = useCallback(
-    async (
-      receiverAddressHex: string,
-      amount: string,
-      opts?: {
-        auditorsEncryptionKeyHexList?: string[];
-        isSyncFirst?: boolean;
-      },
-    ) => {
-      return buildTransferConfidentialAsset(
-        selectedAccount,
-        selectedAccountDecryptionKey.toString(),
-        BigInt(amount),
-        receiverAddressHex,
-        opts?.auditorsEncryptionKeyHexList ?? [],
-        gasStationArgs,
-        selectedToken.address,
-      );
-    },
-    [
-      selectedAccount,
-      selectedAccountDecryptionKey,
-      selectedToken.address,
-      gasStationArgs,
-    ],
-  );
-
   const transfer = useCallback(
     async (
       receiverAddressHex: string,
@@ -931,25 +892,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
-        gasStationArgs,
-        selectedToken.address,
-      );
-    },
-    [
-      selectedAccount,
-      selectedAccountDecryptionKey,
-      selectedToken.address,
-      gasStationArgs,
-    ],
-  );
-
-  const buildWithdrawToTx = useCallback(
-    async (amount: string, receiver: string) => {
-      return buildWithdrawConfidentialBalance(
-        selectedAccount,
-        receiver,
-        selectedAccountDecryptionKey.toString(),
-        BigInt(amount),
         gasStationArgs,
         selectedToken.address,
       );
@@ -1226,9 +1168,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         unfreezeAccount,
 
         rolloverAccount,
-        buildTransferTx,
         transfer,
-        buildWithdrawToTx,
         withdrawTo,
         depositTo,
         depositCoinTo,

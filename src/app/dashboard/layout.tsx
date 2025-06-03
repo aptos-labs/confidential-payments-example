@@ -7,7 +7,6 @@ import { PropsWithChildren } from 'react';
 import { useAsync, useTimeoutFn } from 'react-use';
 
 import { queryClient } from '@/api/client';
-import { preloadTables } from '@/api/modules/aptos/wasmPollardKangaroo';
 import Loading from '@/app/dashboard/loading';
 import { ErrorHandler } from '@/helpers';
 import { authStore } from '@/store/auth';
@@ -26,11 +25,6 @@ export default function DashboardLayout({ children }: PropsWithChildren) {
 
   const state = useAsync(async () => {
     try {
-      // console.log('[layout] Preloading tables...');
-      await preloadTables();
-      // await preloadTables();
-      // console.log('[layout] Tables preloaded');
-
       if (!activeKeylessAccount && keylessAccounts.length) {
         // console.log('[layout] Switching to keyless account...');
         await switchKeylessAccount(keylessAccounts[0].idToken.raw);

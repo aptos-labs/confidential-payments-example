@@ -13,12 +13,11 @@ import {
   useState,
 } from 'react';
 
-import { getEkByAddr, sendAndWaitTx } from '@/api/modules/aptos';
+import { getEncryptionKey } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { ErrorHandler, getYupAmountField, isMobile, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGetAnsSubdomainAddress } from '@/hooks/ans';
-import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
@@ -59,12 +58,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
     const {
       selectedAccount,
-      buildTransferTx,
+      transfer,
       reloadBalances,
       perTokenStatuses,
       ensureConfidentialBalanceReadyBeforeOp,
     } = useConfidentialCoinContext();
-    const gasStationArgs = useGasStationArgs();
 
     const currentTokenStatus = perTokenStatuses[token.address];
 
@@ -120,7 +118,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
                 const addressStr = resolvedAddress.toString();
                 const [ek, ekError] = await tryCatch(
-                  getEkByAddr(addressStr, token.address),
+                  getEncryptionKey(addressStr, token.address),
                 );
                 if (ekError || !ek) return false;
                 return true;
@@ -138,7 +136,9 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               .test('audAddr', "Auditor's address not exist", async v => {
                 if (!v) return false;
 
-                const [ek, ekError] = await tryCatch(getEkByAddr(v, token.address));
+                const [ek, ekError] = await tryCatch(
+                  getEncryptionKey(v, token.address),
+                );
                 if (ekError) return false;
                 return Boolean(ek);
               }),
@@ -212,7 +212,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
           const auditorsEncryptionKeyHexList = await Promise.all(
             formData.auditorsAddresses.map(async addr => {
-              return getEkByAddr(addr, token.address);
+              return getEncryptionKey(addr, token.address);
             }),
           );
 
@@ -229,8 +229,8 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
           const addressStr = resolvedAddress.toString();
 
-          const [transferTx, buildTransferTxError] = await tryCatch(
-            buildTransferTx(
+          const [response, transferError] = await tryCatch(
+            transfer(
               addressStr,
               parseUnits(String(formData.amount), token.decimals).toString(),
               {
@@ -241,17 +241,15 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
               },
             ),
           );
-          if (buildTransferTxError) {
-            ErrorHandler.process(buildTransferTxError);
+          if (transferError) {
+            ErrorHandler.process(transferError);
             enableForm();
             setIsSubmitting(false);
             return;
           }
 
-          const res = await sendAndWaitTx(transferTx, selectedAccount, gasStationArgs);
-
           const [, reloadError] = await tryCatch(
-            Promise.all([reloadBalances(BigInt(res.version))]),
+            Promise.all([reloadBalances(BigInt(response.version))]),
           );
           if (reloadError) {
             ErrorHandler.process(reloadError);
@@ -266,7 +264,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           setIsSubmitting(false);
         })(),
       [
-        buildTransferTx,
+        transfer,
         clearForm,
         currentTokenStatus,
         disableForm,
@@ -276,9 +274,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         onSubmit,
         reloadBalances,
         resolvedAddress,
-        selectedAccount,
         token,
-        gasStationArgs,
       ],
     );
 

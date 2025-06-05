@@ -15,19 +15,24 @@ async function shouldShowMaintenancePage() {
     return true;
   }
 
-  const response = await fetch(
-    `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
-    {
-      headers: {
-        Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,
+  try {
+    const response = await fetch(
+      `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+      {
+        headers: {
+          Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,
+        },
       },
-    },
-  );
-  if (!response.ok) {
-    console.error('Error fetching module:', response.statusText);
+    );
+    if (response.ok) {
+      return false;
+    }
+    console.error('Non 200 response when fetching module:', response.statusText);
+    return true;
+  } catch (error) {
+    console.error('Error fetching module:', error);
+    return true;
   }
-
-  return !response.ok;
 }
 
 const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {

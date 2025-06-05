@@ -1,7 +1,4 @@
-import {
-  ConfidentialAsset,
-  ConfidentialAssetTransactionBuilder,
-} from '@aptos-labs/confidential-assets';
+import { ConfidentialAsset } from '@aptos-labs/confidential-assets';
 import { Aptos, AptosConfig, NetworkToNetworkName } from '@aptos-labs/ts-sdk';
 import { GraphQLClient } from 'graphql-request';
 
@@ -15,12 +12,6 @@ const aptosConfig = new AptosConfig({
   },
 });
 export const aptos = new Aptos(aptosConfig);
-export const confidentialAssetsTxnBuilder = new ConfidentialAssetTransactionBuilder(
-  aptosConfig,
-  {
-    confidentialAssetModuleAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-  },
-);
 export const confidentialAssets = new ConfidentialAsset({
   config: aptosConfig,
   confidentialAssetModuleAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,

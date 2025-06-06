@@ -229,7 +229,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
 
           const addressStr = resolvedAddress.toString();
 
-          const [response, transferError] = await tryCatch(
+          const [responses, transferError] = await tryCatch(
             transfer(
               addressStr,
               parseUnits(String(formData.amount), token.decimals).toString(),
@@ -247,9 +247,17 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             setIsSubmitting(false);
             return;
           }
+          if (responses.length === 0) {
+            ErrorHandler.process(new Error('No responses were returned'));
+            enableForm();
+            setIsSubmitting(false);
+            return;
+          }
 
           const [, reloadError] = await tryCatch(
-            Promise.all([reloadBalances(BigInt(response.version))]),
+            Promise.all([
+              reloadBalances(BigInt(responses[responses.length - 1].version)),
+            ]),
           );
           if (reloadError) {
             ErrorHandler.process(reloadError);

@@ -21,7 +21,6 @@ import { createContext, useContext, useMemo } from 'react';
 import {
   buildDepositConfidentialBalanceCoinTx,
   buildDepositConfidentialBalanceTx,
-  buildSafelyRolloverConfidentialBalanceTx,
   depositConfidentialBalance,
   depositConfidentialBalanceCoin,
   getCoinByFaAddress,
@@ -141,7 +140,7 @@ type ConfidentialCoinContextType = {
 
       auditorsEncryptionKeyHexList?: string[];
     },
-  ) => Promise<CommittedTransactionResponse>;
+  ) => Promise<CommittedTransactionResponse[]>;
   buildWithdrawToTx: (
     amount: string,
     receiver: string,
@@ -211,7 +210,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   normalizeAccount: async () => ({}) as CommittedTransactionResponse,
   unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
   rolloverAccount: async () => ({}) as CommittedTransactionResponse[],
-  transfer: async () => ({}) as CommittedTransactionResponse,
+  transfer: async () => ({}) as CommittedTransactionResponse[],
   buildWithdrawToTx: async () => ({}) as SimpleTransaction,
   withdrawTo: async () => ({}) as CommittedTransactionResponse,
   depositTo: async () => ({}) as CommittedTransactionResponse,
@@ -418,7 +417,6 @@ const useAccounts = () => {
 const useSelectedAccountDecryptionKey = () => {
   const rawKeylessAccounts = authStore.useAuthStore(state => state.accounts);
   const activeKeylessAccount = authStore.useAuthStore(state => state.activeAccount);
-  const gasStationArgs = useGasStationArgs();
 
   const selectedAccount = useSelectedAccount();
 
@@ -437,7 +435,6 @@ const useSelectedAccountDecryptionKey = () => {
     return registerConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
-      gasStationArgs,
       tokenAddress,
     );
   };
@@ -569,8 +566,6 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   const accountAddrHexToTokenAddrMap = walletStore.useWalletStore(
     state => state.accountAddrHexToTokenAddrMap,
   );
-
-  const gasStationArgs = useGasStationArgs();
 
   const currentTokensList = useMemo(() => {
     if (!selectedAccount.accountAddress) return [];
@@ -784,10 +779,9 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     return normalizeConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
-      gasStationArgs,
       tokenAddress,
     );
-  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress, gasStationArgs]);
+  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress]);
 
   // FIXME: implement Promise<CommittedTransactionResponse>
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -799,27 +793,15 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     // mb: rotate keys with unfreeze
   }, [selectedAccountDecryptionKey]);
 
-  const buildRolloverAccountTx = useCallback(async () => {
-    if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
-
-    return buildSafelyRolloverConfidentialBalanceTx(
-      selectedAccount,
-      selectedAccountDecryptionKey.toString(),
-      gasStationArgs,
-      tokenAddress,
-    );
-  }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress, gasStationArgs]);
-
   const rolloverAccount = useCallback(async () => {
     if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
     return rolloverConfidentialBalance(
       selectedAccount,
       selectedAccountDecryptionKey.toString(),
-      gasStationArgs,
       tokenAddress,
     );
-  }, [selectedAccountDecryptionKey, selectedAccount, tokenAddress, gasStationArgs]);
+  }, [selectedAccountDecryptionKey, selectedAccount, tokenAddress]);
 
   return {
     perTokenStatusesRaw,
@@ -834,8 +816,6 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
 
     normalizeAccount,
     unfreezeAccount,
-
-    buildRolloverAccountTx,
     rolloverAccount,
   };
 };
@@ -873,7 +853,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     loadSelectedDecryptionKeyState,
     normalizeAccount,
     unfreezeAccount,
-    buildRolloverAccountTx,
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address);
 
@@ -892,16 +871,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         BigInt(amount),
         receiverAddressHex,
         opts?.auditorsEncryptionKeyHexList ?? [],
-        gasStationArgs,
         selectedToken.address,
       );
     },
-    [
-      selectedAccount,
-      selectedAccountDecryptionKey,
-      selectedToken.address,
-      gasStationArgs,
-    ],
+    [selectedAccount, selectedAccountDecryptionKey, selectedToken.address],
   );
 
   const withdrawTo = useCallback(
@@ -911,16 +884,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         receiver,
         selectedAccountDecryptionKey.toString(),
         BigInt(amount),
-        gasStationArgs,
         selectedToken.address,
       );
     },
-    [
-      selectedAccount,
-      selectedAccountDecryptionKey,
-      selectedToken.address,
-      gasStationArgs,
-    ],
+    [selectedAccount, selectedAccountDecryptionKey, selectedToken.address],
   );
 
   const buildDepositToTx = useCallback(
@@ -946,11 +913,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         selectedAccount,
         amount,
         to,
-        gasStationArgs,
         selectedToken.address,
       );
     },
-    [selectedAccount, selectedToken, gasStationArgs],
+    [selectedAccount, selectedToken],
   );
 
   const buildDepositCoinToTx = useCallback(
@@ -974,11 +940,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         selectedAccount,
         amount,
         selectedToken.address,
-        gasStationArgs,
         to,
       );
     },
-    [selectedAccount, selectedToken.address, gasStationArgs],
+    [selectedAccount, selectedToken.address],
   );
 
   const testMintTokens = useCallback(
@@ -1017,7 +982,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   >(
     async args => {
       let depositTransactionToExecute: SimpleTransaction | undefined = undefined;
-      let rolloverTransactionsToExecute: SimpleTransaction | undefined = undefined;
 
       const publicBalanceBN = BigInt(
         perTokenStatuses[args.token.address].fungibleAssetBalance || 0,
@@ -1066,28 +1030,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         depositTransactionToExecute = depositTx;
       }
 
-      if (availableAmountBN < formAmountBN) {
-        const [rolloverTxx, buildRolloverTxError] = await tryCatch(
-          buildRolloverAccountTx(),
-        );
-        if (buildRolloverTxError) {
-          return buildRolloverTxError;
-        }
-        rolloverTransactionsToExecute = rolloverTxx;
-      }
-
       if (depositTransactionToExecute) {
         const [, error] = await tryCatch(
           sendAndWaitTx(depositTransactionToExecute, selectedAccount, gasStationArgs),
-        );
-        if (error) {
-          return error;
-        }
-      }
-
-      if (rolloverTransactionsToExecute) {
-        const [, error] = await tryCatch(
-          sendAndWaitTx(rolloverTransactionsToExecute, selectedAccount, gasStationArgs),
         );
         if (error) {
           return error;
@@ -1097,7 +1042,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     [
       buildDepositCoinToTx,
       buildDepositToTx,
-      buildRolloverAccountTx,
       perTokenStatuses,
       selectedAccount,
       gasStationArgs,

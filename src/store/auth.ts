@@ -30,8 +30,6 @@ import { aptos } from '@/api/modules/aptos/client';
 import { sleep, tryCatch } from '@/helpers';
 import { walletStore } from '@/store/wallet';
 
-import { useGasStationArgs } from './gas-station';
-
 type StoredAccount = {
   idToken: { decoded: EncryptedScopedIdToken; raw: string };
   pepper: Uint8Array;
@@ -289,8 +287,6 @@ const useEphemeralKeyPair = () => {
 };
 
 const useEnsureConfidentialRegistered = () => {
-  const gasStationArgs = useGasStationArgs();
-
   return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0;
 
@@ -306,7 +302,6 @@ const useEnsureConfidentialRegistered = () => {
         registerConfidentialBalance(
           account,
           dk.toString(),
-          gasStationArgs,
           appConfig.PRIMARY_TOKEN_ADDRESS,
         ),
       );

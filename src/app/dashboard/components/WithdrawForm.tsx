@@ -5,12 +5,10 @@ import { parseUnits } from 'ethers';
 import { RefreshCw } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
-import { sendAndWaitTx } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { ErrorHandler, getYupAmountField, trimAddress, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGetTargetAddress } from '@/hooks/ans';
-import { useGasStationArgs } from '@/store/gas-station';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
@@ -26,12 +24,11 @@ export default function WithdrawForm({
   const {
     selectedToken,
     selectedAccount,
-    buildWithdrawToTx,
+    withdrawTo,
     reloadBalances,
     perTokenStatuses,
     ensureConfidentialBalanceReadyBeforeOp,
   } = useConfidentialCoinContext();
-  const gasStationArgs = useGasStationArgs();
 
   const currentTokenStatus = perTokenStatuses[token.address];
 
@@ -175,9 +172,8 @@ export default function WithdrawForm({
           setIsSubmitting(false);
           return;
         }
-
-        const [withdrawTx, buildWithdrawError] = await tryCatch(
-          buildWithdrawToTx(
+        const [txReceipt, withdrawErr] = await tryCatch(
+          withdrawTo(
             parseUnits(String(formData.amount), token.decimals).toString(),
             recipientAddress,
             {
@@ -185,17 +181,8 @@ export default function WithdrawForm({
             },
           ),
         );
-        if (buildWithdrawError) {
-          ErrorHandler.process(buildWithdrawError);
-          enableForm();
-          return;
-        }
-
-        const [txReceipt, withdrawError] = await tryCatch(
-          sendAndWaitTx(withdrawTx, selectedAccount, gasStationArgs),
-        );
-        if (withdrawError) {
-          ErrorHandler.process(withdrawError);
+        if (withdrawErr) {
+          ErrorHandler.process(withdrawErr);
           enableForm();
           setIsSubmitting(false);
           return;
@@ -217,7 +204,7 @@ export default function WithdrawForm({
         setIsSubmitting(false);
       })(),
     [
-      buildWithdrawToTx,
+      // buildWithdrawToTx,
       clearForm,
       currentTokenStatus,
       disableForm,
@@ -226,10 +213,9 @@ export default function WithdrawForm({
       handleSubmit,
       onSubmit,
       reloadBalances,
+      withdrawTo,
       resolvedAddress,
-      selectedAccount,
       token,
-      gasStationArgs,
     ],
   );
 

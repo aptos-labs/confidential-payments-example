@@ -1,5 +1,6 @@
 import { ConfidentialAsset } from '@aptos-labs/confidential-assets';
-import { Aptos, AptosConfig, NetworkToNetworkName } from '@aptos-labs/ts-sdk';
+import { createGasStationClient } from '@aptos-labs/gas-station-client';
+import { Aptos, AptosConfig, Network, NetworkToNetworkName } from '@aptos-labs/ts-sdk';
 import { GraphQLClient } from 'graphql-request';
 
 import { getSdk } from '@/codegen/indexer/generated/queries';
@@ -12,8 +13,13 @@ const aptosConfig = new AptosConfig({
   },
 });
 export const aptos = new Aptos(aptosConfig);
-export const confidentialAssets = new ConfidentialAsset(aptosConfig, {
+export const confidentialAssets = new ConfidentialAsset({
+  config: aptosConfig,
   confidentialAssetModuleAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
+  gasStation: createGasStationClient({
+    network: appConfig.APTOS_NETWORK as Network,
+    apiKey: appConfig.APTOS_BUILD_GAS_STATION_KEY,
+  }),
 });
 
 /** Do not forget to pass the API key when using this client. */

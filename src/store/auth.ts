@@ -13,7 +13,6 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 
 import {
-  buildRegisterConfidentialBalanceTx,
   createEphemeralKeyPair,
   decryptionKeyFromPepper,
   decryptionKeyFromPrivateKey,
@@ -22,7 +21,7 @@ import {
   getIsAccountRegisteredWithToken,
   isValidEphemeralKeyPair,
   KeylessAccountEncoding,
-  sendAndWaitTx,
+  registerConfidentialBalance,
   validateEphemeralKeyPair,
   validateIdToken,
   validateKeylessAccount,
@@ -30,8 +29,6 @@ import {
 import { aptos } from '@/api/modules/aptos/client';
 import { sleep, tryCatch } from '@/helpers';
 import { walletStore } from '@/store/wallet';
-
-import { useGasStationArgs } from './gas-station';
 
 type StoredAccount = {
   idToken: { decoded: EncryptedScopedIdToken; raw: string };
@@ -290,8 +287,6 @@ const useEphemeralKeyPair = () => {
 };
 
 const useEnsureConfidentialRegistered = () => {
-  const gasStationArgs = useGasStationArgs();
-
   return async (account: Account, dk: TwistedEd25519PrivateKey) => {
     let attempts = 0;
 
@@ -303,18 +298,13 @@ const useEnsureConfidentialRegistered = () => {
 
       await sleep(500);
 
-      const [tx] = await tryCatch(
-        buildRegisterConfidentialBalanceTx(
+      await tryCatch(
+        registerConfidentialBalance(
           account,
           dk.toString(),
-          gasStationArgs,
           appConfig.PRIMARY_TOKEN_ADDRESS,
         ),
       );
-
-      if (tx) {
-        await tryCatch(sendAndWaitTx(tx, account, gasStationArgs));
-      }
 
       attempts++;
       await sleep(500);

@@ -2,7 +2,6 @@ import {
   TwistedEd25519PrivateKey,
   TwistedEd25519PublicKey,
 } from '@aptos-labs/confidential-assets';
-import { RangeProofExecutor } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AccountAddress,
@@ -11,7 +10,6 @@ import {
   Ed25519PrivateKey,
   EphemeralKeyPair,
   GetFungibleAssetMetadataResponse,
-  type InputGenerateTransactionPayloadData,
   KeylessAccount,
   MoveStructId,
   MoveValue,
@@ -25,18 +23,11 @@ import { ethers, isHexString } from 'ethers';
 import { jwtDecode } from 'jwt-decode';
 import { z } from 'zod';
 
-import {
-  genBatchRangeZKP,
-  verifyBatchRangeZKP,
-} from '@/api/modules/aptos/wasmRangeProof';
 import { appConfig } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
 import { aptos, confidentialAssets } from './client';
-
-RangeProofExecutor.setGenBatchRangeZKP(genBatchRangeZKP);
-RangeProofExecutor.setVerifyBatchRangeZKP(verifyBatchRangeZKP);
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
@@ -113,11 +104,11 @@ export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
   return new TwistedEd25519PrivateKey(hashDigest);
 };
 
-export const sendAndWaitTx = async (
+export const sendTransaction = async (
   transaction: SimpleTransaction,
   signer: Account,
   gasStationArgs: GasStationArgs,
-): Promise<CommittedTransactionResponse> => {
+) => {
   if (!gasStationArgs.withGasStation) {
     throw new Error('We only support gas station for now.');
   }
@@ -139,34 +130,17 @@ export const sendAndWaitTx = async (
       `[${statusCode}] Error signing and submitting transaction for sender ${transaction.rawTransaction.sender} (seq num: ${transaction.rawTransaction.sequence_number}): ${errorInner} ${message}`,
     );
   }
-
-  return aptos.waitForTransaction({ transactionHash: response.data.transactionHash });
+  return response.data.transactionHash;
 };
 
-export const sendAndWaitBatchTxs = async (
-  txPayloads: InputGenerateTransactionPayloadData[] | SimpleTransaction[],
-  sender: Account,
+export const sendAndWaitTx = async (
+  transaction: SimpleTransaction,
+  signer: Account,
   gasStationArgs: GasStationArgs,
-): Promise<CommittedTransactionResponse[]> => {
-  const transactions: Promise<CommittedTransactionResponse>[] = [];
+): Promise<CommittedTransactionResponse> => {
+  const transactionHash = await sendTransaction(transaction, signer, gasStationArgs);
 
-  for (const payload of txPayloads) {
-    let tx;
-    if (payload instanceof SimpleTransaction) {
-      tx = payload;
-    } else {
-      tx = await aptos.transaction.build.simple({
-        sender: sender.accountAddress,
-        data: payload,
-        withFeePayer: gasStationArgs.withGasStation,
-      });
-    }
-
-    const txResponse = sendAndWaitTx(tx, sender, gasStationArgs);
-    transactions.push(txResponse);
-  }
-
-  return Promise.all(transactions);
+  return aptos.waitForTransaction({ transactionHash });
 };
 
 export const mintPrimaryToken = async (
@@ -202,74 +176,28 @@ export const mintAptCoin = async (
 };
 */
 
-export const buildWithdrawConfidentialBalance = async (
-  account: Account,
-  receiver: string,
-  decryptionKeyHex: string,
-  withdrawAmount: bigint,
-  gasStationArgs: GasStationArgs,
-  tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
-) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
-
-  return confidentialAssets.withdraw({
-    sender: account.accountAddress,
-    recipient: receiver,
-    tokenAddress,
-    senderDecryptionKey: decryptionKey,
-    amount: withdrawAmount,
-    withFeePayer: gasStationArgs.withGasStation,
-  });
-};
-
 export const withdrawConfidentialBalance = async (
   account: Account,
   receiver: string,
   decryptionKeyHex: string,
   withdrawAmount: bigint,
-  gasStationArgs: GasStationArgs,
-  tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
-) => {
-  const withdrawTx = await buildWithdrawConfidentialBalance(
-    account,
-    receiver,
-    decryptionKeyHex,
-    withdrawAmount,
-    gasStationArgs,
-    tokenAddress,
-  );
-
-  return sendAndWaitTx(withdrawTx, account, gasStationArgs);
-};
-
-export const getEkByAddr = async (addrHex: string, tokenAddress: string) => {
-  return confidentialAssets.getEncryptionKey({
-    accountAddress: AccountAddress.from(addrHex),
-    tokenAddress,
-  });
-};
-
-export const buildTransferConfidentialAsset = async (
-  account: Account,
-  decryptionKeyHex: string,
-  amountToTransfer: bigint,
-  recipientAddressHex: string,
-  auditorsEncryptionKeyHexList: string[],
-  gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
 
-  return confidentialAssets.transfer({
-    senderDecryptionKey: decryptionKey,
-    amount: amountToTransfer,
-    sender: account.accountAddress,
+  return confidentialAssets.withdraw({
+    signer: account,
+    recipient: receiver,
     tokenAddress,
-    recipient: recipientAddressHex,
-    additionalAuditorEncryptionKeys: auditorsEncryptionKeyHexList.map(
-      hex => new TwistedEd25519PublicKey(hex),
-    ),
-    withFeePayer: gasStationArgs.withGasStation,
+    senderDecryptionKey: decryptionKey,
+    amount: withdrawAmount,
+  });
+};
+
+export const getEncryptionKey = async (addrHex: string, tokenAddress: string) => {
+  return confidentialAssets.getEncryptionKey({
+    accountAddress: AccountAddress.from(addrHex),
+    tokenAddress,
   });
 };
 
@@ -279,67 +207,47 @@ export const transferConfidentialAsset = async (
   amountToTransfer: bigint,
   recipientAddressHex: string,
   auditorsEncryptionKeyHexList: string[],
-  gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
-) => {
-  const transferTx = await buildTransferConfidentialAsset(
-    account,
-    decryptionKeyHex,
-    amountToTransfer,
-    recipientAddressHex,
-    auditorsEncryptionKeyHexList,
-    gasStationArgs,
+): Promise<CommittedTransactionResponse[]> => {
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
+  return confidentialAssets.transferWithTotalBalance({
+    signer: account,
+    recipient: recipientAddressHex,
     tokenAddress,
-  );
-
-  return await sendAndWaitTx(transferTx, account, gasStationArgs);
+    senderDecryptionKey: decryptionKey,
+    amount: amountToTransfer,
+    additionalAuditorEncryptionKeys: auditorsEncryptionKeyHexList.map(
+      hex => new TwistedEd25519PublicKey(hex),
+    ),
+  });
 };
 
-export const safelyRotateConfidentialBalance = async (
+export const rotateEncryptionKey = async (
   account: Account,
   decryptionKeyHex: string,
-  gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
   const newDecryptionKey = TwistedEd25519PrivateKey.generate();
 
-  const rotateTx = await confidentialAssets.rotateEncryptionKey({
-    sender: account.accountAddress,
+  return confidentialAssets.rotateEncryptionKey({
+    signer: account,
     tokenAddress,
     senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     newSenderDecryptionKey: newDecryptionKey,
-    withFeePayer: gasStationArgs.withGasStation,
   });
-  return await sendAndWaitTx(rotateTx, account, gasStationArgs);
 };
 
-export const buildSafelyRolloverConfidentialBalanceTx = async (
+export const rolloverConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,
-  gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
+  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
   return confidentialAssets.rolloverPendingBalance({
-    sender: account.accountAddress,
+    signer: account,
     tokenAddress,
-    withFeePayer: gasStationArgs.withGasStation,
+    senderDecryptionKey: decryptionKey,
   });
-};
-
-export const safelyRolloverConfidentialBalance = async (
-  account: Account,
-  decryptionKeyHex: string,
-  gasStationArgs: GasStationArgs,
-  tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
-) => {
-  const rolloverTx = await buildSafelyRolloverConfidentialBalanceTx(
-    account,
-    decryptionKeyHex,
-    gasStationArgs,
-    tokenAddress,
-  );
-
-  return sendAndWaitTx(rolloverTx, account, gasStationArgs);
 };
 
 export const createAccount = async (
@@ -364,7 +272,7 @@ export const buildRegisterConfidentialBalanceTx = async (
   gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.registerBalance({
+  return confidentialAssets.transaction.registerBalance({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
     decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
@@ -374,34 +282,26 @@ export const buildRegisterConfidentialBalanceTx = async (
 
 export const registerConfidentialBalance = async (
   account: Account,
-  publicKeyHex: string,
-  gasStationArgs: GasStationArgs,
+  privateKeyHex: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const registerVBTxBody = await buildRegisterConfidentialBalanceTx(
-    account,
-    publicKeyHex,
-    gasStationArgs,
+  return confidentialAssets.registerBalance({
+    signer: account,
     tokenAddress,
-  );
-
-  return sendAndWaitTx(registerVBTxBody, account, gasStationArgs);
+    decryptionKey: new TwistedEd25519PrivateKey(privateKeyHex),
+  });
 };
 
 export const normalizeConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,
-  gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const normalizeTx = await confidentialAssets.normalizeBalance({
+  return confidentialAssets.normalizeBalance({
+    signer: account,
     tokenAddress,
     senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
-    sender: account.accountAddress,
-    withFeePayer: gasStationArgs.withGasStation,
   });
-
-  return sendAndWaitTx(normalizeTx, account, gasStationArgs);
 };
 
 export const buildDepositConfidentialBalanceTx = async (
@@ -411,7 +311,7 @@ export const buildDepositConfidentialBalanceTx = async (
   gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.deposit({
+  return confidentialAssets.transaction.deposit({
     sender: account.accountAddress,
     recipient: AccountAddress.from(to),
     tokenAddress: tokenAddress,
@@ -423,18 +323,15 @@ export const buildDepositConfidentialBalanceTx = async (
 export const depositConfidentialBalance = async (
   account: Account,
   amount: bigint,
-  to: string,
-  gasStationArgs: GasStationArgs,
+  recipient: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const depositTx = await buildDepositConfidentialBalanceTx(
-    account,
-    amount,
-    to,
-    gasStationArgs,
+  return confidentialAssets.deposit({
+    signer: account,
     tokenAddress,
-  );
-  return sendAndWaitTx(depositTx, account, gasStationArgs);
+    amount,
+    recipient,
+  });
 };
 
 export const buildDepositConfidentialBalanceCoinTx = async (
@@ -444,7 +341,7 @@ export const buildDepositConfidentialBalanceCoinTx = async (
   gasStationArgs: GasStationArgs,
   to?: string,
 ) => {
-  const tx = await confidentialAssets.deposit({
+  const tx = await confidentialAssets.transaction.deposit({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
     amount: amount,
@@ -459,53 +356,44 @@ export const depositConfidentialBalanceCoin = async (
   account: Account,
   amount: bigint,
   tokenAddress: string,
-  gasStationArgs: GasStationArgs,
-  to?: string,
+  recipient?: string,
 ) => {
-  const depositTx = await buildDepositConfidentialBalanceCoinTx(
-    account,
-    amount,
+  return confidentialAssets.deposit({
+    signer: account,
     tokenAddress,
-    gasStationArgs,
-    to,
-  );
-  return sendAndWaitTx(depositTx, account, gasStationArgs);
+    amount,
+    recipient,
+  });
 };
 
 export const getIsAccountRegisteredWithToken = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const isRegistered = await confidentialAssets.hasUserRegistered({
+  return confidentialAssets.hasUserRegistered({
     accountAddress: account.accountAddress,
-    tokenAddress: tokenAddress,
+    tokenAddress,
   });
-
-  return isRegistered;
 };
 
 export const getIsBalanceNormalized = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const isNormalized = await confidentialAssets.isBalanceNormalized({
+  return confidentialAssets.isBalanceNormalized({
     accountAddress: account.accountAddress,
-    tokenAddress: tokenAddress,
+    tokenAddress,
   });
-
-  return isNormalized;
 };
 
 export const getIsBalanceFrozen = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const isFrozen = await confidentialAssets.isPendingBalanceFrozen({
+  return confidentialAssets.isPendingBalanceFrozen({
     accountAddress: account.accountAddress,
     tokenAddress,
   });
-
-  return isFrozen;
 };
 
 export const getCoinByFaAddress = async (

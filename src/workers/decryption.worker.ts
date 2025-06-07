@@ -6,8 +6,6 @@ import {
 } from '@aptos-labs/confidential-assets';
 import { getBytes } from 'ethers';
 
-import { preloadTables } from '../api/modules/aptos/wasmPollardKangaroo';
-
 export type DecryptionWorkerRequest = {
   id: string;
   amountCiphertext: string;
@@ -26,9 +24,6 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
   const { id, amountCiphertext, decryptionKeyBytesString } = event.data;
 
   try {
-    // We have to call this in each thread.
-    await preloadTables();
-
     // Reconstruct the decryption key from bytes.
     const decryptionKey = new TwistedEd25519PrivateKey(
       getBytes(decryptionKeyBytesString),

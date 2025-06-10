@@ -154,7 +154,7 @@ type ConfidentialCoinContextType = {
     opts?: {
       isSyncFirst?: boolean;
     },
-  ) => Promise<CommittedTransactionResponse>;
+  ) => Promise<CommittedTransactionResponse[]>;
   depositTo: (amount: bigint, to: string) => Promise<CommittedTransactionResponse>;
   depositCoinTo: (amount: bigint, to: string) => Promise<CommittedTransactionResponse>;
   // TODO: rotate keys
@@ -212,7 +212,7 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
   rolloverAccount: async () => ({}) as CommittedTransactionResponse[],
   transfer: async () => ({}) as CommittedTransactionResponse[],
   buildWithdrawToTx: async () => ({}) as SimpleTransaction,
-  withdrawTo: async () => ({}) as CommittedTransactionResponse,
+  withdrawTo: async () => ({}) as CommittedTransactionResponse[],
   depositTo: async () => ({}) as CommittedTransactionResponse,
   depositCoinTo: async () => ({}) as CommittedTransactionResponse,
 

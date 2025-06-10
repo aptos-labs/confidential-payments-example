@@ -185,7 +185,7 @@ export const withdrawConfidentialBalance = async (
 ) => {
   const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
 
-  return confidentialAssets.withdraw({
+  return confidentialAssets.withdrawWithTotalBalance({
     signer: account,
     recipient: receiver,
     tokenAddress,

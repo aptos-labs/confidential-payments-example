@@ -172,7 +172,7 @@ export default function WithdrawForm({
           setIsSubmitting(false);
           return;
         }
-        const [txReceipt, withdrawErr] = await tryCatch(
+        const [responses, withdrawErr] = await tryCatch(
           withdrawTo(
             parseUnits(String(formData.amount), token.decimals).toString(),
             recipientAddress,
@@ -187,9 +187,15 @@ export default function WithdrawForm({
           setIsSubmitting(false);
           return;
         }
+        if (responses.length === 0) {
+          ErrorHandler.process(new Error('No responses were returned'));
+          enableForm();
+          setIsSubmitting(false);
+          return;
+        }
 
         const [, reloadError] = await tryCatch(
-          reloadBalances(BigInt(txReceipt.version)),
+          reloadBalances(BigInt(responses[responses.length - 1].version)),
         );
         if (reloadError) {
           ErrorHandler.process(reloadError);

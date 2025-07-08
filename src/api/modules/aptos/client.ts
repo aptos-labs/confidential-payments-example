@@ -11,15 +11,18 @@ const aptosConfig = new AptosConfig({
   clientConfig: {
     API_KEY: appConfig.APTOS_BUILD_API_KEY,
   },
+  pluginSettings: {
+    TRANSACTION_SUBMITTER: createGasStationClient({
+      network: appConfig.APTOS_NETWORK as Network,
+      apiKey: appConfig.APTOS_BUILD_GAS_STATION_KEY,
+    }),
+  },
 });
 export const aptos = new Aptos(aptosConfig);
 export const confidentialAssets = new ConfidentialAsset({
   config: aptosConfig,
   confidentialAssetModuleAddress: appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR,
-  gasStation: createGasStationClient({
-    network: appConfig.APTOS_NETWORK as Network,
-    apiKey: appConfig.APTOS_BUILD_GAS_STATION_KEY,
-  }),
+  withFeePayer: true,
 });
 
 /** Do not forget to pass the API key when using this client. */

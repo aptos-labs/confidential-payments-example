@@ -11,14 +11,14 @@ importers:
         specifier: ^0.0.2
         version: 0.0.2
       '@aptos-labs/confidential-assets':
-        specifier: '=0.4.3'
-        version: 0.4.3(axios@1.8.2)(got@14.4.6)
+        specifier: '=0.6.0'
+        version: 0.6.0(got@14.4.6)
       '@aptos-labs/gas-station-client':
-        specifier: ^1.0.0
-        version: 1.0.0(axios@1.8.2)(got@14.4.6)
+        specifier: ^1.1.1
+        version: 1.1.1(got@14.4.6)
       '@aptos-labs/ts-sdk':
-        specifier: ^1.38.0
-        version: 1.38.0(axios@1.8.2)(got@14.4.6)
+        specifier: ^3.1.2
+        version: 3.1.2(got@14.4.6)
       '@distributedlab/tools':
         specifier: ^1.0.0-rc.17
         version: 1.0.0-rc.17
@@ -427,21 +427,14 @@ packages:
       }
     hasBin: true
 
-  '@aptos-labs/aptos-client@1.1.0':
+  '@aptos-labs/aptos-client@2.0.0':
     resolution:
       {
-        integrity: sha512-rkGVjQufVONAwnMcjIbdPRmJnAoqBFxd8IXVUBJIVlDXkPgjW+Vj0P3z31CxDFE4mVBN6Wpu30BeBzCW/+IDPQ==,
+        integrity: sha512-A23T3zTCRXEKURodp00dkadVtIrhWjC9uo08dRDBkh69OhCnBAxkENmUy/rcBarfLoFr60nRWt7cBkc8wxr1mg==,
       }
-    engines: { node: '>=15.10.0' }
+    engines: { node: '>=20.0.0' }
     peerDependencies:
-      axios: ^1.8.0
       got: ^11.8.6
-
-  '@aptos-labs/aptos-dynamic-transaction-composer@0.1.3':
-    resolution:
-      {
-        integrity: sha512-bJl+Zq5QbhpcPIJakAkl9tnT3T02mxCYhZThQDhUmjsOZ5wMRlKJ0P7aaq1dmlybSHkVj7vRgOy2t86/NDKKng==,
-      }
 
   '@aptos-labs/confidential-asset-wasm-bindings@0.0.2':
     resolution:
@@ -449,29 +442,23 @@ packages:
         integrity: sha512-xfgRVc4WX4N7hjSHP91a3o686gC4307PGa9eDT7eWhp2VN9YgYhDIKRFRITpKT5JC7IXbuh6pGq1MqrqTjBokA==,
       }
 
-  '@aptos-labs/confidential-assets@0.4.3':
+  '@aptos-labs/confidential-assets@0.6.0':
     resolution:
       {
-        integrity: sha512-j6dIMLpqoz+fiZYKtI5OoHy30zJKFNb/QjjRnRNDC3VlIU09GIaOxtp+FJu6mOMTOEYSqLAyFlg/PkGkX/Br2w==,
+        integrity: sha512-h504ozems6oBw32g4UVhAQvrOP1rHJ1vKAulGDLj+/5QOewVWei/Fuudt3QEsx5iEfheTcFb9pmtDSdqWCigVw==,
       }
     engines: { node: '>=20.0.0' }
 
-  '@aptos-labs/gas-station-client@1.0.0':
+  '@aptos-labs/gas-station-client@1.1.1':
     resolution:
       {
-        integrity: sha512-8iN+nYIDKLCxshlbisIYuzlffDbx/mjgakyl5W/5XOC0exR74+YI513XHQO7o3VX6ENIEhPzOPcGk21lv4MdFw==,
+        integrity: sha512-vuXFtGAIfDdl5crR27dT1JUfhKHtad688PL3RD2lHnLd9aIZEJJ0Rtw1UUat4QVxy4N/JcjvR3hFV179DTKMSg==,
       }
 
-  '@aptos-labs/script-composer-pack@0.0.9':
+  '@aptos-labs/ts-sdk@3.1.2':
     resolution:
       {
-        integrity: sha512-Y3kA1rgF65HETgoTn2omDymsgO+fnZouPLrKJZ9sbxTGdOekIIHtGee3A2gk84eCqa02ZKBumZmP+IDCXRtU/g==,
-      }
-
-  '@aptos-labs/ts-sdk@1.38.0':
-    resolution:
-      {
-        integrity: sha512-cflGyknECg11wTkQ1o1OK759v1m+mpz0S0/ZXsHbPMO0dO6eQGLjH/Uk5/YWMe1Nat8/szcgIipKk8Xr6Unvzg==,
+        integrity: sha512-wEe8+JhtjfuDHLsAUHfUcLmR3EvWHN9LzhE98vKAI5nDJmme6dC5JnBwwK+p+XIrbQqCc6qFEAEpzjMpJLpE6A==,
       }
     engines: { node: '>=20.0.0' }
 
@@ -13137,42 +13124,31 @@ snapshots:
     dependencies:
       commander: 12.1.0
 
-  '@aptos-labs/aptos-client@1.1.0(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/aptos-client@2.0.0(got@14.4.6)':
     dependencies:
-      axios: 1.8.2
       got: 14.4.6
-
-  '@aptos-labs/aptos-dynamic-transaction-composer@0.1.3': {}
 
   '@aptos-labs/confidential-asset-wasm-bindings@0.0.2': {}
 
-  '@aptos-labs/confidential-assets@0.4.3(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/confidential-assets@0.6.0(got@14.4.6)':
     dependencies:
       '@aptos-labs/confidential-asset-wasm-bindings': 0.0.2
-      '@aptos-labs/gas-station-client': 1.0.0(axios@1.8.2)(got@14.4.6)
-      '@aptos-labs/ts-sdk': 1.38.0(axios@1.8.2)(got@14.4.6)
+      '@aptos-labs/ts-sdk': 3.1.2(got@14.4.6)
       '@noble/curves': 1.9.0
       '@noble/hashes': 1.8.0
     transitivePeerDependencies:
-      - axios
       - got
 
-  '@aptos-labs/gas-station-client@1.0.0(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/gas-station-client@1.1.1(got@14.4.6)':
     dependencies:
-      '@aptos-labs/ts-sdk': 1.38.0(axios@1.8.2)(got@14.4.6)
+      '@aptos-labs/ts-sdk': 3.1.2(got@14.4.6)
     transitivePeerDependencies:
-      - axios
       - got
 
-  '@aptos-labs/script-composer-pack@0.0.9':
-    dependencies:
-      '@aptos-labs/aptos-dynamic-transaction-composer': 0.1.3
-
-  '@aptos-labs/ts-sdk@1.38.0(axios@1.8.2)(got@14.4.6)':
+  '@aptos-labs/ts-sdk@3.1.2(got@14.4.6)':
     dependencies:
       '@aptos-labs/aptos-cli': 1.0.2
-      '@aptos-labs/aptos-client': 1.1.0(axios@1.8.2)(got@14.4.6)
-      '@aptos-labs/script-composer-pack': 0.0.9
+      '@aptos-labs/aptos-client': 2.0.0(got@14.4.6)
       '@noble/curves': 1.9.0
       '@noble/hashes': 1.8.0
       '@scure/bip32': 1.6.2
@@ -13183,7 +13159,6 @@ snapshots:
       jwt-decode: 4.0.0
       poseidon-lite: 0.2.1
     transitivePeerDependencies:
-      - axios
       - got
 
   '@ardatan/relay-compiler@12.0.0(graphql@16.11.0)':

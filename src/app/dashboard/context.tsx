@@ -157,7 +157,6 @@ type ConfidentialCoinContextType = {
   ) => Promise<CommittedTransactionResponse[]>;
   depositTo: (amount: bigint, to: string) => Promise<CommittedTransactionResponse>;
   depositCoinTo: (amount: bigint, to: string) => Promise<CommittedTransactionResponse>;
-  // TODO: rotate keys
 
   decryptionKeyStatusLoadingState: LoadingState;
   loadSelectedDecryptionKeyState: (minimumLedgerVersion?: AnyNumber) => Promise<void>;
@@ -789,8 +788,7 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
   const unfreezeAccount = useCallback(async () => {
     if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
-    // TODO: implement me
-    // mb: rotate keys with unfreeze
+    // TODO: implement unfreezeAccount
   }, [selectedAccountDecryptionKey]);
 
   const rolloverAccount = useCallback(async () => {

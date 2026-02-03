@@ -238,21 +238,6 @@ export const transferConfidentialAsset = async (
   });
 };
 
-export const rotateEncryptionKey = async (
-  account: Account,
-  decryptionKeyHex: string,
-  tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
-) => {
-  const newDecryptionKey = TwistedEd25519PrivateKey.generate();
-
-  return confidentialAssets.rotateEncryptionKey({
-    signer: account,
-    tokenAddress,
-    senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
-    newSenderDecryptionKey: newDecryptionKey,
-  });
-};
-
 export const rolloverConfidentialBalance = async (
   account: Account,
   decryptionKeyHex: string,

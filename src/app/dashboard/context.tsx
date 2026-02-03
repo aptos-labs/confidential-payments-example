@@ -130,7 +130,6 @@ type ConfidentialCoinContextType = {
     tokenAddress: string,
   ) => Promise<CommittedTransactionResponse>;
   normalizeAccount: () => Promise<CommittedTransactionResponse>;
-  unfreezeAccount: () => Promise<CommittedTransactionResponse>;
   rolloverAccount: () => Promise<CommittedTransactionResponse[]>;
   transfer: (
     receiverEncryptionKeyHex: string,
@@ -207,7 +206,6 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
 
   registerAccountEncryptionKey: async () => ({}) as CommittedTransactionResponse,
   normalizeAccount: async () => ({}) as CommittedTransactionResponse,
-  unfreezeAccount: async () => ({}) as CommittedTransactionResponse,
   rolloverAccount: async () => ({}) as CommittedTransactionResponse[],
   transfer: async () => ({}) as CommittedTransactionResponse[],
   buildWithdrawToTx: async () => ({}) as SimpleTransaction,
@@ -782,15 +780,6 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     );
   }, [selectedAccount, selectedAccountDecryptionKey, tokenAddress]);
 
-  // FIXME: implement Promise<CommittedTransactionResponse>
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  const unfreezeAccount = useCallback(async () => {
-    if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
-
-    // TODO: implement unfreezeAccount
-  }, [selectedAccountDecryptionKey]);
-
   const rolloverAccount = useCallback(async () => {
     if (!selectedAccountDecryptionKey) throw new TypeError('Decryption key is not set');
 
@@ -813,7 +802,6 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
     },
 
     normalizeAccount,
-    unfreezeAccount,
     rolloverAccount,
   };
 };
@@ -850,7 +838,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     selectedAccountDecryptionKeyStatus,
     loadSelectedDecryptionKeyState,
     normalizeAccount,
-    unfreezeAccount,
     rolloverAccount,
   } = useSelectedAccountDecryptionKeyStatus(selectedToken.address);
 
@@ -1080,6 +1067,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
   return (
     <confidentialCoinContext.Provider
+      // @ts-expect-error buildWithdrawToTx not implemented
       value={{
         accountsList,
 
@@ -1105,10 +1093,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         selectedAccountDecryptionKey,
         registerAccountEncryptionKey,
         normalizeAccount,
-
-        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-        // @ts-expect-error
-        unfreezeAccount,
 
         rolloverAccount,
         transfer,

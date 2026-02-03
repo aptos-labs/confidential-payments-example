@@ -92,22 +92,6 @@ export default function DashboardClient() {
     setIsSubmitting(false);
   }, [loadSelectedDecryptionKeyState, reloadPrimaryTokenBalance]);
 
-  // const tryUnfreeze = useCallback(async () => {
-  //   setIsSubmitting(true)
-  //   try {
-  //     const txReceipt = await unfreezeAccount()
-  //     addTxHistoryItem({
-  //       txHash: txReceipt.hash,
-  //       txType: 'unfreeze',
-  //       createdAt: time().timestamp,
-  //     })
-  //     await tryRefresh()
-  //   } catch (error) {
-  //     ErrorHandler.process(error)
-  //   }
-  //   setIsSubmitting(false)
-  // }, [addTxHistoryItem, tryRefresh, unfreezeAccount])
-
   const [carouselWrpRef] = useMeasure();
 
   const clearAllParams = useCallback(() => {
@@ -293,29 +277,6 @@ export default function DashboardClient() {
               disabled={isActionsDisabled}
             />
           </div>
-
-          {/* {[decryptionKeyStatusLoadingState, accountsLoadingState, tokensLoadingState].every(
-          el => el === 'success',
-        ) && (
-          <div className='flex flex-col gap-4 p-4'>
-            <>
-              {selectedAccountDecryptionKeyStatus.isFrozen && (
-                <ActionCard
-                  title='Unfreeze Balance'
-                  desc='Lorem ipsum dolor sit amet concestetur! Lorem ipsum dolor sit amet!'
-                  leadingContent={
-                    <Snowflake
-                      size={32}
-                      className='self-center text-textPrimary'
-                    />
-                  }
-                  onClick={tryUnfreeze}
-                  disabled={isSubmitting}
-                />
-              )}
-            </>
-          </div>
-        )} */}
 
           <ActivitiesFeed />
         </div>

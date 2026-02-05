@@ -1,9 +1,10 @@
 import { FixedNumber, parseUnits } from 'ethers';
-import { RefreshCw } from 'lucide-react';
+import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
-import { getFABalance, mintPrimaryToken } from '@/api/modules/aptos';
+import { getFABalance, getExternalFaucetUrl, mintUsdt } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/helpers';
 import { useGasStationArgs } from '@/store/gas-station';
 import { UiButton } from '@/ui/UiButton';
@@ -11,8 +12,6 @@ import { UiSkeleton } from '@/ui/UiSkeleton';
 
 const MINT_AMOUNT = 5;
 
-// This component relies on the janky assumption that `mintPrimaryToken` will indeed
-// mint the `selectedToken`.
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
     selectedAccount,
@@ -28,16 +27,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const currTokenStatus = perTokenStatuses[selectedToken?.address];
+  const assetConfig = ASSET_CONFIG[PRIMARY_ASSET];
 
   if (!currTokenStatus) {
     // Loading...
     return <UiSkeleton className='min-h-[36px] w-full' />;
   }
-
-  // We only know how to mint testnet USDT right now.
-  const isTestnetUsdt =
-    selectedToken?.address ===
-    '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050';
 
   // This is a bandaid for the fact that `currTokenStatus` enters some weird partially
   // undefined state after the user mints, where everything is false or undefined.
@@ -56,17 +51,32 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     );
   }
 
-  if (!isTestnetUsdt) {
+  // For assets with external faucets (e.g. APT), show a link to the faucet.
+  if (assetConfig.faucetUrl) {
+    const faucetUrl = getExternalFaucetUrl(selectedAccount.accountAddress.toString());
+
     return (
-      <div>
-        <p>
-          We only know how to mint testnet USDT right now. This is a bug, you shouldn't
-          be seeing this.
+      <div className='flex w-full flex-col gap-3 rounded-2xl border-2 border-solid border-textPrimary p-4'>
+        <p className='text-sm'>
+          Get free {selectedToken?.symbol} from the testnet faucet. Your wallet address
+          has been pre-filled.
+        </p>
+        <UiButton
+          className='w-full'
+          onClick={() => window.open(faucetUrl!, '_blank')}
+        >
+          <ExternalLink size={16} className='mr-2' />
+          Open Faucet
+        </UiButton>
+        <p className='text-xs text-gray-500'>
+          After receiving tokens, return here and use the &quot;Send to yourself&quot;
+          option to deposit them into your confidential balance.
         </p>
       </div>
     );
   }
 
+  // For assets with on-chain minting (e.g. USDT), show the mint button.
   const tryMint = async () => {
     setIsSubmitting(true);
     setDidSubmit(true);
@@ -77,7 +87,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     let firstMinimumLedgerVersion = undefined;
     do {
       const [res, mintError] = await tryCatch(
-        mintPrimaryToken(selectedAccount, amountToDeposit, gasStationArgs),
+        mintUsdt(selectedAccount, amountToDeposit, gasStationArgs),
       );
       if (mintError) {
         if (mintAttempts >= 5) {

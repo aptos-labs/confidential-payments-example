@@ -31,7 +31,7 @@ import {
   getIsBalanceFrozen,
   getIsBalanceNormalized,
   getPrimaryTokenBalance,
-  mintPrimaryToken,
+  mintUsdt,
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
@@ -950,7 +950,8 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     async (mintAmount = '10'): Promise<CommittedTransactionResponse[]> => {
       const amountToDeposit = parseUnits(mintAmount, selectedToken.decimals);
 
-      const mintTxReceipt = await mintPrimaryToken(
+      // Note: This only works for USDT. For APT, use the external faucet.
+      const mintTxReceipt = await mintUsdt(
         selectedAccount,
         amountToDeposit,
         gasStationArgs,

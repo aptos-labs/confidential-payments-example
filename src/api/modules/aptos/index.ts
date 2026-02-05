@@ -23,7 +23,7 @@ import { ethers, isHexString } from 'ethers';
 import { jwtDecode } from 'jwt-decode';
 import { z } from 'zod';
 
-import { appConfig } from '@/config';
+import { appConfig, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
@@ -143,18 +143,17 @@ export const sendAndWaitTx = async (
   return aptos.waitForTransaction({ transactionHash });
 };
 
-export const mintPrimaryToken = async (
+// Only works for USDT - calls the on-chain faucet.
+export const mintUsdt = async (
   account: Account,
   amount: bigint,
   gasStationArgs: GasStationArgs,
 ) => {
+  const mintFunction = ASSET_CONFIG.usdt.mintFunction;
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
-      // TODO: Do something smarter than just hardcode this.
-      // function: `0x33c6f1c080cffdb8bc57dbd93bf2e4f10420f729bedb430ffd79c788518e0f86::mock_token::mint_to`,
-      // This is testnet USDT:
-      function: `0x24246c14448a5994d9f23e3b978da2a354e64b6dfe54220debb8850586c448cc::usdt::faucet`,
+      function: mintFunction,
       functionArguments: [amount],
     },
     withFeePayer: gasStationArgs.withGasStation,
@@ -163,18 +162,11 @@ export const mintPrimaryToken = async (
   return sendAndWaitTx(tx, account, gasStationArgs);
 };
 
-// We generally don't support programmatically minting APT on testnet.
-/*
-export const mintAptCoin = async (
-  account: Account,
-  fundAmount = BigInt(1 * 10 ** 8),
-) => {
-  await aptos.fundAccount({
-    accountAddress: account.accountAddress,
-    amount: +fundAmount.toString(),
-  });
+// Get external faucet URL for assets that don't have on-chain minting (e.g. APT).
+export const getExternalFaucetUrl = (address: string): string | null => {
+  const config = ASSET_CONFIG[PRIMARY_ASSET];
+  return config.faucetUrl ? config.faucetUrl(address) : null;
 };
-*/
 
 export const withdrawConfidentialBalance = async (
   account: Account,

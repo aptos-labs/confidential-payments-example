@@ -168,6 +168,28 @@ export const getExternalFaucetUrl = (address: string): string | null => {
   return config.faucetUrl ? config.faucetUrl(address) : null;
 };
 
+// Get the unified balance for an account using the node API.
+// This handles both Coin and FA balances automatically via the unified endpoint.
+export const getUnifiedBalance = async (
+  accountAddress: string,
+  asset: string,
+): Promise<bigint> => {
+  const network = aptos.config.network;
+  const baseUrl =
+    network === 'testnet'
+      ? 'https://api.testnet.aptoslabs.com/v1'
+      : network === 'mainnet'
+        ? 'https://api.mainnet.aptoslabs.com/v1'
+        : 'https://api.devnet.aptoslabs.com/v1';
+
+  const response = await fetch(`${baseUrl}/accounts/${accountAddress}/balance/${asset}`);
+  if (!response.ok) {
+    throw new Error(`Failed to fetch balance: ${response.statusText}`);
+  }
+  const balance = await response.json();
+  return BigInt(balance);
+};
+
 export const withdrawConfidentialBalance = async (
   account: Account,
   receiver: string,

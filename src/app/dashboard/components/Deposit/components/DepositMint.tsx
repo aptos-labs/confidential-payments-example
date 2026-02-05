@@ -2,7 +2,13 @@ import { FixedNumber, parseUnits } from 'ethers';
 import { ExternalLink, RefreshCw } from 'lucide-react';
 import { useState } from 'react';
 
-import { getFABalance, getExternalFaucetUrl, mintUsdt } from '@/api/modules/aptos';
+import {
+  getCoinByFaAddress,
+  getFABalance,
+  getExternalFaucetUrl,
+  getUnifiedBalance,
+  mintUsdt,
+} from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/helpers';
@@ -51,15 +57,87 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     );
   }
 
-  // For assets with external faucets (e.g. APT), show a link to the faucet.
+  // For assets with external faucets (e.g. APT), show faucet link and convert button.
   if (assetConfig.faucetUrl) {
     const faucetUrl = getExternalFaucetUrl(selectedAccount.accountAddress.toString());
+
+    const tryConvert = async () => {
+      setIsSubmitting(true);
+      setDidSubmit(true);
+
+      // Check if this is a coin-based asset (like APT) for choosing the deposit function.
+      const [coin] = await tryCatch(getCoinByFaAddress(selectedToken.address));
+
+      let depositAttempts = 0;
+      do {
+        // Use the unified balance API which handles both Coin and FA balances.
+        const [balance, getBalanceError] = await tryCatch(
+          getUnifiedBalance(
+            selectedAccount.accountAddress.toString(),
+            selectedToken.address,
+          ),
+        );
+        if (getBalanceError) {
+          if (depositAttempts >= 5) {
+            ErrorHandler.process(getBalanceError);
+            setIsSubmitting(false);
+            return;
+          }
+          depositAttempts += 1;
+          await sleep(200);
+          continue;
+        }
+
+        const amountToDeposit = balance;
+
+        if (amountToDeposit === 0n) {
+          bus.emit(BusEvents.Error, 'No public balance to veil');
+          setIsSubmitting(false);
+          return;
+        }
+
+        // Use depositCoinTo for coin-based assets (like APT), depositTo for pure FA assets.
+        const [depositTxReceipt, depositError] = await tryCatch(
+          coin
+            ? depositCoinTo(amountToDeposit, selectedAccount.accountAddress.toString())
+            : depositTo(amountToDeposit, selectedAccount.accountAddress.toString()),
+        );
+        if (depositError) {
+          if (depositAttempts >= 5) {
+            ErrorHandler.process(depositError);
+            setIsSubmitting(false);
+            return;
+          }
+          depositAttempts += 1;
+          await sleep(200);
+          continue;
+        }
+
+        const minimumLedgerVersion = BigInt(depositTxReceipt.version);
+        const [, reloadError] = await tryCatch(reloadBalances(minimumLedgerVersion));
+        if (reloadError) {
+          ErrorHandler.process(reloadError);
+          setIsSubmitting(false);
+          return;
+        }
+
+        const formattedAmount = (
+          Number(amountToDeposit) / Math.pow(10, selectedToken.decimals)
+        ).toFixed(4);
+        bus.emit(
+          BusEvents.Success,
+          `Successfully veiled ${formattedAmount} ${selectedToken.symbol}`,
+        );
+        setIsSubmitting(false);
+        onSubmit?.();
+        break;
+      } while (depositAttempts < 5);
+    };
 
     return (
       <div className='flex w-full flex-col gap-3 rounded-2xl border-2 border-solid border-textPrimary p-4'>
         <p className='text-sm'>
-          Get free {selectedToken?.symbol} from the testnet faucet. Your wallet address
-          has been pre-filled.
+          Step 1: Get free {selectedToken?.symbol} from the testnet faucet.
         </p>
         <UiButton
           className='w-full'
@@ -68,10 +146,23 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
           <ExternalLink size={16} className='mr-2' />
           Open Faucet
         </UiButton>
-        <p className='text-xs text-gray-500'>
-          After receiving tokens, return here and use the &quot;Send to yourself&quot;
-          option to deposit them into your confidential balance.
-        </p>
+
+        <div className='mt-2 border-t border-gray-300 pt-3'>
+          <p className='text-sm'>
+            Step 2: Veil your public balance.
+          </p>
+          <UiButton
+            className='w-full'
+            onClick={tryConvert}
+            disabled={isSubmitting}
+          >
+            {isSubmitting ? (
+              <RefreshCw size={12} className='animate-spin' />
+            ) : (
+              'Veil'
+            )}
+          </UiButton>
+        </div>
       </div>
     );
   }

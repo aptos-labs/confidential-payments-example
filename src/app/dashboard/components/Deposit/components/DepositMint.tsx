@@ -1,11 +1,11 @@
 import { FixedNumber, parseUnits } from 'ethers';
-import { ExternalLink, RefreshCw } from 'lucide-react';
-import { useState } from 'react';
+import { Check, ExternalLink, RefreshCw } from 'lucide-react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 
 import {
   getCoinByFaAddress,
-  getFABalance,
   getExternalFaucetUrl,
+  getFABalance,
   getUnifiedBalance,
   mintUsdt,
 } from '@/api/modules/aptos';
@@ -17,6 +17,8 @@ import { UiButton } from '@/ui/UiButton';
 import { UiSkeleton } from '@/ui/UiSkeleton';
 
 const MINT_AMOUNT = 5;
+
+type FaucetState = 'idle' | 'waiting' | 'veiling' | 'veiled';
 
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
@@ -31,72 +33,34 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
   const [didSubmit, setDidSubmit] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [faucetState, setFaucetState] = useState<FaucetState>('idle');
+  const pollingRef = useRef<NodeJS.Timeout | null>(null);
+  const initialBalanceRef = useRef<bigint | null>(null);
 
   const currTokenStatus = perTokenStatuses[selectedToken?.address];
   const assetConfig = ASSET_CONFIG[PRIMARY_ASSET];
 
-  if (!currTokenStatus) {
-    // Loading...
-    return <UiSkeleton className='min-h-[36px] w-full' />;
-  }
+  // Clean up polling on unmount.
+  useEffect(() => {
+    return () => {
+      if (pollingRef.current) {
+        clearInterval(pollingRef.current);
+      }
+    };
+  }, []);
 
-  // This is a bandaid for the fact that `currTokenStatus` enters some weird partially
-  // undefined state after the user mints, where everything is false or undefined.
-  if (didSubmit && !currTokenStatus.isRegistered) {
-    return <UiSkeleton className='min-h-[36px] w-full' />;
-  }
+  // Auto-veil function for when funds arrive.
+  const doVeil = useCallback(
+    async (amountToDeposit: bigint) => {
+      if (!selectedToken || !selectedAccount) return;
 
-  if (!currTokenStatus.isRegistered) {
-    // The user needs to hit the start button first.
-    return (
-      <div>
-        <p>
-          You need to register the asset for your account first, hit the start button.
-        </p>
-      </div>
-    );
-  }
-
-  // For assets with external faucets (e.g. APT), show faucet link and convert button.
-  if (assetConfig.faucetUrl) {
-    const faucetUrl = getExternalFaucetUrl(selectedAccount.accountAddress.toString());
-
-    const tryConvert = async () => {
-      setIsSubmitting(true);
-      setDidSubmit(true);
+      setFaucetState('veiling');
 
       // Check if this is a coin-based asset (like APT) for choosing the deposit function.
       const [coin] = await tryCatch(getCoinByFaAddress(selectedToken.address));
 
       let depositAttempts = 0;
       do {
-        // Use the unified balance API which handles both Coin and FA balances.
-        const [balance, getBalanceError] = await tryCatch(
-          getUnifiedBalance(
-            selectedAccount.accountAddress.toString(),
-            selectedToken.address,
-          ),
-        );
-        if (getBalanceError) {
-          if (depositAttempts >= 5) {
-            ErrorHandler.process(getBalanceError);
-            setIsSubmitting(false);
-            return;
-          }
-          depositAttempts += 1;
-          await sleep(200);
-          continue;
-        }
-
-        const amountToDeposit = balance;
-
-        if (amountToDeposit === 0n) {
-          bus.emit(BusEvents.Error, 'No public balance to veil');
-          setIsSubmitting(false);
-          return;
-        }
-
-        // Use depositCoinTo for coin-based assets (like APT), depositTo for pure FA assets.
         const [depositTxReceipt, depositError] = await tryCatch(
           coin
             ? depositCoinTo(amountToDeposit, selectedAccount.accountAddress.toString())
@@ -105,7 +69,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         if (depositError) {
           if (depositAttempts >= 5) {
             ErrorHandler.process(depositError);
-            setIsSubmitting(false);
+            setFaucetState('idle');
             return;
           }
           depositAttempts += 1;
@@ -117,52 +81,139 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         const [, reloadError] = await tryCatch(reloadBalances(minimumLedgerVersion));
         if (reloadError) {
           ErrorHandler.process(reloadError);
-          setIsSubmitting(false);
+          setFaucetState('idle');
           return;
         }
 
         const formattedAmount = (
           Number(amountToDeposit) / Math.pow(10, selectedToken.decimals)
-        ).toFixed(4);
+        ).toFixed(2);
         bus.emit(
           BusEvents.Success,
-          `Successfully veiled ${formattedAmount} ${selectedToken.symbol}`,
+          `Successfully veiled full public balance of ${formattedAmount} ${selectedToken.symbol}`,
         );
-        setIsSubmitting(false);
-        onSubmit?.();
+        setFaucetState('veiled');
+        setDidSubmit(true);
+        // Don't call onSubmit here - let the user see "Veiled!" before drawer closes.
         break;
       } while (depositAttempts < 5);
+    },
+    [depositCoinTo, depositTo, reloadBalances, selectedAccount, selectedToken],
+  );
+
+  // Start polling for balance changes after opening faucet.
+  const startPollingForFunds = useCallback(async () => {
+    if (!selectedToken || !selectedAccount) return;
+
+    // Get the initial balance before the user gets funds.
+    const [initialBalance] = await tryCatch(
+      getUnifiedBalance(
+        selectedAccount.accountAddress.toString(),
+        selectedToken.address,
+      ),
+    );
+    initialBalanceRef.current = initialBalance ?? 0n;
+    setFaucetState('waiting');
+
+    // Start polling.
+    pollingRef.current = setInterval(async () => {
+      const [currentBalance, err] = await tryCatch(
+        getUnifiedBalance(
+          selectedAccount.accountAddress.toString(),
+          selectedToken.address,
+        ),
+      );
+
+      if (err || currentBalance === undefined) return;
+
+      const initialBal = initialBalanceRef.current ?? 0n;
+      if (currentBalance > initialBal) {
+        // Funds arrived! Stop polling and veil.
+        if (pollingRef.current) {
+          clearInterval(pollingRef.current);
+          pollingRef.current = null;
+        }
+        await doVeil(currentBalance);
+      }
+    }, 400);
+  }, [doVeil, selectedAccount, selectedToken]);
+
+  // If we're in an active faucet state, skip the currTokenStatus checks and render the faucet UI.
+  // This prevents flickering to other states during balance reloads.
+  const isInActiveFaucetState = faucetState !== 'idle';
+
+  if (!isInActiveFaucetState) {
+    if (!currTokenStatus) {
+      // Loading...
+      return <UiSkeleton className='min-h-[36px] w-full' />;
+    }
+
+    // This is a bandaid for the fact that `currTokenStatus` enters some weird partially
+    // undefined state after the user mints, where everything is false or undefined.
+    if (didSubmit && !currTokenStatus.isRegistered) {
+      return <UiSkeleton className='min-h-[36px] w-full' />;
+    }
+
+    if (!currTokenStatus.isRegistered) {
+      // The user needs to hit the start button first.
+      return (
+        <div>
+          <p>
+            You need to register the asset for your account first, hit the start button.
+          </p>
+        </div>
+      );
+    }
+  }
+
+  // For assets with external faucets (e.g. APT), show faucet link with auto-veil.
+  if (assetConfig.faucetUrl) {
+    const faucetUrl = getExternalFaucetUrl(selectedAccount.accountAddress.toString());
+
+    const handleOpenFaucet = () => {
+      window.open(faucetUrl!, '_blank');
+      if (faucetState === 'idle') {
+        startPollingForFunds();
+      }
     };
 
+    const getStatusText = () => {
+      switch (faucetState) {
+        case 'waiting':
+          return 'Waiting for funds to arrive...';
+        case 'veiling':
+          return 'Veiling...';
+        case 'veiled':
+          return 'Veiled!';
+        default:
+          return null;
+      }
+    };
+
+    const statusText = getStatusText();
+
     return (
-      <div className='flex w-full flex-col gap-3 rounded-2xl border-2 border-solid border-textPrimary p-4'>
-        <p className='text-sm'>
-          Step 1: Get free {selectedToken?.symbol} from the testnet faucet.
-        </p>
+      <div className='flex w-full flex-col gap-3'>
         <UiButton
           className='w-full'
-          onClick={() => window.open(faucetUrl!, '_blank')}
+          onClick={handleOpenFaucet}
+          disabled={faucetState !== 'idle'}
         >
           <ExternalLink size={16} className='mr-2' />
           Open Faucet
         </UiButton>
-
-        <div className='mt-2 border-t border-gray-300 pt-3'>
-          <p className='text-sm'>
-            Step 2: Veil your public balance.
-          </p>
-          <UiButton
-            className='w-full'
-            onClick={tryConvert}
-            disabled={isSubmitting}
-          >
-            {isSubmitting ? (
-              <RefreshCw size={12} className='animate-spin' />
-            ) : (
-              'Veil'
-            )}
-          </UiButton>
-        </div>
+        {statusText && (
+          <div className='flex items-center justify-center gap-2 text-sm text-gray-500'>
+            {faucetState === 'waiting' || faucetState === 'veiling' ? (
+              <RefreshCw size={14} className='animate-spin' />
+            ) : faucetState === 'veiled' ? (
+              <Check size={14} className='text-green-500' />
+            ) : null}
+            <span className={faucetState === 'veiled' ? 'text-green-500' : ''}>
+              {statusText}
+            </span>
+          </div>
+        )}
       </div>
     );
   }

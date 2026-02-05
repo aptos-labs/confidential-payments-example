@@ -1,7 +1,9 @@
 /**
- * The gas station must be configured to allow all confidential_asset functions
- * and the 0x1::aptos_account::create_account function, the USDT mint function,
- * and the ANS subdomain manager claim subdomain function.
+ * The gas station must be configured to allow all confidential_asset functions,
+ * the 0x1::aptos_account::create_account function, and the ANS subdomain manager
+ * claim subdomain function. If using USDT as the primary asset, the USDT mint
+ * function must also be allowed. See ASSET_CONFIG in config.ts for the function
+ * addresses.
  */
 
 import {

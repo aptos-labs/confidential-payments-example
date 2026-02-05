@@ -1,8 +1,7 @@
 export type AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR: string;
   /**
-   * This is the asset the user deals with in the app. For the demo they only use a
-   * single stablecoin.
+   * This is the asset the user deals with in the app. Derived from PRIMARY_ASSET config.
    */
   PRIMARY_TOKEN_ADDRESS: string;
   APTOS_NETWORK: string;
@@ -36,10 +35,35 @@ export const APT_FA_ADDR =
 export const USDT_TOKEN_ADDR =
   '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050';
 
+// The primary asset to use in the app. This controls the token address and minting behavior.
+export type PrimaryAsset = 'apt' | 'usdt';
+
+export const PRIMARY_ASSET: PrimaryAsset =
+  (process.env.NEXT_PUBLIC_PRIMARY_ASSET as PrimaryAsset) || 'apt';
+
+// Asset-specific configuration.
+export const ASSET_CONFIG = {
+  apt: {
+    address: APT_FA_ADDR,
+    // APT uses external faucet - no on-chain mint function.
+    mintFunction: null,
+    faucetUrl: (address: string) =>
+      `https://aptos.dev/en/network/faucet?address=${address}`,
+  },
+  usdt: {
+    address: USDT_TOKEN_ADDR,
+    // USDT has an on-chain faucet function.
+    mintFunction:
+      '0x24246c14448a5994d9f23e3b978da2a354e64b6dfe54220debb8850586c448cc::usdt::faucet' as const,
+    faucetUrl: null,
+  },
+} as const;
+
 export const appConfig: AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR:
     process.env.NEXT_PUBLIC_CONFIDENTIAL_ASSET_MODULE_ADDR!,
-  PRIMARY_TOKEN_ADDRESS: USDT_TOKEN_ADDR,
+  // Derive PRIMARY_TOKEN_ADDRESS from the selected asset.
+  PRIMARY_TOKEN_ADDRESS: ASSET_CONFIG[PRIMARY_ASSET].address,
   APTOS_NETWORK: 'testnet',
 
   SUBDOMAIN_MANAGER_CONTRACT_ADDR:

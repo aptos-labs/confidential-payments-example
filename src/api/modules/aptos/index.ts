@@ -182,7 +182,9 @@ export const getUnifiedBalance = async (
         ? 'https://api.mainnet.aptoslabs.com/v1'
         : 'https://api.devnet.aptoslabs.com/v1';
 
-  const response = await fetch(`${baseUrl}/accounts/${accountAddress}/balance/${asset}`);
+  const response = await fetch(
+    `${baseUrl}/accounts/${accountAddress}/balance/${asset}`,
+  );
   if (!response.ok) {
     throw new Error(`Failed to fetch balance: ${response.statusText}`);
   }

@@ -112,7 +112,7 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
             })
             .test(
               'hasEncryptionKey',
-              'Receiver does not have an encryption key.',
+              "Recipient can't receive confidential transfers until they veil some APT at least once.",
               async () => {
                 if (!resolvedAddress) return true;
 

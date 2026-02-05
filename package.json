@@ -55,7 +55,7 @@
     "i18next": "^24.2.2",
     "jsona": "^1.12.1",
     "jwt-decode": "^4.0.0",
-    "lodash": "^4.17.21",
+    "lodash": "^4.17.23",
     "loglevel": "^1.9.2",
     "lru-cache": "^11.1.0",
     "lucide-react": "^0.479.0",

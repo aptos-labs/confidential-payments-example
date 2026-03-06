@@ -14,7 +14,7 @@ import {
 import { appConfig } from '@config';
 import { FixedNumber, parseUnits } from 'ethers';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
-import { PropsWithChildren } from 'react';
+import { PropsWithChildren, useEffect, useRef } from 'react';
 import { useCallback } from 'react';
 import { createContext, useContext, useMemo } from 'react';
 
@@ -983,6 +983,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   >(
     async args => {
       let depositTransactionToExecute: SimpleTransaction | undefined = undefined;
+      let needsRollover = false;
 
       const publicBalanceBN = BigInt(
         perTokenStatuses[args.token.address].fungibleAssetBalance || 0,
@@ -997,6 +998,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       const formAmountBN = parseUnits(args.amountToEnsure, args.token.decimals);
 
       const isConfidentialBalanceEnough = confidentialAmountsSumBN - formAmountBN >= 0;
+      const isAvailableBalanceEnough = availableAmountBN >= formAmountBN;
 
       if (!isConfidentialBalanceEnough) {
         // const amountToDeposit = formAmountBN - confidentialAmountsSumBN
@@ -1029,6 +1031,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
           return buildDepositTxError;
         }
         depositTransactionToExecute = depositTx;
+        needsRollover = true;
+      } else if (!isAvailableBalanceEnough && pendingAmountBN > 0) {
+        needsRollover = true;
       }
 
       if (depositTransactionToExecute) {
@@ -1039,6 +1044,13 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
           return error;
         }
       }
+
+      if (needsRollover) {
+        const [, rolloverError] = await tryCatch(rolloverAccount());
+        if (rolloverError) {
+          return rolloverError;
+        }
+      }
     },
     [
       buildDepositCoinToTx,
@@ -1046,6 +1058,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       perTokenStatuses,
       selectedAccount,
       gasStationArgs,
+      rolloverAccount,
     ],
   );
 
@@ -1065,6 +1078,44 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     }
   }, 5_000);
   */
+
+  const isAutoVeilingRef = useRef(false);
+  useEffect(() => {
+    const autoVeilPublicBalance = async () => {
+      if (isAutoVeilingRef.current) return;
+
+      const currTokenStatus = perTokenStatuses[selectedToken.address];
+      if (!currTokenStatus) return;
+
+      const publicBalance = BigInt(currTokenStatus.fungibleAssetBalance || 0);
+      const pendingBalance = BigInt(currTokenStatus.pendingAmount || 0);
+
+      if (publicBalance <= 0n && pendingBalance <= 0n) return;
+
+      isAutoVeilingRef.current = true;
+      try {
+        if (publicBalance > 0n) {
+          await depositTo(publicBalance, selectedAccount.accountAddress.toString());
+        }
+        await rolloverAccount();
+        await loadSelectedDecryptionKeyState();
+      } catch (error) {
+        console.error('Error auto-veiling balance:', error);
+      } finally {
+        isAutoVeilingRef.current = false;
+      }
+    };
+
+    const intervalId = setInterval(autoVeilPublicBalance, 5_000);
+    return () => clearInterval(intervalId);
+  }, [
+    perTokenStatuses,
+    selectedToken.address,
+    selectedAccount,
+    depositTo,
+    rolloverAccount,
+    loadSelectedDecryptionKeyState,
+  ]);
 
   const reloadBalances = useCallback(
     async (minimumLedgerVersion?: bigint) => {

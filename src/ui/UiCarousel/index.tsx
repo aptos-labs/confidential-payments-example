@@ -25,7 +25,7 @@ export interface CarouselProps {
 const DRAG_BUFFER = 0;
 const VELOCITY_THRESHOLD = 500;
 const GAP = 16;
-const SPRING_OPTIONS = { type: 'spring', stiffness: 300, damping: 30 };
+const SPRING_OPTIONS = { type: 'spring', stiffness: 300, damping: 30 } as const;
 
 export default function UiCarousel({
   items,
@@ -214,9 +214,9 @@ function CarouselItem({
   round?: boolean;
   effectiveTransition?:
     | {
-        type: string;
-        stiffness: number;
-        damping: number;
+        readonly type: 'spring';
+        readonly stiffness: number;
+        readonly damping: number;
       }
     | {
         duration: number;

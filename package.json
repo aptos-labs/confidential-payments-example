@@ -51,6 +51,7 @@
     "copy-to-clipboard": "^3.3.3",
     "ethers": "^6.13.5",
     "fs": "^0.0.1-security",
+    "graphql": "^16.13.1",
     "graphql-request": "=5.1.0",
     "i18next": "^24.2.2",
     "jsona": "^1.12.1",

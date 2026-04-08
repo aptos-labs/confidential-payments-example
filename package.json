@@ -18,6 +18,7 @@
     "generate-from-indexer-queries": "graphql-codegen --config ./src/codegen/indexer/codegen.ts"
   },
   "dependencies": {
+    "@aptos-labs/confidential-asset": "^1.0.0",
     "@aptos-labs/confidential-asset-wasm-bindings": "^0.0.2",
     "@aptos-labs/confidential-assets": "=0.6.0",
     "@aptos-labs/gas-station-client": "^1.1.1",

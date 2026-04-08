@@ -2,6 +2,7 @@ import {
   TwistedEd25519PrivateKey,
   TwistedEd25519PublicKey,
 } from '@aptos-labs/confidential-assets';
+import { TwistedEd25519PrivateKey as NewTwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
 import {
   Account,
   AccountAddress,
@@ -27,7 +28,7 @@ import { appConfig, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
-import { aptos, confidentialAssets } from './client';
+import { aptos, confidentialAsset, confidentialAssets } from './client';
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
@@ -288,10 +289,10 @@ export const buildRegisterConfidentialBalanceTx = async (
   gasStationArgs: GasStationArgs,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.transaction.registerBalance({
+  return confidentialAsset.transaction.registerBalance({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
-    decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
+    decryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
     withFeePayer: gasStationArgs.withGasStation,
   });
 };
@@ -301,10 +302,10 @@ export const registerConfidentialBalance = async (
   privateKeyHex: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.registerBalance({
+  return confidentialAsset.registerBalance({
     signer: account,
     tokenAddress,
-    decryptionKey: new TwistedEd25519PrivateKey(privateKeyHex),
+    decryptionKey: new NewTwistedEd25519PrivateKey(privateKeyHex),
   });
 };
 

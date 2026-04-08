@@ -387,7 +387,7 @@ export const getIsAccountRegisteredWithToken = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.hasUserRegistered({
+  return confidentialAsset.hasUserRegistered({
     accountAddress: account.accountAddress,
     tokenAddress,
   });
@@ -397,7 +397,7 @@ export const getIsBalanceNormalized = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.isBalanceNormalized({
+  return confidentialAsset.isBalanceNormalized({
     accountAddress: account.accountAddress,
     tokenAddress,
   });
@@ -407,7 +407,7 @@ export const getIsBalanceFrozen = async (
   account: Account,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.isPendingBalanceFrozen({
+  return confidentialAsset.isIncomingTransfersPaused({
     accountAddress: account.accountAddress,
     tokenAddress,
   });
@@ -498,16 +498,17 @@ export const getConfidentialBalances = async (
   decryptionKeyHex: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
-
   try {
-    const balance = await confidentialAssets.getBalance({
+    const balance = await confidentialAsset.getBalance({
       accountAddress: account.accountAddress,
       tokenAddress,
-      decryptionKey,
+      decryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
     });
 
-    return balance;
+    return {
+      pending: balance.pendingBalance(),
+      available: balance.availableBalance(),
+    };
   } catch (error) {
     console.error('Error getting confidential balances', error);
     throw error;

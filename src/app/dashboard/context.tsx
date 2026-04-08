@@ -1,9 +1,6 @@
 'use client';
 
-import {
-  EncryptedAmount,
-  TwistedEd25519PrivateKey,
-} from '@aptos-labs/confidential-assets';
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets';
 import {
   Account,
   AnyNumber,
@@ -60,8 +57,8 @@ const AccountDecryptionKeyStatusRawDefault: Omit<
   AccountDecryptionKeyStatus,
   'pendingAmount' | 'availableAmount'
 > & {
-  pending: EncryptedAmount | undefined;
-  available: EncryptedAmount | undefined;
+  pending: bigint | undefined;
+  available: bigint | undefined;
 } = {
   isFrozen: false,
   isNormalized: false,
@@ -715,8 +712,8 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
       {} as Record<
         string,
         {
-          pending: EncryptedAmount | undefined;
-          available: EncryptedAmount | undefined;
+          pending: bigint | undefined;
+          available: bigint | undefined;
         } & Omit<AccountDecryptionKeyStatus, 'pendingAmount' | 'availableAmount'>
       >,
     );
@@ -731,8 +728,8 @@ const useSelectedAccountDecryptionKeyStatus = (tokenAddress: string | undefined)
           key,
           {
             ...rest,
-            pendingAmount: pending?.getAmount()?.toString(),
-            availableAmount: available?.getAmount()?.toString(),
+            pendingAmount: pending?.toString(),
+            availableAmount: available?.toString(),
           } as AccountDecryptionKeyStatus,
         ];
       })

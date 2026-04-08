@@ -92,12 +92,12 @@ export const validateEncryptionKeyHex = (encryptionKeyHex: string) => {
 
 export const decryptionKeyFromPrivateKey = (account: Account) => {
   const signature = account.sign(
-    TwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
+    NewTwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
   );
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
-  return TwistedEd25519PrivateKey.fromSignature(signature);
+  return NewTwistedEd25519PrivateKey.fromSignature(signature);
 };
 
 export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
@@ -105,7 +105,7 @@ export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
 
   const hashDigest = sha256(bytes);
 
-  return new TwistedEd25519PrivateKey(hashDigest);
+  return new NewTwistedEd25519PrivateKey(hashDigest);
 };
 
 export const sendTransaction = async (

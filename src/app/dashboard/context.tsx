@@ -1,6 +1,6 @@
 'use client';
 
-import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets';
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
 import {
   Account,
   AnyNumber,

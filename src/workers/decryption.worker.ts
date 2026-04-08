@@ -1,14 +1,16 @@
 import {
-  AVAILABLE_BALANCE_CHUNK_COUNT,
   EncryptedAmount,
   TwistedEd25519PrivateKey,
   TwistedElGamalCiphertext,
-} from '@aptos-labs/confidential-assets';
+} from '@aptos-labs/confidential-asset';
 import { getBytes } from 'ethers';
 
 export type DecryptionWorkerRequest = {
   id: string;
-  amountCiphertext: string;
+  /** C components of the ciphertext chunks (CompressedRistrettoPoint.data hex strings). */
+  amountP: string[];
+  /** D components of the ciphertext chunks for this user (CompressedRistrettoPoint.data hex strings). */
+  amountR: string[];
   /** This should come from TwistedEd25519PrivateKey.toString(). */
   decryptionKeyBytesString: string;
 };
@@ -21,7 +23,7 @@ export type DecryptionWorkerResponse = {
 
 /** Handle messages from the main thread asking for amount decryption. */
 self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
-  const { id, amountCiphertext, decryptionKeyBytesString } = event.data;
+  const { id, amountP, amountR, decryptionKeyBytesString } = event.data;
 
   try {
     // Reconstruct the decryption key from bytes.
@@ -29,22 +31,9 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
       getBytes(decryptionKeyBytesString),
     );
 
-    // Decrypt the amount.
-    const serializedEncryptedAmountBytes = getBytes(amountCiphertext);
-    const chunkedBytes: Uint8Array[] = [];
-    const chunkSize = Math.ceil(
-      serializedEncryptedAmountBytes.length / (AVAILABLE_BALANCE_CHUNK_COUNT / 2),
-    );
-
-    for (let i = 0; i < serializedEncryptedAmountBytes.length; i += chunkSize) {
-      chunkedBytes.push(serializedEncryptedAmountBytes.slice(i, i + chunkSize));
-    }
-
-    // Create encrypted amount from the serialized bytes.
-    const encrypted = chunkedBytes.map(el => {
-      const C = el.slice(0, el.length / 2);
-      const D = el.slice(el.length / 2);
-      return new TwistedElGamalCiphertext(C, D);
+    // Build TwistedElGamalCiphertext from the structured C and D components.
+    const encrypted = amountP.map((pHex, i) => {
+      return new TwistedElGamalCiphertext(pHex, amountR[i]);
     });
 
     const confidentialAmount = await EncryptedAmount.fromCipherTextAndPrivateKey(
@@ -52,14 +41,12 @@ self.onmessage = async (event: MessageEvent<DecryptionWorkerRequest>) => {
       decryptionKey,
     );
 
-    // Send the decrypted amount back to the main thread.
     const response: DecryptionWorkerResponse = {
       id,
       amount: Number(confidentialAmount.getAmount()),
     };
     self.postMessage(response);
   } catch (error) {
-    // Send error back to main thread.
     const response: DecryptionWorkerResponse = {
       id,
       error: error instanceof Error ? error.message : 'Unknown error occurred',

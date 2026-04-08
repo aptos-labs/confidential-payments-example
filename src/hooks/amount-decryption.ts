@@ -1,4 +1,4 @@
-import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets';
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
 import { LRUCache } from 'lru-cache';
 import { useEffect, useState } from 'react';
 
@@ -83,9 +83,12 @@ function getNextWorker(): Worker {
 
 /**
  * Decrypts an encrypted amount ciphertext using the web worker pool.
+ * @param amountP - C components (CompressedRistrettoPoint.data hex strings)
+ * @param amountR - D components for this user (CompressedRistrettoPoint.data hex strings)
  */
 async function decryptAmount(
-  amountCiphertext: string,
+  amountP: string[],
+  amountR: string[],
   decryptionKey: TwistedEd25519PrivateKey,
 ): Promise<number> {
   const worker = getNextWorker();
@@ -110,7 +113,8 @@ async function decryptAmount(
 
     const message: DecryptionWorkerRequest = {
       id,
-      amountCiphertext,
+      amountP,
+      amountR,
       decryptionKeyBytesString: decryptionKey.toString(),
     };
     worker.postMessage(message);
@@ -120,9 +124,12 @@ async function decryptAmount(
 /**
  * Hook to handle asynchronous decryption of confidential amounts with caching.
  * Uses a web worker to avoid blocking the main thread during heavy computation.
+ * @param amountP - C components (CompressedRistrettoPoint.data hex strings)
+ * @param amountR - D components for this user (CompressedRistrettoPoint.data hex strings)
  */
 export function useDecryptedAmount(
-  amountCiphertext: string,
+  amountP: string[],
+  amountR: string[],
   decryptionKey: TwistedEd25519PrivateKey,
 ) {
   const [amount, setAmount] = useState<number | undefined>(undefined);
@@ -131,7 +138,8 @@ export function useDecryptedAmount(
 
   useEffect(() => {
     // Create a cache key combining ciphertext and key to ensure uniqueness.
-    const cacheKey = `${amountCiphertext}_${decryptionKey.publicKey().toStringWithoutPrefix()}`;
+    const cipherKey = amountP.join(',') + '|' + amountR.join(',');
+    const cacheKey = `${cipherKey}_${decryptionKey.publicKey().toStringWithoutPrefix()}`;
 
     // Check if we already have this value in cache.
     const cachedAmount = decryptionCache.get(cacheKey);
@@ -144,16 +152,11 @@ export function useDecryptedAmount(
     setError(null);
 
     const startTime = Date.now();
-    decryptAmount(amountCiphertext, decryptionKey)
+    decryptAmount(amountP, amountR, decryptionKey)
       .then(decryptedAmount => {
         // Store result in cache.
         decryptionCache.set(cacheKey, decryptedAmount);
         setAmount(decryptedAmount);
-        /*
-        console.log(
-          `[DecryptionWorker] Decryption of amount succeeded after ${Date.now() - startTime}ms`,
-        );
-        */
       })
       .catch(err => {
         const error =
@@ -178,7 +181,7 @@ export function useDecryptedAmount(
         nextWorkerIndex = 0;
       }
     };
-  }, [amountCiphertext, decryptionKey]);
+  }, [amountP, amountR, decryptionKey]);
 
   return { amount, isLoading, error };
 }

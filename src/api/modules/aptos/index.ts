@@ -1,10 +1,6 @@
 import {
   TwistedEd25519PrivateKey,
   TwistedEd25519PublicKey,
-} from '@aptos-labs/confidential-assets';
-import {
-  TwistedEd25519PrivateKey as NewTwistedEd25519PrivateKey,
-  TwistedEd25519PublicKey as NewTwistedEd25519PublicKey,
 } from '@aptos-labs/confidential-asset';
 import {
   Account,
@@ -31,7 +27,7 @@ import { appConfig, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
-import { aptos, confidentialAsset, confidentialAssets } from './client';
+import { aptos, confidentialAsset } from './client';
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
@@ -92,12 +88,12 @@ export const validateEncryptionKeyHex = (encryptionKeyHex: string) => {
 
 export const decryptionKeyFromPrivateKey = (account: Account) => {
   const signature = account.sign(
-    NewTwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
+    TwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
   );
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-expect-error
-  return NewTwistedEd25519PrivateKey.fromSignature(signature);
+  return TwistedEd25519PrivateKey.fromSignature(signature);
 };
 
 export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
@@ -105,7 +101,7 @@ export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
 
   const hashDigest = sha256(bytes);
 
-  return new NewTwistedEd25519PrivateKey(hashDigest);
+  return new TwistedEd25519PrivateKey(hashDigest);
 };
 
 export const sendTransaction = async (
@@ -207,7 +203,7 @@ export const withdrawConfidentialBalance = async (
     signer: account,
     recipient: receiver,
     tokenAddress,
-    senderDecryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
+    senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     amount: withdrawAmount,
   });
 };
@@ -231,10 +227,10 @@ export const transferConfidentialAsset = async (
     signer: account,
     recipient: recipientAddressHex,
     tokenAddress,
-    senderDecryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
+    senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     amount: amountToTransfer,
     additionalAuditorEncryptionKeys: auditorsEncryptionKeyHexList.map(
-      hex => new NewTwistedEd25519PublicKey(hex),
+      hex => new TwistedEd25519PublicKey(hex),
     ),
   });
 };
@@ -246,7 +242,7 @@ export const rotateEncryptionKey = async (
 ) => {
   const newDecryptionKey = TwistedEd25519PrivateKey.generate();
 
-  return confidentialAssets.rotateEncryptionKey({
+  return confidentialAsset.rotateEncryptionKey({
     signer: account,
     tokenAddress,
     senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
@@ -259,11 +255,10 @@ export const rolloverConfidentialBalance = async (
   decryptionKeyHex: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  const decryptionKey = new TwistedEd25519PrivateKey(decryptionKeyHex);
-  return confidentialAssets.rolloverPendingBalance({
+  return confidentialAsset.rolloverPendingBalance({
     signer: account,
     tokenAddress,
-    senderDecryptionKey: decryptionKey,
+    senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
   });
 };
 
@@ -292,7 +287,7 @@ export const buildRegisterConfidentialBalanceTx = async (
   return confidentialAsset.transaction.registerBalance({
     sender: account.accountAddress,
     tokenAddress: tokenAddress,
-    decryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
+    decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     withFeePayer: gasStationArgs.withGasStation,
   });
 };
@@ -305,7 +300,7 @@ export const registerConfidentialBalance = async (
   return confidentialAsset.registerBalance({
     signer: account,
     tokenAddress,
-    decryptionKey: new NewTwistedEd25519PrivateKey(privateKeyHex),
+    decryptionKey: new TwistedEd25519PrivateKey(privateKeyHex),
   });
 };
 
@@ -314,7 +309,7 @@ export const normalizeConfidentialBalance = async (
   decryptionKeyHex: string,
   tokenAddress = appConfig.PRIMARY_TOKEN_ADDRESS,
 ) => {
-  return confidentialAssets.normalizeBalance({
+  return confidentialAsset.normalizeBalance({
     signer: account,
     tokenAddress,
     senderDecryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
@@ -498,7 +493,7 @@ export const getConfidentialBalances = async (
     const balance = await confidentialAsset.getBalance({
       accountAddress: account.accountAddress,
       tokenAddress,
-      decryptionKey: new NewTwistedEd25519PrivateKey(decryptionKeyHex),
+      decryptionKey: new TwistedEd25519PrivateKey(decryptionKeyHex),
     });
 
     return {

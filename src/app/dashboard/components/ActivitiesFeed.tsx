@@ -64,7 +64,10 @@ const fetchActivities = async (
       _or: [
         { owner_address: { _eq: userAddress } },
         // Also fetch transfers where this user is the recipient.
-        { counterparty_address: { _eq: userAddress }, event_type: { _eq: 'Transferred' } },
+        {
+          counterparty_address: { _eq: userAddress },
+          event_type: { _eq: 'Transferred' },
+        },
       ],
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -73,7 +76,8 @@ const fetchActivities = async (
     limit: PAGE_SIZE,
   });
 
-  const nextCursor = rawActivities.length === PAGE_SIZE ? pageParam + PAGE_SIZE : undefined;
+  const nextCursor =
+    rawActivities.length === PAGE_SIZE ? pageParam + PAGE_SIZE : undefined;
   const activities: Activity[] = [];
 
   for (const activity of rawActivities) {

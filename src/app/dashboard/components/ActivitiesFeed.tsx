@@ -1,4 +1,4 @@
-import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-assets';
+import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
 import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
@@ -12,7 +12,7 @@ import Link from 'next/link';
 import { HTMLAttributes, useCallback, useEffect, useRef, useState } from 'react';
 
 import { getTxExplorerUrl } from '@/api/modules/aptos';
-import { noCodeClient } from '@/api/modules/aptos/client';
+import { confidentialAsset } from '@/api/modules/aptos/client';
 import { appConfig } from '@/config';
 import { trimAddress } from '@/helpers';
 import { useDecryptedAmount } from '@/hooks/amount-decryption';
@@ -41,7 +41,10 @@ type WithdrawActivity = BaseActivity & {
 
 type TransferActivity = BaseActivity & {
   activityType: 'transfer';
-  amountCiphertext: string;
+  /** C components of the ciphertext chunks (CompressedRistrettoPoint.data hex strings). */
+  amountP: string[];
+  /** D components of the ciphertext chunks for this user (CompressedRistrettoPoint.data hex strings). */
+  amountR: string[];
 };
 
 type Activity = DepositActivity | WithdrawActivity | TransferActivity;
@@ -56,67 +59,76 @@ const fetchActivities = async (
   activities: Activity[];
   nextCursor: number | undefined;
 }> => {
-  // Fetch the raw activities from the no code indexing API.
-  const rawActivities = await noCodeClient.GetActivities(
-    {
-      userAddress,
-      offset: pageParam,
-      limit: PAGE_SIZE,
+  const rawActivities = await confidentialAsset.getActivities({
+    where: {
+      _or: [
+        { owner_address: { _eq: userAddress } },
+        // Also fetch transfers where this user is the recipient.
+        {
+          counterparty_address: { _eq: userAddress },
+          event_type: { _eq: 'Transferred' },
+        },
+      ],
     },
-    {
-      authorization: `Bearer ${appConfig.APTOS_BUILD_NOCODE_API_KEY}`,
-    },
-  );
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    orderBy: [{ transaction_version: 'desc' as any }],
+    offset: pageParam,
+    limit: PAGE_SIZE,
+  });
 
   const nextCursor =
-    rawActivities.activities_public.length === PAGE_SIZE ||
-    rawActivities.transfers_confidential.length === PAGE_SIZE
-      ? pageParam + PAGE_SIZE
-      : undefined;
-
+    rawActivities.length === PAGE_SIZE ? pageParam + PAGE_SIZE : undefined;
   const activities: Activity[] = [];
 
-  // Map the raw public activities.
-  for (const activity of rawActivities.activities_public) {
-    let activityType: Activity['activityType'];
-    if (activity.activity_type.toLowerCase().includes('deposit')) {
-      activityType = 'deposit';
-    } else if (activity.activity_type.toLowerCase().includes('withdraw')) {
-      activityType = 'withdraw';
-    } else {
-      console.warn('Unknown activity type: ', activity.activity_type);
-      continue;
+  for (const activity of rawActivities) {
+    const base = {
+      timestamp: new Date(activity.transaction_timestamp + 'Z'),
+      txnVersion: Number(activity.transaction_version),
+    };
+
+    if (activity.event_type === 'Deposited') {
+      activities.push({
+        activityType: 'deposit',
+        fromAddress: AccountAddress.from(activity.owner_address),
+        toAddress: AccountAddress.from(activity.owner_address),
+        amount: Number(activity.amount),
+        ...base,
+      });
+    } else if (activity.event_type === 'Withdrawn') {
+      activities.push({
+        activityType: 'withdraw',
+        fromAddress: AccountAddress.from(activity.owner_address),
+        toAddress: activity.counterparty_address
+          ? AccountAddress.from(activity.counterparty_address)
+          : AccountAddress.from(activity.owner_address),
+        amount: Number(activity.amount),
+        ...base,
+      });
+    } else if (activity.event_type === 'Transferred') {
+      // owner_address is always the sender; counterparty_address is the recipient.
+      const isOutgoing =
+        activity.owner_address.toLowerCase() === userAddress.toLowerCase();
+      activities.push({
+        activityType: 'transfer',
+        fromAddress: AccountAddress.from(activity.owner_address),
+        toAddress: AccountAddress.from(activity.counterparty_address),
+        amountP: activity.event_data.amount_P.map(p =>
+          p.data.startsWith('0x') ? p.data.slice(2) : p.data,
+        ),
+        amountR: isOutgoing
+          ? activity.event_data.amount_R_sender.map(r =>
+              r.data.startsWith('0x') ? r.data.slice(2) : r.data,
+            )
+          : activity.event_data.amount_R_recip.map(r =>
+              r.data.startsWith('0x') ? r.data.slice(2) : r.data,
+            ),
+        ...base,
+      });
     }
-    activities.push({
-      activityType,
-      timestamp: new Date(activity.txn_timestamp + 'Z'), // Ensure UTC timezone is used
-      txnVersion: activity.txn_version,
-      fromAddress: AccountAddress.from(activity.from_address),
-      toAddress: AccountAddress.from(activity.to_address),
-      amount: Number(activity.amount),
-    });
+    // Skip Registered, Normalized, RolledOver, KeyRotated, etc.
   }
 
-  // Convert the confidential activities.
-  for (const activity of rawActivities.transfers_confidential) {
-    const amountCiphertext =
-      activity.from_address === userAddress
-        ? activity.amount_ciphertext_sender
-        : activity.amount_ciphertext_recipient;
-    activities.push({
-      activityType: 'transfer',
-      timestamp: new Date(activity.txn_timestamp + 'Z'), // Ensure UTC timezone is used
-      txnVersion: activity.txn_version,
-      fromAddress: AccountAddress.from(activity.from_address),
-      toAddress: AccountAddress.from(activity.to_address),
-      amountCiphertext,
-    });
-  }
-
-  return {
-    activities,
-    nextCursor,
-  };
+  return { activities, nextCursor };
 };
 
 export default function ActivitiesFeed() {
@@ -356,13 +368,15 @@ function TxItem({
   tokenSymbol,
   tokenDecimals,
   amount: amountRaw,
-  amountCiphertext,
+  amountP,
+  amountR,
 }: Activity & {
   currentAddress: AccountAddress;
   tokenSymbol: string;
   tokenDecimals: number;
   amount?: number;
-  amountCiphertext?: string;
+  amountP?: string[];
+  amountR?: string[];
 }) {
   const { selectedAccountDecryptionKey } = useConfidentialCoinContext();
 
@@ -424,9 +438,10 @@ function TxItem({
         <div className='flex flex-1 flex-col gap-1.5'>
           <div className='flex items-center justify-between'>
             <span className='typography-subtitle3 text-textPrimary'>{title}</span>
-            {amountCiphertext ? (
+            {amountP && amountR ? (
               <EncryptedAmountDisplay
-                amountCiphertext={amountCiphertext}
+                amountP={amountP}
+                amountR={amountR}
                 decryptionKey={selectedAccountDecryptionKey}
                 tokenSymbol={tokenSymbol}
                 tokenDecimals={tokenDecimals}
@@ -491,12 +506,14 @@ function PlainAmountDisplay({
 
 // Component for displaying encrypted amounts with decryption handling
 function EncryptedAmountDisplay({
-  amountCiphertext,
+  amountP,
+  amountR,
   decryptionKey,
   tokenSymbol,
   tokenDecimals,
 }: {
-  amountCiphertext: string;
+  amountP: string[];
+  amountR: string[];
   decryptionKey: TwistedEd25519PrivateKey;
   tokenSymbol: string;
   tokenDecimals: number;
@@ -505,7 +522,7 @@ function EncryptedAmountDisplay({
     amount: decryptedAmount,
     isLoading: isDecrypting,
     error: decryptionError,
-  } = useDecryptedAmount(amountCiphertext, decryptionKey);
+  } = useDecryptedAmount(amountP, amountR, decryptionKey);
 
   if (isDecrypting) {
     return (

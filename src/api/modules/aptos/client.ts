@@ -25,9 +25,4 @@ export const confidentialAsset = new ConfidentialAsset({
 });
 
 /** Do not forget to pass the API key when using this client. */
-export const noCodeClient = getSdk(
-  new GraphQLClient(
-    // TODO: Make this configurable.
-    'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql',
-  ),
-);
+export const noCodeClient = getSdk(new GraphQLClient(appConfig.INDEXER_GRAPHQL_URL));

@@ -1,7 +1,7 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo';
 import { NextResponse } from 'next/server';
 
-import { AppConfig, appConfig } from './config';
+import { AppConfig, appConfig, APTOS_NODE_API_URL } from './config';
 
 // Iterate through the config and ensure nothing is undefined.
 for (const key in appConfig) {
@@ -17,7 +17,7 @@ async function shouldShowMaintenancePage() {
 
   try {
     const response = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+      `${APTOS_NODE_API_URL}/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
       {
         headers: {
           Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,

@@ -218,7 +218,23 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     );
   }
 
-  // For assets with on-chain minting (e.g. USDT), show the mint button.
+  // No on-chain mint function either (e.g. any asset on mainnet). Prompt the
+  // user to fund the account themselves instead of showing a broken button.
+  if (!assetConfig.mintFunction) {
+    return (
+      <div className='flex w-full flex-col gap-3 rounded-2xl border-2 border-solid border-textPrimary p-4'>
+        <p className='text-sm'>
+          Send {selectedToken?.symbol} to{' '}
+          <span className='break-all font-mono'>
+            {selectedAccount.accountAddress.toString()}
+          </span>{' '}
+          from an exchange or existing wallet, then return here to veil it.
+        </p>
+      </div>
+    );
+  }
+
+  // For assets with on-chain minting (e.g. USDT on testnet), show the mint button.
   const tryMint = async () => {
     setIsSubmitting(true);
     setDidSubmit(true);

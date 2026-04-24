@@ -23,7 +23,7 @@ import { ethers, isHexString } from 'ethers';
 import { jwtDecode } from 'jwt-decode';
 import { z } from 'zod';
 
-import { appConfig, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
+import { appConfig, APTOS_NODE_API_URL, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
@@ -143,13 +143,18 @@ export const sendAndWaitTx = async (
   return aptos.waitForTransaction({ transactionHash });
 };
 
-// Only works for USDT - calls the on-chain faucet.
+// Only works for USDT on testnet - calls the on-chain faucet.
 export const mintUsdt = async (
   account: Account,
   amount: bigint,
   gasStationArgs: GasStationArgs,
 ) => {
   const mintFunction = ASSET_CONFIG.usdt.mintFunction;
+  if (!mintFunction) {
+    throw new Error(
+      `USDT minting is not available on network "${appConfig.APTOS_NETWORK}".`,
+    );
+  }
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {
@@ -174,16 +179,8 @@ export const getUnifiedBalance = async (
   accountAddress: string,
   asset: string,
 ): Promise<bigint> => {
-  const network = aptos.config.network;
-  const baseUrl =
-    network === 'testnet'
-      ? 'https://api.testnet.aptoslabs.com/v1'
-      : network === 'mainnet'
-        ? 'https://api.mainnet.aptoslabs.com/v1'
-        : 'https://api.devnet.aptoslabs.com/v1';
-
   const response = await fetch(
-    `${baseUrl}/accounts/${accountAddress}/balance/${asset}`,
+    `${APTOS_NODE_API_URL}/accounts/${accountAddress}/balance/${asset}`,
   );
   if (!response.ok) {
     throw new Error(`Failed to fetch balance: ${response.statusText}`);

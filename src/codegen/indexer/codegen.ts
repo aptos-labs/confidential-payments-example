@@ -5,15 +5,18 @@ if (!APTOS_BUILD_NOCODE_API_KEY) {
   throw new Error('NEXT_PUBLIC_APTOS_BUILD_NOCODE_API_KEY is not set');
 }
 
+const INDEXER_GRAPHQL_URL =
+  process.env.NEXT_PUBLIC_INDEXER_GRAPHQL_URL ??
+  'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql';
+
 const config: CodegenConfig = {
   overwrite: true,
   schema: {
-    'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql':
-      {
-        headers: {
-          authorization: `Bearer ${APTOS_BUILD_NOCODE_API_KEY}`,
-        },
+    [INDEXER_GRAPHQL_URL]: {
+      headers: {
+        authorization: `Bearer ${APTOS_BUILD_NOCODE_API_KEY}`,
       },
+    },
   },
   documents: 'src/codegen/indexer/queries/**/*.graphql',
   generates: {

@@ -10,9 +10,12 @@ import {
 } from 'react';
 import { useMeasure } from 'react-use';
 
+import { isTestnet } from '@/api/modules/aptos/client';
 import AddTokenForm from '@/app/dashboard/components/AddTokenForm';
 import ConfidentialAssetCard from '@/app/dashboard/components/ConfidentialAssetCard';
 import DashboardHeader from '@/app/dashboard/components/DashboardHeader';
+import DepositAddress from '@/app/dashboard/components/DepositAddress';
+import NetworkPicker from '@/app/dashboard/components/NetworkPicker';
 import TokenInfo from '@/app/dashboard/components/TokenInfo';
 import WithdrawForm from '@/app/dashboard/components/WithdrawForm';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
@@ -158,7 +161,8 @@ export default function DashboardClient() {
 
   return (
     <div className='flex size-full flex-col'>
-      <header className='order-2 flex h-16 shrink-0 items-center justify-end gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:order-1'>
+      <header className='order-2 flex h-16 shrink-0 items-center justify-between gap-2 px-4 transition-[width,height] ease-linear group-has-[[data-collapsible=icon]]/sidebar-wrapper:h-12 md:order-1'>
+        <NetworkPicker />
         <DashboardHeader />
       </header>
       <div className='order-1 flex flex-1 flex-col overflow-y-auto md:order-2'>
@@ -248,16 +252,29 @@ export default function DashboardClient() {
           </div>
 
           <div className='flex w-full flex-row items-center justify-center gap-8 self-center px-4 md:max-w-[50%]'>
-            <CircleButton
-              className='flex-1'
-              caption={'Faucet'}
-              iconProps={{
-                name: 'CircleDollarSignIcon',
-              }}
-              onClick={() => {
-                setIsDepositSheetOpen(true);
-              }}
-            />
+            {isTestnet() ? (
+              <CircleButton
+                className='flex-1'
+                caption={'Faucet'}
+                iconProps={{
+                  name: 'CircleDollarSignIcon',
+                }}
+                onClick={() => {
+                  setIsDepositSheetOpen(true);
+                }}
+              />
+            ) : (
+              <CircleButton
+                className='flex-1'
+                caption={'Deposit'}
+                iconProps={{
+                  name: 'CircleDollarSignIcon',
+                }}
+                onClick={() => {
+                  setIsDepositSheetOpen(true);
+                }}
+              />
+            )}
 
             {/* <CircleButton
             caption={'Token Info'}
@@ -332,16 +349,20 @@ export default function DashboardClient() {
                   size={18}
                   className='text-textPrimary'
                 />
-                Deposit {selectedToken.name}
+                {isTestnet() ? `Deposit ${selectedToken.name}` : 'Deposit'}
               </UiSheetTitle>
             </UiSheetHeader>
             <UiSeparator className='mb-4 mt-2' />
-            <Deposit
-              onSubmit={() => {
-                setIsDepositSheetOpen(false);
-                tryRefresh();
-              }}
-            />
+            {isTestnet() ? (
+              <Deposit
+                onSubmit={() => {
+                  setIsDepositSheetOpen(false);
+                  tryRefresh();
+                }}
+              />
+            ) : (
+              <DepositAddress />
+            )}
           </UiSheetContent>
         </UiSheet>
         <UiSheet open={isTokenInfoSheetOpen} onOpenChange={setIsTokenInfoSheetOpen}>

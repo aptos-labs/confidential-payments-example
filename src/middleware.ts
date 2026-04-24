@@ -15,9 +15,14 @@ async function shouldShowMaintenancePage() {
     return true;
   }
 
+  const apiBase =
+    appConfig.APTOS_NETWORK === 'mainnet'
+      ? 'https://api.mainnet.aptoslabs.com/v1'
+      : 'https://api.testnet.aptoslabs.com/v1';
+
   try {
     const response = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+      `${apiBase}/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
       {
         headers: {
           Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,

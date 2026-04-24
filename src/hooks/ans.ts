@@ -164,3 +164,45 @@ export function useGetTargetAddress({
     enabled,
   });
 }
+
+/**
+ * Resolves a recipient input which can be:
+ * 1. A hex address (0x...)
+ * 2. A bare username (resolved as username.{ANS_DOMAIN})
+ * 3. A full ANS name (e.g. username.apt, subdomain.domain.apt)
+ */
+export function useResolveRecipient({
+  input,
+  enabled = true,
+}: {
+  input: string;
+  enabled?: boolean;
+}) {
+  return useQuery({
+    queryKey: ['resolveRecipient', input],
+    queryFn: async (): Promise<AccountAddress | null> => {
+      const trimmed = input.trim().replace(/^@/, '');
+      if (!trimmed) return null;
+
+      if (trimmed.startsWith('0x')) {
+        try {
+          return AccountAddress.from(trimmed);
+        } catch {
+          return null;
+        }
+      }
+
+      if (trimmed.endsWith('.apt') || trimmed.includes('.')) {
+        const name = trimmed.endsWith('.apt') ? trimmed : `${trimmed}.apt`;
+        const out = await aptos.ans.getTargetAddress({ name });
+        return out ?? null;
+      }
+
+      const out = await aptos.ans.getTargetAddress({
+        name: `${trimmed}.${appConfig.ANS_DOMAIN}`,
+      });
+      return out ?? null;
+    },
+    enabled: enabled && input.trim().length > 0,
+  });
+}

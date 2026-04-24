@@ -15,9 +15,10 @@ import {
 
 import { getEncryptionKey } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { appConfig } from '@/config';
 import { ErrorHandler, getYupAmountField, isMobile, tryCatch } from '@/helpers';
 import { useForm } from '@/hooks';
-import { useGetAnsSubdomainAddress } from '@/hooks/ans';
+import { useResolveRecipient } from '@/hooks/ans';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
@@ -93,12 +94,11 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         yup.object().shape({
           receiverUsername: yup
             .string()
-            .required('Enter receiver username')
+            .required('Enter recipient')
             .test(
-              'usernameExists',
-              'Username not found. Please check and try again.',
+              'recipientExists',
+              'Recipient not found. Please check and try again.',
               () => {
-                // Only validate if we have a debounced username and it's not currently loading
                 if (debouncedUsername === '' || isResolvingAddress) return true;
                 return Boolean(resolvedAddress);
               },
@@ -181,10 +181,10 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       };
     }, [username]);
 
-    // Query ANS to resolve username to address
+    // Resolve recipient: supports bare usernames (autocomplete .veiled.apt), full ANS names, and hex addresses
     const { data: resolvedAddress, isLoading: isResolvingAddress } =
-      useGetAnsSubdomainAddress({
-        subdomain: debouncedUsername.replace('@', ''),
+      useResolveRecipient({
+        input: debouncedUsername,
         enabled: debouncedUsername !== '',
       });
 
@@ -316,10 +316,14 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 <ControlledUiInput
                   control={control}
                   name='receiverUsername'
-                  label='Recipient Username'
-                  placeholder='Enter recipient username'
+                  label='Recipient'
+                  placeholder={`username, name.apt, or 0x address`}
                 />
-                <div className='pb-2' />
+                <div className='pb-1 text-xs text-textSecondary'>
+                  Bare usernames resolve to{' '}
+                  <span className='font-medium'>.{appConfig.ANS_DOMAIN}.apt</span>
+                </div>
+                <div className='pb-1' />
                 {resolvedAddress &&
                   debouncedUsername !== '' &&
                   !isResolvingAddress &&

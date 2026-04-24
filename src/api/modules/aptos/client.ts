@@ -24,10 +24,16 @@ export const confidentialAsset = new ConfidentialAsset({
   withFeePayer: true,
 });
 
+export const isTestnet = () => appConfig.APTOS_NETWORK === 'testnet';
+
+const NOCODE_URLS: Record<string, string> = {
+  testnet:
+    'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql',
+  mainnet:
+    'https://api.mainnet.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql',
+};
+
 /** Do not forget to pass the API key when using this client. */
 export const noCodeClient = getSdk(
-  new GraphQLClient(
-    // TODO: Make this configurable.
-    'https://api.testnet.staging.aptoslabs.com/nocode/v1/api/cmacir19c0009s601tnchf781/v1/graphql',
-  ),
+  new GraphQLClient(NOCODE_URLS[appConfig.APTOS_NETWORK] || NOCODE_URLS.testnet),
 );

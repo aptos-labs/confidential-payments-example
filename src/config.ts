@@ -59,12 +59,26 @@ export const ASSET_CONFIG = {
   },
 } as const;
 
+export const getStoredNetwork = (): string => {
+  if (typeof window === 'undefined') return 'mainnet';
+  try {
+    const stored = localStorage.getItem('network-store');
+    if (stored) {
+      const parsed = JSON.parse(stored);
+      return parsed?.state?.selectedNetwork ?? 'mainnet';
+    }
+  } catch {
+    // ignore
+  }
+  return 'mainnet';
+};
+
 export const appConfig: AppConfig = {
   CONFIDENTIAL_ASSET_MODULE_ADDR:
     process.env.NEXT_PUBLIC_CONFIDENTIAL_ASSET_MODULE_ADDR!,
   // Derive PRIMARY_TOKEN_ADDRESS from the selected asset.
   PRIMARY_TOKEN_ADDRESS: ASSET_CONFIG[PRIMARY_ASSET].address,
-  APTOS_NETWORK: 'testnet',
+  APTOS_NETWORK: getStoredNetwork(),
 
   SUBDOMAIN_MANAGER_CONTRACT_ADDR:
     process.env.NEXT_PUBLIC_SUBDOMAIN_MANAGER_CONTRACT_ADDR!,

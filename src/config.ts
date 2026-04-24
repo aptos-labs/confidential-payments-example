@@ -45,14 +45,10 @@ export const isTestnet = APTOS_NETWORK === 'testnet';
 export const APT_FA_ADDR =
   '0x000000000000000000000000000000000000000000000000000000000000000a';
 
-// USDT token address per network. The testnet address points at the fake USDT
-// deployed alongside the testnet faucet. On mainnet it must be the real Tether
-// USD FA address, which we read from an env var so operators pick it explicitly.
-const USDT_TOKEN_ADDR_BY_NETWORK: Record<AptosNetworkName, string> = {
-  testnet: '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050',
-  mainnet: process.env.NEXT_PUBLIC_USDT_MAINNET_ADDR ?? '',
-};
-export const USDT_TOKEN_ADDR = USDT_TOKEN_ADDR_BY_NETWORK[APTOS_NETWORK];
+// USDT is only supported on testnet (via the bundled fake-USDT deployment).
+// Mainnet deployments must use APT.
+export const USDT_TOKEN_ADDR =
+  '0xd5d0d561493ea2b9410f67da804653ae44e793c2423707d4f11edb2e38192050';
 
 // The primary asset to use in the app. This controls the token address and minting behavior.
 export type PrimaryAsset = 'apt' | 'usdt';
@@ -60,9 +56,9 @@ export type PrimaryAsset = 'apt' | 'usdt';
 export const PRIMARY_ASSET: PrimaryAsset =
   (process.env.NEXT_PUBLIC_PRIMARY_ASSET as PrimaryAsset) || 'apt';
 
-if (PRIMARY_ASSET === 'usdt' && !USDT_TOKEN_ADDR) {
+if (PRIMARY_ASSET === 'usdt' && isMainnet) {
   throw new Error(
-    `NEXT_PUBLIC_PRIMARY_ASSET is "usdt" but no USDT token address is configured for network "${APTOS_NETWORK}". Set NEXT_PUBLIC_USDT_MAINNET_ADDR.`,
+    'NEXT_PUBLIC_PRIMARY_ASSET="usdt" is not supported on mainnet. Use "apt" or switch to testnet.',
   );
 }
 
@@ -80,10 +76,9 @@ export const ASSET_CONFIG = {
   },
   usdt: {
     address: USDT_TOKEN_ADDR,
-    // Only the testnet USDT deployment exposes an on-chain faucet function.
-    mintFunction: isTestnet
-      ? ('0x24246c14448a5994d9f23e3b978da2a354e64b6dfe54220debb8850586c448cc::usdt::faucet' as const)
-      : null,
+    // Testnet-only: the bundled fake USDT exposes an on-chain faucet function.
+    mintFunction:
+      '0x24246c14448a5994d9f23e3b978da2a354e64b6dfe54220debb8850586c448cc::usdt::faucet' as const,
     faucetUrl: null,
   },
 } as const;

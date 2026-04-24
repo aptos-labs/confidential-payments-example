@@ -143,18 +143,13 @@ export const sendAndWaitTx = async (
   return aptos.waitForTransaction({ transactionHash });
 };
 
-// Only works for USDT on testnet - calls the on-chain faucet.
+// Only works for USDT (testnet only) - calls the on-chain faucet.
 export const mintUsdt = async (
   account: Account,
   amount: bigint,
   gasStationArgs: GasStationArgs,
 ) => {
   const mintFunction = ASSET_CONFIG.usdt.mintFunction;
-  if (!mintFunction) {
-    throw new Error(
-      `USDT minting is not available on network "${appConfig.APTOS_NETWORK}".`,
-    );
-  }
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {

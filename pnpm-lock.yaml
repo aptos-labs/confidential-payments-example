@@ -8,8 +8,8 @@ importers:
   .:
     dependencies:
       '@aptos-labs/confidential-asset':
-        specifier: ^1.0.0
-        version: 1.0.0(@aptos-labs/ts-sdk@3.1.2(got@14.4.6))(expo@55.0.12)(react-native@0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
+        specifier: ^1.1.1
+        version: 1.1.1(@aptos-labs/ts-sdk@3.1.2(got@14.4.6))(expo@55.0.12)(react-native@0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
       '@aptos-labs/gas-station-client':
         specifier: ^1.1.1
         version: 1.1.1(got@14.4.6)
@@ -446,10 +446,10 @@ packages:
       react: '*'
       react-native: '*'
 
-  '@aptos-labs/confidential-asset@1.0.0':
+  '@aptos-labs/confidential-asset@1.1.1':
     resolution:
       {
-        integrity: sha512-c0Kq5ickP0X/L1h2X/ph58njCzFo7mLN5CDgqs8sUTPmF6dEa3iBq6OuYP7y0FpOMS5MVO/ZJnGkdOCXZ8+cSw==,
+        integrity: sha512-7gsq/KLHr3kQ3fGqpNaLSUj/4yOTpksfT8SGvYBlNKh7WdVL3dMH/etzgZ93u/La2R1VroJPjrAfS9LkC5FU9A==,
       }
     engines: { node: '>=20.0.0' }
     peerDependencies:
@@ -3333,6 +3333,13 @@ packages:
       }
     engines: { node: ^14.21.3 || >=16 }
 
+  '@noble/curves@1.9.7':
+    resolution:
+      {
+        integrity: sha512-gbKGcRUYIjA3/zCCNaWDciTMFI0dCkvou3TL8Zmy5Nc7sJ47a0jtOeZoTaMxkuqRo9cRhjOdZJXegxYE5FN/xw==,
+      }
+    engines: { node: ^14.21.3 || >=16 }
+
   '@noble/ed25519@2.2.3':
     resolution:
       {
@@ -5440,6 +5447,7 @@ packages:
         integrity: sha512-9k/gHF6n/pAi/9tqr3m3aqkuiNosYTurLLUtc7xQ9sxB/wm7WPygCv8GYa6mS0fLJEHhqMC1ATYhz++U/lRHqg==,
       }
     engines: { node: '>=10.0.0' }
+    deprecated: this version has critical issues, please update to the latest version
 
   '@xobotyi/scrollbar-width@1.9.5':
     resolution:
@@ -15712,11 +15720,11 @@ snapshots:
       react: 18.3.1
       react-native: 0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10)
 
-  '@aptos-labs/confidential-asset@1.0.0(@aptos-labs/ts-sdk@3.1.2(got@14.4.6))(expo@55.0.12)(react-native@0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)':
+  '@aptos-labs/confidential-asset@1.1.1(@aptos-labs/ts-sdk@3.1.2(got@14.4.6))(expo@55.0.12)(react-native@0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)':
     dependencies:
       '@aptos-labs/confidential-asset-bindings': 1.1.1(expo@55.0.12)(react-native@0.85.0(@babel/core@7.26.7)(@types/react@18.3.18)(bufferutil@4.0.8)(react@18.3.1)(utf-8-validate@5.0.10))(react@18.3.1)
       '@aptos-labs/ts-sdk': 3.1.2(got@14.4.6)
-      '@noble/curves': 1.9.0
+      '@noble/curves': 1.9.7
       '@noble/hashes': 1.8.0
     transitivePeerDependencies:
       - expo
@@ -18217,6 +18225,10 @@ snapshots:
       '@noble/hashes': 1.7.1
 
   '@noble/curves@1.9.0':
+    dependencies:
+      '@noble/hashes': 1.8.0
+
+  '@noble/curves@1.9.7':
     dependencies:
       '@noble/hashes': 1.8.0
 

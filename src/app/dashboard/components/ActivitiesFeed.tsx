@@ -1,4 +1,7 @@
-import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
+import {
+  type ConfidentialAssetActivitiesOrderBy,
+  TwistedEd25519PrivateKey,
+} from '@aptos-labs/confidential-asset';
 import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import {
@@ -70,8 +73,7 @@ const fetchActivities = async (
         },
       ],
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    orderBy: [{ transaction_version: 'desc' as any }],
+    orderBy: [{ transaction_version: 'desc' } as ConfidentialAssetActivitiesOrderBy],
     offset: pageParam,
     limit: PAGE_SIZE,
   });

@@ -16,6 +16,7 @@ import DashboardHeader from '@/app/dashboard/components/DashboardHeader';
 import TokenInfo from '@/app/dashboard/components/TokenInfo';
 import WithdrawForm from '@/app/dashboard/components/WithdrawForm';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
+import { appConfig } from '@/config';
 import { ErrorHandler, isMobile } from '@/helpers';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
@@ -250,7 +251,7 @@ export default function DashboardClient() {
           <div className='flex w-full flex-row items-center justify-center gap-8 self-center px-4 md:max-w-[50%]'>
             <CircleButton
               className='flex-1'
-              caption={'Faucet'}
+              caption={appConfig.APTOS_NETWORK === 'mainnet' ? 'Deposit' : 'Faucet'}
               iconProps={{
                 name: 'CircleDollarSignIcon',
               }}

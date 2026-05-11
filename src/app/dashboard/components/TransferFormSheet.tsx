@@ -1,5 +1,6 @@
 'use client';
 
+import { AccountAddress } from '@aptos-labs/ts-sdk';
 import { isHexString, parseUnits } from 'ethers';
 import { RefreshCw } from 'lucide-react';
 import {
@@ -15,14 +16,66 @@ import {
 
 import { getEncryptionKey } from '@/api/modules/aptos';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
-import { ErrorHandler, getYupAmountField, isMobile, tryCatch } from '@/helpers';
+import { appConfig } from '@/config';
+import {
+  ErrorHandler,
+  getYupAmountField,
+  isMobile,
+  trimAddress,
+  tryCatch,
+} from '@/helpers';
 import { useForm } from '@/hooks';
-import { useGetAnsSubdomainAddress } from '@/hooks/ans';
+import { useGetTargetAddress } from '@/hooks/ans';
 import { TokenBaseInfo } from '@/store/wallet';
 import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
 import { UiSeparator } from '@/ui/UiSeparator';
 import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
+
+type RecipientKind = 'address' | 'ans' | 'username' | 'invalid';
+
+type ParsedRecipient = {
+  /** What we treat the input as. */
+  kind: RecipientKind;
+  /** ANS name to look up (only set when kind is 'ans' or 'username'). */
+  ansName: string | null;
+  /** Resolved hex address (only set when kind is 'address'). */
+  hexAddress: string | null;
+};
+
+/**
+ * Parse the recipient input. The user can enter:
+ *   - a hex account address (starts with 0x and is a valid AccountAddress),
+ *   - a fully-qualified ANS name ending in `.apt` (e.g. `alice.apt` or
+ *     `pay.alice.apt`),
+ *   - or a bare username, which we treat as the ANS subdomain under the
+ *     configured ANS_DOMAIN, i.e. `<input>.<ANS_DOMAIN>.apt`.
+ */
+function parseRecipient(input: string): ParsedRecipient {
+  const trimmed = input.trim();
+
+  if (trimmed === '') {
+    return { kind: 'invalid', ansName: null, hexAddress: null };
+  }
+
+  if (trimmed.startsWith('0x')) {
+    return AccountAddress.isValid({ input: trimmed }).valid
+      ? { kind: 'address', ansName: null, hexAddress: trimmed }
+      : { kind: 'invalid', ansName: null, hexAddress: null };
+  }
+
+  if (trimmed.toLowerCase().endsWith('.apt')) {
+    return { kind: 'ans', ansName: trimmed.toLowerCase(), hexAddress: null };
+  }
+
+  // Treat as a bare username under the configured ANS domain.
+  const subdomain = trimmed.replace(/^@/, '').toLowerCase();
+  return {
+    kind: 'username',
+    ansName: `${subdomain}.${appConfig.ANS_DOMAIN}.apt`,
+    hexAddress: null,
+  };
+}
 
 type TransferFormSheetRef = {
   open: (prefillUsername?: string) => void;
@@ -77,11 +130,16 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
     }, [availableAmountBN, pendingAmountBN, publicBalanceBN]);
 
     const [isTransferSheetOpen, setIsTransferSheetOpen] = useState(false);
-    const [debouncedUsername, setDebouncedUsername] = useState('');
+    const [debouncedRecipient, setDebouncedRecipient] = useState('');
     const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
-    const [username, setUsername] = useState('');
+    const [recipientInput, setRecipientInput] = useState('');
 
     const [isSubmitting, setIsSubmitting] = useState(false);
+
+    const parsedRecipient = useMemo(
+      () => parseRecipient(debouncedRecipient),
+      [debouncedRecipient],
+    );
 
     const formSchema = useForm(
       {
@@ -93,13 +151,21 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
         yup.object().shape({
           receiverUsername: yup
             .string()
-            .required('Enter receiver username')
+            .required('Enter recipient username, ANS name or address')
             .test(
-              'usernameExists',
-              'Username not found. Please check and try again.',
+              'recipientFormat',
+              'Enter a valid username, ANS name (e.g. alice.apt) or 0x address.',
               () => {
-                // Only validate if we have a debounced username and it's not currently loading
-                if (debouncedUsername === '' || isResolvingAddress) return true;
+                if (debouncedRecipient === '') return true;
+                return parsedRecipient.kind !== 'invalid';
+              },
+            )
+            .test(
+              'recipientResolves',
+              'Recipient not found. Please check and try again.',
+              () => {
+                if (debouncedRecipient === '' || isResolvingAddress) return true;
+                if (parsedRecipient.kind === 'invalid') return true;
                 return Boolean(resolvedAddress);
               },
             )
@@ -158,20 +224,20 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
       trigger,
     } = formSchema;
 
-    // Get the current username from form state
+    // Get the current recipient input from form state
     useEffect(() => {
-      const currentUsername = formState.receiverUsername || '';
-      setUsername(currentUsername);
+      const current = formState.receiverUsername || '';
+      setRecipientInput(current);
     }, [formState]);
 
-    // Debounce the username input
+    // Debounce the recipient input
     useEffect(() => {
       if (debounceTimerRef.current) {
         clearTimeout(debounceTimerRef.current);
       }
 
       debounceTimerRef.current = setTimeout(() => {
-        setDebouncedUsername(username);
+        setDebouncedRecipient(recipientInput);
       }, 250);
 
       return () => {
@@ -179,21 +245,31 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
           clearTimeout(debounceTimerRef.current);
         }
       };
-    }, [username]);
+    }, [recipientInput]);
 
-    // Query ANS to resolve username to address
-    const { data: resolvedAddress, isLoading: isResolvingAddress } =
-      useGetAnsSubdomainAddress({
-        subdomain: debouncedUsername.replace('@', ''),
-        enabled: debouncedUsername !== '',
-      });
+    // Resolve via ANS only when the input is a username or a fully qualified ANS name.
+    const { data: ansResolvedAddress, isLoading: isResolvingAns } = useGetTargetAddress(
+      {
+        name: parsedRecipient.ansName ?? '',
+        enabled: parsedRecipient.ansName !== null,
+      },
+    );
+
+    // The final resolved address is either the literal hex address the user pasted, or
+    // the ANS-resolved address.
+    const resolvedAddress =
+      parsedRecipient.kind === 'address' && parsedRecipient.hexAddress
+        ? AccountAddress.from(parsedRecipient.hexAddress)
+        : (ansResolvedAddress ?? null);
+
+    const isResolvingAddress = parsedRecipient.ansName !== null && isResolvingAns;
 
     // Trigger validation when external dependencies change
     useEffect(() => {
-      if (debouncedUsername !== '') {
+      if (debouncedRecipient !== '') {
         trigger('receiverUsername');
       }
-    }, [resolvedAddress, isResolvingAddress, debouncedUsername, trigger]);
+    }, [resolvedAddress, isResolvingAddress, debouncedRecipient, trigger]);
 
     const clearForm = useCallback(() => {
       setValue('receiverUsername', '');
@@ -316,15 +392,19 @@ export const TransferFormSheet = forwardRef<TransferFormSheetRef, Props>(
                 <ControlledUiInput
                   control={control}
                   name='receiverUsername'
-                  label='Recipient Username'
-                  placeholder='Enter recipient username'
+                  label='Recipient'
+                  placeholder={`Username, ANS name (e.g. alice.apt) or 0x address`}
                 />
                 <div className='pb-2' />
                 {resolvedAddress &&
-                  debouncedUsername !== '' &&
+                  debouncedRecipient !== '' &&
                   !isResolvingAddress &&
                   !formErrors.receiverUsername && (
-                    <div className='text-sm text-green-500'>Recipient found.</div>
+                    <div className='text-sm text-green-500'>
+                      {parsedRecipient.kind === 'address'
+                        ? 'Address looks valid.'
+                        : `Resolved to ${trimAddress(resolvedAddress.toString())}.`}
+                    </div>
                   )}
               </div>
 

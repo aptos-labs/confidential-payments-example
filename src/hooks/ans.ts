@@ -106,26 +106,6 @@ export function useClaimAnsSubdomain() {
   });
 }
 
-/** Look up the address an ANS subdomain resolves to. */
-export function useGetAnsSubdomainAddress({
-  subdomain,
-  enabled = true,
-}: {
-  subdomain: string;
-  enabled?: boolean;
-}) {
-  return useQuery({
-    queryKey: ['ansSubdomainAddress', subdomain],
-    queryFn: async () => {
-      const out = await aptos.ans.getTargetAddress({
-        name: `${subdomain}.${appConfig.ANS_DOMAIN}`,
-      });
-      return out ?? null;
-    },
-    enabled,
-  });
-}
-
 /** Look up the primary name an address resolves to. */
 export function useGetAnsPrimaryName({
   accountAddress,

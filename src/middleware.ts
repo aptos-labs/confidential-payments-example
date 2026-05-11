@@ -1,26 +1,42 @@
 import { createMiddleware, type MiddlewareFunctionProps } from '@rescale/nemo';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
-import { AppConfig, appConfig } from './config';
+import { appConfig } from './config';
 
-// Iterate through the config and ensure nothing is undefined.
-for (const key in appConfig) {
-  if (appConfig[key as keyof AppConfig] === undefined) {
-    throw new Error(`Required environment variable ${key} is not set.`);
+function getNetworkConfig(request: NextRequest) {
+  const network = request.cookies.get('aptos_network')?.value ?? 'mainnet';
+  if (network === 'testnet') {
+    return {
+      endpoint: 'https://api.testnet.aptoslabs.com/v1',
+      moduleAddr: process.env.NEXT_PUBLIC_TESTNET_CONFIDENTIAL_ASSET_MODULE_ADDR,
+      apiKey: process.env.NEXT_PUBLIC_TESTNET_APTOS_BUILD_API_KEY,
+    };
   }
+  return {
+    endpoint: 'https://api.mainnet.aptoslabs.com/v1',
+    moduleAddr: process.env.NEXT_PUBLIC_MAINNET_CONFIDENTIAL_ASSET_MODULE_ADDR,
+    apiKey: process.env.NEXT_PUBLIC_MAINNET_APTOS_BUILD_API_KEY,
+  };
 }
 
-async function shouldShowMaintenancePage() {
+async function shouldShowMaintenancePage(request: NextRequest) {
   if (appConfig.FORCE_MAINTENANCE_PAGE) {
     return true;
   }
 
+  const { endpoint, moduleAddr, apiKey } = getNetworkConfig(request);
+  // If the module address is not configured for this network, bypass the check.
+  // The client-side config validation will surface missing env vars to the developer.
+  if (!moduleAddr) {
+    return false;
+  }
+
   try {
     const response = await fetch(
-      `https://api.testnet.aptoslabs.com/v1/accounts/${appConfig.CONFIDENTIAL_ASSET_MODULE_ADDR}/module/confidential_asset`,
+      `${endpoint}/accounts/${moduleAddr}/module/confidential_asset`,
       {
         headers: {
-          Authorization: `Bearer ${appConfig.APTOS_BUILD_API_KEY}`,
+          Authorization: `Bearer ${apiKey}`,
         },
       },
     );
@@ -36,7 +52,7 @@ async function shouldShowMaintenancePage() {
 }
 
 const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
-  const showMaintenancePage = await shouldShowMaintenancePage();
+  const showMaintenancePage = await shouldShowMaintenancePage(request);
   if (showMaintenancePage) {
     return NextResponse.redirect(new URL('/maintenance', request.url));
   }
@@ -45,7 +61,7 @@ const moduleValidGuard = async ({ request }: MiddlewareFunctionProps) => {
 };
 
 const maintenanceGuard = async ({ request }: MiddlewareFunctionProps) => {
-  const showMaintenancePage = await shouldShowMaintenancePage();
+  const showMaintenancePage = await shouldShowMaintenancePage(request);
   if (!showMaintenancePage) {
     return NextResponse.redirect(new URL('/', request.url));
   }

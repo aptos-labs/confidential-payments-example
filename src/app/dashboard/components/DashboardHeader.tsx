@@ -43,6 +43,8 @@ import { UiSeparator } from '@/ui/UiSeparator';
 import { UiSheet, UiSheetContent, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
 import UiThemeSwitcher from '@/ui/UiThemeSwitcher';
 
+import NetworkPicker from './NetworkPicker';
+
 export default function DashboardHeader({
   className,
   ...rest
@@ -111,7 +113,8 @@ export default function DashboardHeader({
   const subdomain = ansNameData?.subdomain;
 
   return (
-    <div {...rest} className={cn('flex items-center', className)}>
+    <div {...rest} className={cn('flex items-center gap-3', className)}>
+      <NetworkPicker />
       <UiDropdownMenu>
         <UiDropdownMenuTrigger asChild>
           <button className='flex flex-row items-center gap-2'>

@@ -150,6 +150,8 @@ export const mintUsdt = async (
   gasStationArgs: GasStationArgs,
 ) => {
   const mintFunction = ASSET_CONFIG.usdt.mintFunction;
+  if (!mintFunction)
+    throw new Error('USDT on-chain minting is not supported on this network');
   const tx = await aptos.transaction.build.simple({
     sender: account.accountAddress,
     data: {

@@ -17,6 +17,26 @@ export default async function RootPage() {
         <HomepageLink />
       </div>
 
+      <div className='absolute bottom-4 left-4 z-20 flex gap-4'>
+        <a
+          href='https://aptoslabs.com/terms-wallet'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='typography-caption1 text-textSecondary transition-colors hover:text-textPrimary'
+        >
+          Terms of Use
+        </a>
+
+        <a
+          href='https://aptoslabs.com/privacy'
+          target='_blank'
+          rel='noopener noreferrer'
+          className='typography-caption1 text-textSecondary transition-colors hover:text-textPrimary'
+        >
+          Privacy Policy
+        </a>
+      </div>
+
       <div className='background-gradient absolute -bottom-[20%] -right-[20%] h-[70dvh] w-[75vw] rotate-[70deg] rounded-[50%] opacity-80 blur-[70px]' />
 
       <div

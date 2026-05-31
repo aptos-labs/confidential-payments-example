@@ -399,7 +399,7 @@ function TxItem({
       <ArrowDownIcon size={18} className='text-textPrimary' />
     );
   } else if (activityType === 'deposit') {
-    title = isSelfDeposit ? 'Mint' : 'Deposit';
+    title = 'Deposit';
     icon = isSelfDeposit ? (
       <DollarSignIcon size={18} className='text-textPrimary' />
     ) : (

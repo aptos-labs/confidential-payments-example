@@ -149,8 +149,8 @@ export default function DepositAddress() {
   return (
     <div className='flex w-full flex-col gap-3'>
       <p className='typography-body2 text-textSecondary'>
-        Send funds to this address to deposit. They will be converted to confidential APT
-        automatically once they arrive.
+        Send funds to this address to deposit. They will be converted to confidential
+        APT automatically once they arrive.
       </p>
       {username && <CopyRow label='Username' value={username} />}
       <CopyRow label='Address' value={address} />

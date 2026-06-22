@@ -18,7 +18,7 @@ import { UiSkeleton } from '@/ui/UiSkeleton';
 
 const MINT_AMOUNT = 5;
 
-type FaucetState = 'idle' | 'waiting' | 'veiling' | 'veiled';
+type FaucetState = 'idle' | 'waiting' | 'converting' | 'converted';
 
 export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
   const {
@@ -49,12 +49,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     };
   }, []);
 
-  // Auto-veil function for when funds arrive.
-  const doVeil = useCallback(
+  // Auto-convert function for when funds arrive.
+  const doConvert = useCallback(
     async (amountToDeposit: bigint) => {
       if (!selectedToken || !selectedAccount) return;
 
-      setFaucetState('veiling');
+      setFaucetState('converting');
 
       // Check if this is a coin-based asset (like APT) for choosing the deposit function.
       const [coin] = await tryCatch(getCoinByFaAddress(selectedToken.address));
@@ -90,11 +90,11 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         ).toFixed(2);
         bus.emit(
           BusEvents.Success,
-          `Successfully veiled full public balance of ${formattedAmount} ${selectedToken.symbol}`,
+          `Successfully converted ${formattedAmount} ${selectedToken.symbol} to confidential APT`,
         );
-        setFaucetState('veiled');
+        setFaucetState('converted');
         setDidSubmit(true);
-        // Don't call onSubmit here - let the user see "Veiled!" before drawer closes.
+        // Don't call onSubmit here - let the user see "Converted!" before drawer closes.
         break;
       } while (depositAttempts < 5);
     },
@@ -128,15 +128,15 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
 
       const initialBal = initialBalanceRef.current ?? 0n;
       if (currentBalance > initialBal) {
-        // Funds arrived! Stop polling and veil.
+        // Funds arrived! Stop polling and convert to confidential APT.
         if (pollingRef.current) {
           clearInterval(pollingRef.current);
           pollingRef.current = null;
         }
-        await doVeil(currentBalance);
+        await doConvert(currentBalance);
       }
     }, 400);
-  }, [doVeil, selectedAccount, selectedToken]);
+  }, [doConvert, selectedAccount, selectedToken]);
 
   // If we're in an active faucet state, skip the currTokenStatus checks and render the faucet UI.
   // This prevents flickering to other states during balance reloads.
@@ -166,7 +166,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
     }
   }
 
-  // For assets with external faucets (e.g. APT), show faucet link with auto-veil.
+  // For assets with external faucets (e.g. APT), show faucet link with auto-convert.
   if (assetConfig.faucetUrl) {
     const faucetUrl = getExternalFaucetUrl(selectedAccount.accountAddress.toString());
 
@@ -181,10 +181,10 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       switch (faucetState) {
         case 'waiting':
           return 'Waiting for funds to arrive...';
-        case 'veiling':
-          return 'Veiling...';
-        case 'veiled':
-          return 'Veiled!';
+        case 'converting':
+          return 'Converting to confidential APT...';
+        case 'converted':
+          return 'Converted!';
         default:
           return null;
       }
@@ -204,12 +204,12 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
         </UiButton>
         {statusText && (
           <div className='flex items-center justify-center gap-2 text-sm text-gray-500'>
-            {faucetState === 'waiting' || faucetState === 'veiling' ? (
+            {faucetState === 'waiting' || faucetState === 'converting' ? (
               <RefreshCw size={14} className='animate-spin' />
-            ) : faucetState === 'veiled' ? (
+            ) : faucetState === 'converted' ? (
               <Check size={14} className='text-green-500' />
             ) : null}
-            <span className={faucetState === 'veiled' ? 'text-green-500' : ''}>
+            <span className={faucetState === 'converted' ? 'text-green-500' : ''}>
               {statusText}
             </span>
           </div>
@@ -247,7 +247,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       break;
     } while (mintAttempts < 5);
 
-    // Now we try to veil the funds.
+    // Now we try to convert the funds to confidential APT.
     let depositAttempts = 0;
 
     do {
@@ -298,7 +298,7 @@ export default function DepositMint({ onSubmit }: { onSubmit?: () => void }) {
       }
       bus.emit(
         BusEvents.Success,
-        `Successfully funded your balance with ${MINT_AMOUNT} ${selectedToken.symbol} and veiled it`,
+        `Successfully funded your balance with ${MINT_AMOUNT} ${selectedToken.symbol} and converted it to confidential APT`,
       );
       setIsSubmitting(false);
       onSubmit?.();

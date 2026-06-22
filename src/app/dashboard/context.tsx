@@ -1076,10 +1076,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   }, 5_000);
   */
 
-  const isAutoVeilingRef = useRef(false);
+  const isAutoConvertingRef = useRef(false);
   useEffect(() => {
-    const autoVeilPublicBalance = async () => {
-      if (isAutoVeilingRef.current) return;
+    const autoConvertPublicBalance = async () => {
+      if (isAutoConvertingRef.current) return;
 
       const currTokenStatus = perTokenStatuses[selectedToken.address];
       if (!currTokenStatus) return;
@@ -1089,7 +1089,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
       if (publicBalance <= 0n && pendingBalance <= 0n) return;
 
-      isAutoVeilingRef.current = true;
+      isAutoConvertingRef.current = true;
       try {
         if (publicBalance > 0n) {
           await depositTo(publicBalance, selectedAccount.accountAddress.toString());
@@ -1097,13 +1097,13 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
         await rolloverAccount();
         await loadSelectedDecryptionKeyState();
       } catch (error) {
-        console.error('Error auto-veiling balance:', error);
+        console.error('Error auto-converting to confidential APT:', error);
       } finally {
-        isAutoVeilingRef.current = false;
+        isAutoConvertingRef.current = false;
       }
     };
 
-    const intervalId = setInterval(autoVeilPublicBalance, 5_000);
+    const intervalId = setInterval(autoConvertPublicBalance, 5_000);
     return () => clearInterval(intervalId);
   }, [
     perTokenStatuses,

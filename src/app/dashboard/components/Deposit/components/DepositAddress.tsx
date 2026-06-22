@@ -13,7 +13,7 @@ import { abbrCenter, bus, BusEvents, ErrorHandler, sleep, tryCatch } from '@/hel
 import { useCopyToClipboard } from '@/hooks';
 import { useGetAnsSubdomains } from '@/hooks/ans';
 
-type VeilState = 'waiting' | 'veiling' | 'veiled';
+type ConvertState = 'waiting' | 'converting' | 'converted';
 
 function CopyRow({ label, value }: { label: string; value: string }) {
   const { copy, isCopied } = useCopyToClipboard();
@@ -47,14 +47,14 @@ export default function DepositAddress() {
   const subdomain = ansNameData?.subdomain;
   const username = subdomain ? `${subdomain}.${appConfig.ANS_DOMAIN}.apt` : null;
 
-  const [veilState, setVeilState] = useState<VeilState>('waiting');
+  const [convertState, setConvertState] = useState<ConvertState>('waiting');
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const initialBalanceRef = useRef<bigint | null>(null);
 
-  const doVeil = useCallback(
+  const doConvert = useCallback(
     async (amountToDeposit: bigint) => {
       if (!selectedToken || !selectedAccount) return;
-      setVeilState('veiling');
+      setConvertState('converting');
 
       const [coin] = await tryCatch(getCoinByFaAddress(selectedToken.address));
 
@@ -69,7 +69,7 @@ export default function DepositAddress() {
           attempts += 1;
           if (attempts >= 5) {
             ErrorHandler.process(err);
-            setVeilState('waiting');
+            setConvertState('waiting');
             return;
           }
           await sleep(200);
@@ -79,7 +79,7 @@ export default function DepositAddress() {
         const [, reloadErr] = await tryCatch(reloadBalances(BigInt(receipt.version)));
         if (reloadErr) {
           ErrorHandler.process(reloadErr);
-          setVeilState('waiting');
+          setConvertState('waiting');
           return;
         }
 
@@ -88,9 +88,9 @@ export default function DepositAddress() {
         ).toFixed(2);
         bus.emit(
           BusEvents.Success,
-          `Successfully veiled deposit of ${formatted} ${selectedToken.symbol}`,
+          `Successfully converted ${formatted} ${selectedToken.symbol} to confidential APT`,
         );
-        setVeilState('veiled');
+        setConvertState('converted');
         return;
       }
     },
@@ -125,7 +125,7 @@ export default function DepositAddress() {
             clearInterval(pollingRef.current);
             pollingRef.current = null;
           }
-          await doVeil(current);
+          await doConvert(current);
         }
       }, 400);
     })();
@@ -137,20 +137,20 @@ export default function DepositAddress() {
         pollingRef.current = null;
       }
     };
-  }, [doVeil, selectedAccount, selectedToken]);
+  }, [doConvert, selectedAccount, selectedToken]);
 
   const statusText =
-    veilState === 'waiting'
+    convertState === 'waiting'
       ? 'Waiting for funds to arrive...'
-      : veilState === 'veiling'
-        ? 'Veiling...'
-        : 'Veiled!';
+      : convertState === 'converting'
+        ? 'Converting to confidential APT...'
+        : 'Converted!';
 
   return (
     <div className='flex w-full flex-col gap-3'>
       <p className='typography-body2 text-textSecondary'>
-        Send funds to this address to deposit. They will be veiled automatically once
-        they arrive.
+        Send funds to this address to deposit. They will be converted to confidential APT
+        automatically once they arrive.
       </p>
       {username && <CopyRow label='Username' value={username} />}
       <CopyRow label='Address' value={address} />
@@ -163,12 +163,12 @@ export default function DepositAddress() {
         View on Explorer ({abbrCenter(address)})
       </Link>
       <div className='flex items-center justify-center gap-2 text-sm text-textSecondary'>
-        {veilState === 'veiled' ? (
+        {convertState === 'converted' ? (
           <CheckIcon size={14} className='text-successMain' />
         ) : (
           <RefreshCw size={14} className='animate-spin' />
         )}
-        <span className={veilState === 'veiled' ? 'text-successMain' : ''}>
+        <span className={convertState === 'converted' ? 'text-successMain' : ''}>
           {statusText}
         </span>
       </div>

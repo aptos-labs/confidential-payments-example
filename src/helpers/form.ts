@@ -1,4 +1,4 @@
-import { formatUnits } from 'ethers';
+import { formatUnits, parseUnits } from 'ethers';
 import * as Yup from 'yup';
 
 /**
@@ -10,32 +10,49 @@ export function getYupAmountField(
   totalBalanceBN: bigint,
   symbol: string,
 ) {
+  const minAmount = formatUnits('1', decimals);
+  const maxAmount = formatUnits(totalBalanceBN, decimals);
+
   return yup
-    .number()
-    .min(
-      +formatUnits('1', decimals),
-      `Amount must be greater than ${formatUnits('1', decimals)} ${symbol}.`,
+    .string()
+    .required('Enter amount')
+    .test('isValidNumber', 'Enter a valid amount', value => {
+      if (!value) return false;
+      const num = Number(value);
+      return !Number.isNaN(num) && Number.isFinite(num);
+    })
+    .test(
+      'minAmount',
+      `Amount must be greater than ${minAmount} ${symbol}.`,
+      value => {
+        if (!value) return false;
+        try {
+          return parseUnits(value, decimals) >= 1n;
+        } catch {
+          return false;
+        }
+      },
     )
     .test(
       'maxDecimals',
       `Amount cannot have more than ${decimals} decimal places.`,
       value => {
-        if (value === undefined || value === null) return true;
-        const valueStr = value.toString();
-        const decimalIndex = valueStr.indexOf('.');
+        if (!value) return true;
+        const decimalIndex = value.indexOf('.');
         if (decimalIndex === -1) return true;
-        const decimalPlaces = valueStr.length - decimalIndex - 1;
-        return decimalPlaces <= decimals;
+        return value.length - decimalIndex - 1 <= decimals;
       },
     )
-    .test('maxAmount', (value, { createError, path }) => {
-      if (value === undefined || value === null) return true;
-      if (value > +formatUnits(totalBalanceBN, decimals))
-        return createError({
-          path,
-          message: `Amount cannot be greater than current balance: ${formatUnits(totalBalanceBN, decimals)} ${symbol}.`,
-        });
-      else return true;
-    })
-    .required('Enter amount');
+    .test(
+      'maxAmount',
+      `Amount cannot be greater than current balance: ${maxAmount} ${symbol}.`,
+      value => {
+        if (!value) return false;
+        try {
+          return parseUnits(value, decimals) <= totalBalanceBN;
+        } catch {
+          return false;
+        }
+      },
+    );
 }

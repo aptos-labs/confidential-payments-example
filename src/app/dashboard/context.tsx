@@ -8,7 +8,7 @@ import {
   KeylessAccount,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
-import { appConfig } from '@config';
+import { appConfig, APT_FA_ADDR, PUBLIC_APT_GAS_RESERVE_OCTAS } from '@/config';
 import { FixedNumber, parseUnits } from 'ethers';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { PropsWithChildren, useEffect, useRef } from 'react';
@@ -28,16 +28,18 @@ import {
   getIsBalanceFrozen,
   getIsBalanceNormalized,
   getPrimaryTokenBalance,
+  getUnifiedBalance,
   mintUsdt,
   normalizeConfidentialBalance,
   parseCoinTypeFromCoinStruct,
   registerConfidentialBalance,
   rolloverConfidentialBalance,
   sendAndWaitTx,
+  sendPublicFungibleAsset,
   transferConfidentialAsset,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos';
-import { ErrorHandler, tryCatch } from '@/helpers';
+import { bus, BusEvents, ErrorHandler, formatBalance, formatBalanceFullPrecision, getSendPublicTokenGasReadiness, sleep, tryCatch } from '@/helpers';
 import { useLoading } from '@/hooks';
 import { authStore } from '@/store/auth';
 import { useGasStationArgs } from '@/store/gas-station';
@@ -80,6 +82,14 @@ const AccountDecryptionKeyStatusDefault: AccountDecryptionKeyStatus = {
 };
 
 type LoadingState = 'idle' | 'loading' | 'success' | 'error';
+
+export type SendPublicTokenStatus =
+  | 'preparing'
+  | 'withdrawing-gas'
+  | 'waiting-gas'
+  | 'sending'
+  | 'securing-apt'
+  | 'done';
 
 type KeylessAccountPublic = {
   idToken: string;
@@ -165,6 +175,16 @@ type ConfidentialCoinContextType = {
     token: TokenBaseInfo;
     currentTokenStatus: AccountDecryptionKeyStatus;
   }) => Promise<Error | undefined>;
+  sendPublicTokenWithGas: (args: {
+    tokenAddress: string;
+    recipient: string;
+    amount: bigint;
+    tokenSymbol: string;
+    tokenDecimals: number;
+    onStatusChange?: (status: SendPublicTokenStatus) => void;
+  }) => Promise<void>;
+  pauseAutoConvert: () => void;
+  resumeAutoConvert: () => void;
 };
 
 const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
@@ -218,6 +238,9 @@ const confidentialCoinContext = createContext<ConfidentialCoinContextType>({
 
   testMintTokens: async () => [] as CommittedTransactionResponse[],
   ensureConfidentialBalanceReadyBeforeOp: async () => undefined,
+  sendPublicTokenWithGas: async () => {},
+  pauseAutoConvert: () => {},
+  resumeAutoConvert: () => {},
 });
 
 export const useConfidentialCoinContext = () => {
@@ -998,7 +1021,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       const isAvailableBalanceEnough = availableAmountBN >= formAmountBN;
 
       if (!isConfidentialBalanceEnough) {
-        // const amountToDeposit = formAmountBN - confidentialAmountsSumBN
         const amountToDeposit = publicBalanceBN;
 
         const [faOnlyBalanceResponse, getFAError] = await tryCatch(
@@ -1077,8 +1099,208 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   */
 
   const isAutoConvertingRef = useRef(false);
+  const autoConvertPauseCountRef = useRef(0);
+
+  const pauseAutoConvert = useCallback(() => {
+    autoConvertPauseCountRef.current += 1;
+  }, []);
+
+  const resumeAutoConvert = useCallback(() => {
+    autoConvertPauseCountRef.current = Math.max(0, autoConvertPauseCountRef.current - 1);
+  }, []);
+
+  const waitForPublicAptBalance = useCallback(
+    async (minimumBalance: bigint) => {
+      const accountAddress = selectedAccount.accountAddress.toString();
+
+      for (let attempt = 0; attempt < 30; attempt += 1) {
+        const [balance, error] = await tryCatch(getUnifiedBalance(accountAddress, APT_FA_ADDR));
+        if (!error && balance !== undefined && balance >= minimumBalance) {
+          return balance;
+        }
+        await sleep(400);
+      }
+
+      throw new Error('Timed out waiting for public APT balance after withdraw.');
+    },
+    [selectedAccount],
+  );
+
+  const depositAptConfidential = useCallback(
+    async (amount: bigint, recipient: string) => {
+      const [coin] = await tryCatch(getCoinByFaAddress(APT_FA_ADDR));
+      if (coin) {
+        return depositConfidentialBalanceCoin(
+          selectedAccount,
+          amount,
+          APT_FA_ADDR,
+          recipient,
+        );
+      }
+
+      return depositConfidentialBalance(
+        selectedAccount,
+        amount,
+        recipient,
+        APT_FA_ADDR,
+      );
+    },
+    [selectedAccount],
+  );
+
+  const reloadBalances = useCallback(
+    async (minimumLedgerVersion?: bigint) => {
+      const min = minimumLedgerVersion ? minimumLedgerVersion + 1n : undefined;
+      await Promise.all([
+        reloadPrimaryTokenBalance(min),
+        loadSelectedDecryptionKeyState(min),
+      ]);
+    },
+    [reloadPrimaryTokenBalance, loadSelectedDecryptionKeyState],
+  );
+
+  const sendPublicTokenWithGas = useCallback<
+    ConfidentialCoinContextType['sendPublicTokenWithGas']
+  >(
+    async ({
+      tokenAddress,
+      recipient,
+      amount,
+      tokenSymbol,
+      tokenDecimals,
+      onStatusChange,
+    }) => {
+      const accountAddress = selectedAccount.accountAddress.toString();
+      const decryptionKeyHex = selectedAccountDecryptionKey.toString();
+
+      pauseAutoConvert();
+      onStatusChange?.('preparing');
+
+      try {
+        const gasReadiness = await getSendPublicTokenGasReadiness(
+          selectedAccount,
+          decryptionKeyHex,
+        );
+        if (!gasReadiness.canSend) {
+          throw new Error(
+            gasReadiness.warning ??
+              'Not enough APT to pay gas. You need at least 0.05 APT before sending.',
+          );
+        }
+
+        let publicApt = gasReadiness.publicApt;
+        const hadConfidentialApt = gasReadiness.confidentialApt > 0n;
+
+        if (publicApt < PUBLIC_APT_GAS_RESERVE_OCTAS) {
+          onStatusChange?.('withdrawing-gas');
+
+          const { pending, available } = await getConfidentialBalances(
+            selectedAccount,
+            decryptionKeyHex,
+            APT_FA_ADDR,
+          );
+
+          if (available < PUBLIC_APT_GAS_RESERVE_OCTAS && pending > 0n) {
+            await rolloverConfidentialBalance(
+              selectedAccount,
+              decryptionKeyHex,
+              APT_FA_ADDR,
+            );
+            await reloadBalances();
+          }
+
+          const { available: availableAfterRollover } = await getConfidentialBalances(
+            selectedAccount,
+            decryptionKeyHex,
+            APT_FA_ADDR,
+          );
+
+          if (availableAfterRollover < PUBLIC_APT_GAS_RESERVE_OCTAS) {
+            throw new Error(
+              `Not enough confidential APT for gas. Available: ${formatBalance(availableAfterRollover, 8)} APT, required: 0.05 APT.`,
+            );
+          }
+
+          await withdrawConfidentialBalance(
+            selectedAccount,
+            accountAddress,
+            decryptionKeyHex,
+            PUBLIC_APT_GAS_RESERVE_OCTAS,
+            APT_FA_ADDR,
+          );
+          await reloadBalances();
+
+          onStatusChange?.('waiting-gas');
+          publicApt = await waitForPublicAptBalance(PUBLIC_APT_GAS_RESERVE_OCTAS);
+        }
+
+        if (publicApt < PUBLIC_APT_GAS_RESERVE_OCTAS) {
+          throw new Error(
+            `Not enough public APT for gas. Current balance: ${formatBalance(publicApt, 8)} APT, required: 0.05 APT.`,
+          );
+        }
+
+        onStatusChange?.('sending');
+        const sendReceipt = await sendPublicFungibleAsset(
+          selectedAccount,
+          tokenAddress,
+          recipient,
+          amount,
+        );
+
+        // Token is already sent on-chain — post-send cleanup must not fail the flow.
+        const [, reloadAfterSendError] = await tryCatch(
+          reloadBalances(BigInt(sendReceipt.version)),
+        );
+        if (reloadAfterSendError) {
+          ErrorHandler.processWithoutFeedback(reloadAfterSendError);
+        }
+
+        if (hadConfidentialApt) {
+          onStatusChange?.('securing-apt');
+          const [remainingPublicApt, remainingError] = await tryCatch(
+            getUnifiedBalance(accountAddress, APT_FA_ADDR),
+          );
+          if (remainingError) {
+            ErrorHandler.processWithoutFeedback(remainingError);
+          } else if (remainingPublicApt !== undefined && remainingPublicApt > 0n) {
+            const [, depositError] = await tryCatch(
+              depositAptConfidential(remainingPublicApt, accountAddress),
+            );
+            if (depositError) {
+              ErrorHandler.processWithoutFeedback(depositError);
+            } else {
+              const [, reloadAfterDepositError] = await tryCatch(reloadBalances());
+              if (reloadAfterDepositError) {
+                ErrorHandler.processWithoutFeedback(reloadAfterDepositError);
+              }
+            }
+          }
+        }
+
+        onStatusChange?.('done');
+        bus.emit(
+          BusEvents.Success,
+          `Successfully sent ${formatBalanceFullPrecision(amount, tokenDecimals)} ${tokenSymbol}`,
+        );
+      } finally {
+        resumeAutoConvert();
+      }
+    },
+    [
+      depositAptConfidential,
+      pauseAutoConvert,
+      reloadBalances,
+      resumeAutoConvert,
+      selectedAccount,
+      selectedAccountDecryptionKey,
+      waitForPublicAptBalance,
+    ],
+  );
+
   useEffect(() => {
     const autoConvertPublicBalance = async () => {
+      if (autoConvertPauseCountRef.current > 0) return;
       if (isAutoConvertingRef.current) return;
 
       const currTokenStatus = perTokenStatuses[selectedToken.address];
@@ -1113,20 +1335,6 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     rolloverAccount,
     loadSelectedDecryptionKeyState,
   ]);
-
-  const reloadBalances = useCallback(
-    async (minimumLedgerVersion?: bigint) => {
-      // TODO: We could optimize this by just manually calling waitForIndexer
-      // first before then doing these other functions, otherwise both of them
-      // will wait for the indexer to catch up.
-      const min = minimumLedgerVersion ? minimumLedgerVersion + 1n : undefined;
-      await Promise.all([
-        reloadPrimaryTokenBalance(min),
-        loadSelectedDecryptionKeyState(min),
-      ]);
-    },
-    [reloadPrimaryTokenBalance, loadSelectedDecryptionKeyState],
-  );
 
   return (
     <confidentialCoinContext.Provider
@@ -1172,6 +1380,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
 
         testMintTokens,
         ensureConfidentialBalanceReadyBeforeOp,
+        sendPublicTokenWithGas,
+        pauseAutoConvert,
+        resumeAutoConvert,
       }}
     >
       {children}

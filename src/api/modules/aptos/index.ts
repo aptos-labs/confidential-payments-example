@@ -19,15 +19,17 @@ import {
 } from '@aptos-labs/ts-sdk';
 import { BN, time } from '@distributedlab/tools';
 import { sha256 } from '@noble/hashes/sha256';
-import { ethers, isHexString } from 'ethers';
+import { abbrCenter } from '@/helpers/formatters';
+
+import { ethers, isHexString, parseUnits } from 'ethers';
 import { jwtDecode } from 'jwt-decode';
 import { z } from 'zod';
 
-import { appConfig, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
+import { appConfig, APT_FA_ADDR, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
-import { aptos, confidentialAsset } from './client';
+import { aptos, aptosSelfPaid, confidentialAsset } from './client';
 
 export const accountFromPrivateKey = (privateKeyHex: string) => {
   const sanitizedPrivateKeyHex = privateKeyHex.startsWith('0x')
@@ -104,9 +106,11 @@ export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
   return new TwistedEd25519PrivateKey(hashDigest);
 };
 
+type TransactionSigner = Account | KeylessAccount;
+
 export const sendTransaction = async (
   transaction: SimpleTransaction,
-  signer: Account,
+  signer: TransactionSigner,
   gasStationArgs: GasStationArgs,
 ) => {
   if (!gasStationArgs.withGasStation) {
@@ -135,12 +139,24 @@ export const sendTransaction = async (
 
 export const sendAndWaitTx = async (
   transaction: SimpleTransaction,
-  signer: Account,
+  signer: TransactionSigner,
   gasStationArgs: GasStationArgs,
 ): Promise<CommittedTransactionResponse> => {
   const transactionHash = await sendTransaction(transaction, signer, gasStationArgs);
 
   return aptos.waitForTransaction({ transactionHash });
+};
+
+export const sendAndWaitTxSelfPaid = async (
+  transaction: SimpleTransaction,
+  signer: TransactionSigner,
+): Promise<CommittedTransactionResponse> => {
+  const pendingTxn = await aptosSelfPaid.signAndSubmitTransaction({
+    signer,
+    transaction,
+  });
+
+  return aptosSelfPaid.waitForTransaction({ transactionHash: pendingTxn.hash });
 };
 
 // Only works for USDT - calls the on-chain faucet.
@@ -603,22 +619,100 @@ export const getFABalance = async (
   });
 };
 
+export type PublicTokenBalance = TokenBaseInfo & { balance: bigint };
+
+const FA_METADATA_ADDRESS_RE = /^0x[a-fA-F0-9]{64}$/;
+
+const isSendablePublicFaAddress = (assetType: string) =>
+  FA_METADATA_ADDRESS_RE.test(assetType) &&
+  assetType.toLowerCase() !== APT_FA_ADDR.toLowerCase();
+
+export const getAccountPublicTokenBalances = async (
+  account: Account | KeylessAccount,
+): Promise<PublicTokenBalance[]> => {
+  const balances = await aptos.fungibleAsset.getCurrentFungibleAssetBalances({
+    options: {
+      where: {
+        owner_address: {
+          _eq: account.accountAddress.toString(),
+        },
+        amount: {
+          _gt: 0,
+        },
+      },
+    },
+  });
+
+  const tokens = await Promise.all(
+    balances.map(async bal => {
+      const address = bal.asset_type;
+      const balance = BigInt(bal.amount);
+
+      let metadata: TokenBaseInfo | undefined;
+      try {
+        const metadatas = await getFungibleAssetMetadata(address);
+        metadata = metadatas[0];
+      } catch {
+        metadata = undefined;
+      }
+
+      return {
+        address,
+        name: metadata?.name ?? '',
+        symbol: metadata?.symbol ?? abbrCenter(address),
+        decimals: metadata?.decimals ?? 8,
+        iconUri: metadata?.iconUri ?? '',
+        balance,
+      };
+    }),
+  );
+
+  return tokens
+    .filter(token => isSendablePublicFaAddress(token.address))
+    .sort((a, b) => {
+    if (a.balance > b.balance) return -1;
+    if (a.balance < b.balance) return 1;
+    return 0;
+  });
+};
+
+export const sendPublicFungibleAsset = async (
+  account: TransactionSigner,
+  tokenAddress: string,
+  recipient: string,
+  amount: bigint,
+) => {
+  const transaction = await aptosSelfPaid.fungibleAsset.transferFungibleAsset({
+    sender: account,
+    fungibleAssetMetadataAddress: tokenAddress,
+    recipient,
+    amount,
+    options: {
+      withFeePayer: false,
+      maxGasAmount: 20000,
+    },
+  });
+
+  // Gas station is not configured for 0x1::primary_fungible_store::transfer.
+  // Submit with the sender paying gas directly instead.
+  return sendAndWaitTxSelfPaid(transaction, account);
+};
+
 export const sendPrimaryToken = async (
   account: Account,
   receiverAccountAddressHex: string,
   humanAmount: string,
-  gasStationArgs: GasStationArgs,
+  _gasStationArgs: GasStationArgs,
 ) => {
-  const amount = BN.fromRaw(humanAmount, 8).value;
+  const [metadata] = await getFungibleAssetMetadata(appConfig.PRIMARY_TOKEN_ADDRESS);
+  const decimals = metadata?.decimals ?? 8;
 
-  const sendPrimaryTokenTransaction = await aptos.fungibleAsset.transferFungibleAsset({
-    sender: account,
-    fungibleAssetMetadataAddress: appConfig.PRIMARY_TOKEN_ADDRESS,
-    recipient: receiverAccountAddressHex,
-    amount: BigInt(amount),
-  });
-
-  return sendAndWaitTx(sendPrimaryTokenTransaction, account, gasStationArgs);
+  return sendPublicFungibleAsset(
+    account,
+    appConfig.PRIMARY_TOKEN_ADDRESS,
+    receiverAccountAddressHex,
+    parseUnits(humanAmount, decimals),
+  );
 };
 
 // =========================================================================

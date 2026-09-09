@@ -29,6 +29,7 @@ UiInput.displayName = 'UiInput';
 
 export type ControlledInputProps<T extends FieldValues> = Props & {
   label?: ReactNode;
+  hideErrorMessage?: boolean;
 } & UseControllerProps<T>;
 
 function ControlledUiInput<T extends FieldValues>({
@@ -36,20 +37,23 @@ function ControlledUiInput<T extends FieldValues>({
   control,
   rules,
   label,
+  hideErrorMessage = false,
+  id: idProp,
   ...rest
 }: ControlledInputProps<T>) {
-  const id = useMemo(() => v4(), []);
+  const generatedId = useMemo(() => v4(), []);
+  const inputId = idProp ?? generatedId;
   const { field, fieldState } = useController({ control, name, rules: rules });
 
   return (
     <div className='grid gap-2'>
       {label &&
         (() => {
-          return <UiLabel htmlFor={id}>{label}</UiLabel>;
+          return <UiLabel htmlFor={inputId}>{label}</UiLabel>;
         })()}
       <UiInput
         {...rest}
-        id={id}
+        id={inputId}
         ref={field.ref}
         autoCapitalize='none'
         onChange={e => {
@@ -62,9 +66,9 @@ function ControlledUiInput<T extends FieldValues>({
         }}
         value={field.value}
       />
-      {fieldState.error?.message && (
+      {!hideErrorMessage && fieldState.error?.message ? (
         <div className='pt-2 text-sm text-warningMain'>{fieldState.error.message}</div>
-      )}
+      ) : null}
     </div>
   );
 }

@@ -17,9 +17,9 @@ import {
   getSendPublicTokenErrorMessage,
   getSendPublicTokenGasReadiness,
   getYupAmountField,
+  type SendPublicTokenGasReadiness,
   trimAddress,
   tryCatch,
-  type SendPublicTokenGasReadiness,
 } from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGetTargetAddress } from '@/hooks/ans';

@@ -688,7 +688,6 @@ export const sendPublicFungibleAsset = async (
     recipient,
     amount,
     options: {
-      withFeePayer: false,
       maxGasAmount: 20000,
     },
   });

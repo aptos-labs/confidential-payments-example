@@ -4,17 +4,23 @@ import { AccountAddress } from '@aptos-labs/ts-sdk';
 import Avatar from 'boring-avatars';
 import { formatUnits, parseUnits } from 'ethers';
 import { ArrowLeft, RefreshCw } from 'lucide-react';
-import { type ComponentProps, useCallback, useEffect, useRef, useState } from 'react';
+import { ComponentProps, useCallback, useEffect, useRef, useState } from 'react';
 
-import {
-  getAccountPublicTokenBalances,
-  PublicTokenBalance,
-} from '@/api/modules/aptos';
+import { getAccountPublicTokenBalances, PublicTokenBalance } from '@/api/modules/aptos';
 import {
   SendPublicTokenStatus,
   useConfidentialCoinContext,
 } from '@/app/dashboard/context';
-import { ErrorHandler, formatBalanceFullPrecision, getSendPublicTokenErrorMessage, getSendPublicTokenGasReadiness, getYupAmountField, trimAddress, tryCatch, type SendPublicTokenGasReadiness } from '@/helpers';
+import {
+  ErrorHandler,
+  formatBalanceFullPrecision,
+  getSendPublicTokenErrorMessage,
+  getSendPublicTokenGasReadiness,
+  getYupAmountField,
+  trimAddress,
+  tryCatch,
+  type SendPublicTokenGasReadiness,
+} from '@/helpers';
 import { useForm } from '@/hooks';
 import { useGetTargetAddress } from '@/hooks/ans';
 import { cn } from '@/theme/utils';
@@ -22,7 +28,13 @@ import { UiButton } from '@/ui/UiButton';
 import { ControlledUiInput } from '@/ui/UiInput';
 import { UiLabel } from '@/ui/UiLabel';
 import { UiSeparator } from '@/ui/UiSeparator';
-import { UiSheet, UiSheetContent, UiSheetDescription, UiSheetHeader, UiSheetTitle } from '@/ui/UiSheet';
+import {
+  UiSheet,
+  UiSheetContent,
+  UiSheetDescription,
+  UiSheetHeader,
+  UiSheetTitle,
+} from '@/ui/UiSheet';
 
 type SendPublicTokenSheetProps = {
   onSubmit: () => void;
@@ -42,7 +54,9 @@ export default function SendPublicTokenSheet({
 
   const loadTokens = useCallback(async () => {
     setIsLoadingTokens(true);
-    const [balances, error] = await tryCatch(getAccountPublicTokenBalances(selectedAccount));
+    const [balances, error] = await tryCatch(
+      getAccountPublicTokenBalances(selectedAccount),
+    );
     if (error) {
       ErrorHandler.process(error);
       setTokens([]);
@@ -99,14 +113,19 @@ export default function SendPublicTokenSheet({
         ) : (
           <div className='flex flex-col gap-3'>
             <div className='flex items-center justify-between'>
-              <span className='typography-subtitle4 text-textPrimary'>Select token</span>
+              <span className='typography-subtitle4 text-textPrimary'>
+                Select token
+              </span>
               <button
                 type='button'
                 onClick={() => void loadTokens()}
                 disabled={isLoadingTokens}
                 className='text-textSecondary'
               >
-                <RefreshCw size={16} className={cn(isLoadingTokens && 'animate-spin')} />
+                <RefreshCw
+                  size={16}
+                  className={cn(isLoadingTokens && 'animate-spin')}
+                />
               </button>
             </div>
 
@@ -142,7 +161,8 @@ export default function SendPublicTokenSheet({
                     </div>
                   </div>
                   <span className='typography-subtitle4 shrink-0 text-textPrimary'>
-                    {formatBalanceFullPrecision(token.balance, token.decimals)} {token.symbol}
+                    {formatBalanceFullPrecision(token.balance, token.decimals)}{' '}
+                    {token.symbol}
                   </span>
                 </button>
               ))
@@ -167,7 +187,9 @@ function SendPublicTokenForm({
     useConfidentialCoinContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<SendPublicTokenStatus | null>(null);
-  const [gasReadiness, setGasReadiness] = useState<SendPublicTokenGasReadiness | null>(null);
+  const [gasReadiness, setGasReadiness] = useState<SendPublicTokenGasReadiness | null>(
+    null,
+  );
   const [isLoadingGasReadiness, setIsLoadingGasReadiness] = useState(true);
   const [debouncedRecipient, setDebouncedRecipient] = useState('');
   const debounceTimerRef = useRef<NodeJS.Timeout | null>(null);
@@ -271,7 +293,11 @@ function SendPublicTokenForm({
 
   const fillMaxAmount = useCallback(() => {
     const maxAmount = formatUnits(token.balance, token.decimals);
-    setValue('amount', maxAmount, { shouldValidate: true, shouldDirty: true, shouldTouch: true });
+    setValue('amount', maxAmount, {
+      shouldValidate: true,
+      shouldDirty: true,
+      shouldTouch: true,
+    });
   }, [setValue, token.balance, token.decimals]);
 
   const submit = useCallback(
@@ -363,15 +389,18 @@ function SendPublicTokenForm({
         <div className='flex flex-col'>
           <span className='typography-subtitle4 text-textPrimary'>{token.symbol}</span>
           <span className='typography-caption2 text-textSecondary'>
-            Available: {formatBalanceFullPrecision(token.balance, token.decimals)} {token.symbol}
+            Available: {formatBalanceFullPrecision(token.balance, token.decimals)}{' '}
+            {token.symbol}
           </span>
         </div>
       </div>
 
       {isLoadingGasReadiness ? (
-        <p className='typography-caption2 text-textSecondary'>Checking APT for gas...</p>
+        <p className='typography-caption2 text-textSecondary'>
+          Checking APT for gas...
+        </p>
       ) : gasReadiness?.warning ? (
-        <div className='rounded-md border border-warningMain bg-warningMain/10 p-3'>
+        <div className='bg-warningMain/10 rounded-md border border-warningMain p-3'>
           <p className='typography-caption1 text-textPrimary'>{gasReadiness.warning}</p>
         </div>
       ) : gasReadiness?.info ? (
@@ -423,7 +452,12 @@ function SendPublicTokenForm({
       <UiButton
         className='w-full'
         onClick={submit}
-        disabled={!canSubmitForm || isSubmitting || isLoadingGasReadiness || gasReadiness?.canSend === false}
+        disabled={
+          !canSubmitForm ||
+          isSubmitting ||
+          isLoadingGasReadiness ||
+          gasReadiness?.canSend === false
+        }
       >
         {isSubmitting ? (
           <>

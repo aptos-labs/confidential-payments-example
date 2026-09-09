@@ -182,7 +182,9 @@ export default function DashboardHeader({
             </button>
           </UiDropdownMenuItem>
           <UiDropdownMenuItem onClick={() => setIsSendPublicTokenSheetOpen(true)}>
-            <span className='typography-caption1 text-textPrimary'>Send Public Token</span>
+            <span className='typography-caption1 text-textPrimary'>
+              Send Public Token
+            </span>
             <UiIcon name='ForwardIcon' className='ml-auto size-4' />
           </UiDropdownMenuItem>
           <UiDropdownMenuItem>

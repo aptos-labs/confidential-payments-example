@@ -17,15 +17,14 @@ import {
   PrivateKeyVariants,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
-import { BN, time } from '@distributedlab/tools';
+import { time } from '@distributedlab/tools';
 import { sha256 } from '@noble/hashes/sha256';
-import { abbrCenter } from '@/helpers/formatters';
-
 import { ethers, isHexString, parseUnits } from 'ethers';
 import { jwtDecode } from 'jwt-decode';
 import { z } from 'zod';
 
 import { appConfig, APT_FA_ADDR, ASSET_CONFIG, PRIMARY_ASSET } from '@/config';
+import { abbrCenter } from '@/helpers/formatters';
 import { GasStationArgs } from '@/store/gas-station';
 import { type TokenBaseInfo } from '@/store/wallet';
 
@@ -670,10 +669,10 @@ export const getAccountPublicTokenBalances = async (
   return tokens
     .filter(token => isSendablePublicFaAddress(token.address))
     .sort((a, b) => {
-    if (a.balance > b.balance) return -1;
-    if (a.balance < b.balance) return 1;
-    return 0;
-  });
+      if (a.balance > b.balance) return -1;
+      if (a.balance < b.balance) return 1;
+      return 0;
+    });
 };
 
 export const sendPublicFungibleAsset = async (

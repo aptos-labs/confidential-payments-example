@@ -21,18 +21,14 @@ export function getYupAmountField(
       const num = Number(value);
       return !Number.isNaN(num) && Number.isFinite(num);
     })
-    .test(
-      'minAmount',
-      `Amount must be greater than ${minAmount} ${symbol}.`,
-      value => {
-        if (!value) return false;
-        try {
-          return parseUnits(value, decimals) >= 1n;
-        } catch {
-          return false;
-        }
-      },
-    )
+    .test('minAmount', `Amount must be greater than ${minAmount} ${symbol}.`, value => {
+      if (!value) return false;
+      try {
+        return parseUnits(value, decimals) >= 1n;
+      } catch {
+        return false;
+      }
+    })
     .test(
       'maxDecimals',
       `Amount cannot have more than ${decimals} decimal places.`,

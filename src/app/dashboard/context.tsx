@@ -8,7 +8,6 @@ import {
   KeylessAccount,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
-import { appConfig, APT_FA_ADDR, PUBLIC_APT_GAS_RESERVE_OCTAS } from '@/config';
 import { FixedNumber, parseUnits } from 'ethers';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { PropsWithChildren, useEffect, useRef } from 'react';
@@ -39,7 +38,17 @@ import {
   transferConfidentialAsset,
   withdrawConfidentialBalance,
 } from '@/api/modules/aptos';
-import { bus, BusEvents, ErrorHandler, formatBalance, formatBalanceFullPrecision, getSendPublicTokenGasReadiness, sleep, tryCatch } from '@/helpers';
+import { appConfig, APT_FA_ADDR, PUBLIC_APT_GAS_RESERVE_OCTAS } from '@/config';
+import {
+  bus,
+  BusEvents,
+  ErrorHandler,
+  formatBalance,
+  formatBalanceFullPrecision,
+  getSendPublicTokenGasReadiness,
+  sleep,
+  tryCatch,
+} from '@/helpers';
 import { useLoading } from '@/hooks';
 import { authStore } from '@/store/auth';
 import { useGasStationArgs } from '@/store/gas-station';
@@ -1106,7 +1115,10 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
   }, []);
 
   const resumeAutoConvert = useCallback(() => {
-    autoConvertPauseCountRef.current = Math.max(0, autoConvertPauseCountRef.current - 1);
+    autoConvertPauseCountRef.current = Math.max(
+      0,
+      autoConvertPauseCountRef.current - 1,
+    );
   }, []);
 
   const waitForPublicAptBalance = useCallback(
@@ -1114,7 +1126,9 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
       const accountAddress = selectedAccount.accountAddress.toString();
 
       for (let attempt = 0; attempt < 30; attempt += 1) {
-        const [balance, error] = await tryCatch(getUnifiedBalance(accountAddress, APT_FA_ADDR));
+        const [balance, error] = await tryCatch(
+          getUnifiedBalance(accountAddress, APT_FA_ADDR),
+        );
         if (!error && balance !== undefined && balance >= minimumBalance) {
           return balance;
         }

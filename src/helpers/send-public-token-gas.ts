@@ -69,7 +69,11 @@ export async function getSendPublicTokenGasReadiness(
 
 export function getSendPublicTokenErrorMessage(error: unknown): string {
   const text =
-    error instanceof Error ? error.message : typeof error === 'string' ? error : String(error);
+    error instanceof Error
+      ? error.message
+      : typeof error === 'string'
+        ? error
+        : String(error);
 
   if (text.includes('INSUFFICIENT_BALANCE_FOR_TRANSACTION_FEE')) {
     return 'Transfer failed: not enough APT left to pay transaction gas.';

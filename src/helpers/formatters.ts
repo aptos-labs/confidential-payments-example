@@ -141,13 +141,22 @@ export function formatBalance(
     const formatCfg = formatConfig || {
       ...defaultBnFormatConfig,
       groupSeparator: '',
-      ...(decimals && { decimals }),
+      ...(decimals !== undefined && { decimals }),
     };
 
     return convertNumberWithPrefix(formatAmount(amount, decimalsOrConfig, formatCfg));
   } catch (error) {
     return '0';
   }
+}
+
+/** Full on-chain precision without M/B/T abbreviation or display rounding. */
+export function formatBalanceFullPrecision(amount: BnLike, decimals: number) {
+  return formatAmount(amount, decimals, {
+    ...defaultBnFormatConfig,
+    groupSeparator: '',
+    decimals,
+  });
 }
 
 export function abbrCenter(addr: string, start = 4, end = 4) {

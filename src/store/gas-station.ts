@@ -4,6 +4,9 @@
  * claim subdomain function. If using USDT as the primary asset, the USDT mint
  * function must also be allowed. See ASSET_CONFIG in config.ts for the function
  * addresses.
+ *
+ * Public FA transfers (0x1::primary_fungible_store::transfer) are not gas-station
+ * sponsored and are submitted with the sender paying APT gas directly.
  */
 
 import {

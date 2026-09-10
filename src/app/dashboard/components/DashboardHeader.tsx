@@ -1,7 +1,6 @@
 'use client';
 
 import { Account } from '@aptos-labs/ts-sdk';
-import { BN } from '@distributedlab/tools';
 import Avatar from 'boring-avatars';
 import { jwtDecode } from 'jwt-decode';
 import { CheckIcon, CopyIcon, EllipsisIcon, TrashIcon } from 'lucide-react';
@@ -20,15 +19,14 @@ import { Controller } from 'react-hook-form';
 import {
   generatePrivateKeyHex,
   getAccountExplorerUrl,
-  sendPrimaryToken,
   validatePrivateKeyHex,
 } from '@/api/modules/aptos';
+import SendPublicTokenSheet from '@/app/dashboard/components/SendPublicTokenSheet';
 import { useConfidentialCoinContext } from '@/app/dashboard/context';
 import { abbrCenter, ErrorHandler, isMobile } from '@/helpers';
 import { useCopyToClipboard, useForm } from '@/hooks';
 import { useGetAnsSubdomains } from '@/hooks/ans';
 import { authStore } from '@/store/auth';
-import { useGasStationArgs } from '@/store/gas-station';
 import { cn } from '@/theme/utils';
 import { UiIcon } from '@/ui';
 import { UiButton } from '@/ui/UiButton';
@@ -74,7 +72,7 @@ export default function DashboardHeader({
 
   const [isAccountsBottomSheet, setIsAccountsBottomSheet] = useState(false);
   const [isAddAccountBottomSheet, setIsAddAccountBottomSheet] = useState(false);
-  const [isTransferNativeBottomSheet, setIsTransferNativeBottomSheet] = useState(false);
+  const [isSendPublicTokenSheetOpen, setIsSendPublicTokenSheetOpen] = useState(false);
 
   const keylessPubAcc = useMemo(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -91,7 +89,7 @@ export default function DashboardHeader({
 
     return {
       name: decodedJwt.name,
-      avatarUrl: decodedJwt.picture,
+      avatarUrl: decodedJwt.picture?.trim() || undefined,
     };
   }, [selectedAccount]);
 
@@ -104,10 +102,6 @@ export default function DashboardHeader({
     [addNewAccount],
   );
 
-  const handleTransferNative = useCallback(async () => {
-    setIsTransferNativeBottomSheet(false);
-  }, []);
-
   const { copy, isCopied } = useCopyToClipboard();
 
   const subdomain = ansNameData?.subdomain;
@@ -118,7 +112,7 @@ export default function DashboardHeader({
       <UiDropdownMenu>
         <UiDropdownMenuTrigger asChild>
           <button className='flex flex-row items-center gap-2'>
-            {keylessPubAcc ? (
+            {keylessPubAcc?.avatarUrl ? (
               <Image
                 src={keylessPubAcc.avatarUrl}
                 alt={keylessPubAcc.name}
@@ -126,6 +120,8 @@ export default function DashboardHeader({
                 height={24}
                 className='rounded-full'
               />
+            ) : keylessPubAcc ? (
+              <Avatar name={keylessPubAcc.name} size={24} />
             ) : (
               <Avatar name={selectedAccount.accountAddress.toString()} size={24} />
             )}
@@ -184,6 +180,12 @@ export default function DashboardHeader({
                 <UiIcon name='CopyIcon' className='size-4' />
               )}
             </button>
+          </UiDropdownMenuItem>
+          <UiDropdownMenuItem onClick={() => setIsSendPublicTokenSheetOpen(true)}>
+            <span className='typography-caption1 text-textPrimary'>
+              Send Public Token
+            </span>
+            <UiIcon name='ForwardIcon' className='ml-auto size-4' />
           </UiDropdownMenuItem>
           <UiDropdownMenuItem>
             <Link
@@ -301,10 +303,10 @@ export default function DashboardHeader({
         onSubmit={handleAddNewAccount}
       />
 
-      <TransferNativeBottomSheet
-        open={isTransferNativeBottomSheet}
-        onOpenChange={setIsTransferNativeBottomSheet}
-        onSubmit={handleTransferNative}
+      <SendPublicTokenSheet
+        open={isSendPublicTokenSheetOpen}
+        onOpenChange={setIsSendPublicTokenSheetOpen}
+        onSubmit={() => setIsSendPublicTokenSheetOpen(false)}
       />
     </div>
   );
@@ -481,130 +483,6 @@ function AddNewAccountBottomSheet({
               disabled={isFormDisabled}
             >
               Create new
-            </UiButton>
-          </div>
-        </div>
-      </UiSheetContent>
-    </UiSheet>
-  );
-}
-
-type TransferNativeBottomSheetProps = {
-  onSubmit: () => void;
-} & Omit<ComponentProps<typeof UiSheet>, 'children'>;
-
-function TransferNativeBottomSheet({
-  onSubmit,
-  ...rest
-}: TransferNativeBottomSheetProps) {
-  const { selectedAccount, primaryTokenBalance, reloadBalances } =
-    useConfidentialCoinContext();
-  const gasStationArgs = useGasStationArgs();
-
-  const {
-    formState,
-    isFormDisabled,
-    handleSubmit,
-    disableForm,
-    enableForm,
-    control,
-    setValue,
-  } = useForm(
-    {
-      receiverAccountAddress: '',
-      amount: '',
-    },
-    yup =>
-      yup.object().shape({
-        receiverAccountAddress: yup.string().required('Enter receiver address'),
-        amount: yup
-          .number()
-          .required('Enter amount')
-          .max(Number(BN.fromBigInt(primaryTokenBalance, 8).toString())),
-      }),
-  );
-
-  const clearForm = useCallback(() => {
-    setValue('receiverAccountAddress', '');
-    setValue('amount', '');
-  }, [setValue]);
-
-  const submit = useCallback(
-    () =>
-      handleSubmit(async formData => {
-        disableForm();
-        try {
-          await sendPrimaryToken(
-            selectedAccount,
-            formData.receiverAccountAddress,
-            formData.amount,
-            gasStationArgs,
-          );
-          await reloadBalances();
-          onSubmit();
-          clearForm();
-        } catch (error) {
-          ErrorHandler.process(error);
-        }
-        enableForm();
-      })(),
-    [
-      clearForm,
-      disableForm,
-      enableForm,
-      handleSubmit,
-      onSubmit,
-      reloadBalances,
-      selectedAccount,
-      gasStationArgs,
-    ],
-  );
-
-  return (
-    <UiSheet {...rest}>
-      <UiSheetContent side='bottom'>
-        <UiSheetHeader>
-          <UiSheetTitle>Send APT</UiSheetTitle>
-        </UiSheetHeader>
-        <UiSeparator className='my-4' />
-
-        <div className='flex flex-col gap-4'>
-          <Controller
-            control={control}
-            name='receiverAccountAddress'
-            render={({ field }) => (
-              <UiInput
-                {...field}
-                placeholder='Enter account address'
-                disabled={isFormDisabled}
-              />
-            )}
-          />
-
-          <Controller
-            control={control}
-            name='amount'
-            render={({ field }) => (
-              <UiInput
-                {...field}
-                placeholder='Enter amount'
-                type='number'
-                disabled={isFormDisabled}
-              />
-            )}
-          />
-        </div>
-
-        <div className='mt-[50] pt-4'>
-          <UiSeparator className='mb-4' />
-          <div className='flex flex-col gap-3'>
-            <UiButton
-              onClick={submit}
-              disabled={
-                isFormDisabled || !formState.amount || !formState.receiverAccountAddress
-              }
-            >
-              Send
             </UiButton>
           </div>
         </div>

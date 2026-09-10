@@ -6,4 +6,5 @@ export * from './form';
 export * from './formatters';
 export * from './promise';
 export * from './router';
+export * from './send-public-token-gas';
 export * from './try-catch';

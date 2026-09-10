@@ -47,6 +47,9 @@ export type AppConfig = {
 export const APT_FA_ADDR =
   '0x000000000000000000000000000000000000000000000000000000000000000a';
 
+/** APT amount withdrawn from confidential balance to pay for Send Public Token gas. */
+export const PUBLIC_APT_GAS_RESERVE_OCTAS = 5_000_000n;
+
 // Network-specific environment variables — Next.js requires static references to NEXT_PUBLIC_ vars
 const NETWORK_ENV_VARS = {
   mainnet: {

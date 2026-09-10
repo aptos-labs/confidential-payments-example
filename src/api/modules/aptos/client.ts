@@ -17,6 +17,16 @@ const aptosConfig = new AptosConfig({
   },
 });
 export const aptos = new Aptos(aptosConfig);
+
+// Client without gas-station submitter for sender-paid transactions.
+const aptosSelfPaidConfig = new AptosConfig({
+  network: NetworkToNetworkName[appConfig.APTOS_NETWORK],
+  clientConfig: {
+    API_KEY: appConfig.APTOS_BUILD_API_KEY,
+  },
+});
+export const aptosSelfPaid = new Aptos(aptosSelfPaidConfig);
+
 export const confidentialAsset = new ConfidentialAsset({
   config: aptosConfig,
   withFeePayer: true,

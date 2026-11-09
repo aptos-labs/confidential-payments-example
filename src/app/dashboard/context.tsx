@@ -3,11 +3,11 @@
 import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
 import {
   Account,
-  AnyNumber,
-  CommittedTransactionResponse,
-  KeylessAccount,
+  type AnyNumber,
+  type CommittedTransactionResponse,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
+import { KeylessAccount } from '@aptos-labs/ts-sdk/keyless';
 import { FixedNumber, parseUnits } from 'ethers';
 import { jwtDecode, JwtPayload } from 'jwt-decode';
 import { PropsWithChildren, useEffect, useRef } from 'react';
@@ -125,7 +125,7 @@ type ConfidentialCoinContextType = {
   // reloadAptBalance: () => Promise<void>;
 
   primaryTokenBalance: number;
-  reloadPrimaryTokenBalance: (minimumLedgerVersion?: bigint) => Promise<void>;
+  reloadPrimaryTokenBalance: () => Promise<void>;
 
   reloadBalances: (minimumLedgerVersion?: bigint) => Promise<void>;
 
@@ -329,8 +329,8 @@ const useAccounts = () => {
     update,
   } = useLoading(
     0,
-    (minimumLedgerVersion?: AnyNumber) => {
-      return getPrimaryTokenBalance(selectedAccount, minimumLedgerVersion);
+    () => {
+      return getPrimaryTokenBalance(selectedAccount);
     },
     { loadArgs: [selectedAccount] },
   );
@@ -1166,7 +1166,7 @@ export const ConfidentialCoinContextProvider = ({ children }: PropsWithChildren)
     async (minimumLedgerVersion?: bigint) => {
       const min = minimumLedgerVersion ? minimumLedgerVersion + 1n : undefined;
       await Promise.all([
-        reloadPrimaryTokenBalance(min),
+        reloadPrimaryTokenBalance(),
         loadSelectedDecryptionKeyState(min),
       ]);
     },

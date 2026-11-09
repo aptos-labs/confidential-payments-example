@@ -9,18 +9,10 @@
  * sponsored and are submitted with the sender paying APT gas directly.
  */
 
-import {
-  createGasStationClient,
-  GasStationClient,
-} from '@aptos-labs/gas-station-client';
-import { Network } from '@aptos-labs/ts-sdk';
 import { useMemo } from 'react';
-
-import { appConfig } from '@/config';
 
 export type GasStationArgs = {
   withGasStation: boolean;
-  gasStationClient: GasStationClient;
 };
 
 export const useGasStationArgs = () => {
@@ -29,10 +21,6 @@ export const useGasStationArgs = () => {
     // for gas themselves, in case the gas station is down or something.
     const args: GasStationArgs = {
       withGasStation: true,
-      gasStationClient: createGasStationClient({
-        network: appConfig.APTOS_NETWORK as Network,
-        apiKey: appConfig.APTOS_BUILD_GAS_STATION_KEY,
-      }),
     };
     return args;
   }, []);

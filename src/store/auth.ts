@@ -1,12 +1,8 @@
 'use client';
 
 import { TwistedEd25519PrivateKey } from '@aptos-labs/confidential-asset';
-import {
-  Account,
-  EphemeralKeyPair,
-  KeylessAccount,
-  ProofFetchStatus,
-} from '@aptos-labs/ts-sdk';
+import { Account } from '@aptos-labs/ts-sdk';
+import { EphemeralKeyPair, KeylessAccount } from '@aptos-labs/ts-sdk/keyless';
 import { appConfig } from '@config';
 import { useMemo } from 'react';
 import { create } from 'zustand';
@@ -186,7 +182,12 @@ const useAuthStore = create<KeylessAccountsState & KeylessAccountsActions>()(
             throw new Error('switchKeylessAccount: Ephemeral key pair not found');
           }
 
-          const proofFetchCallback = async (res: ProofFetchStatus) => {
+          // ProofFetchStatus is not re-exported from the ts-sdk 7 entry points,
+          // so spell the discriminated union inline: { status: 'Success' } |
+          // { status: 'Failed'; error: string }.
+          const proofFetchCallback = async (
+            res: { status: 'Success' } | { status: 'Failed'; error: string },
+          ) => {
             if (String(res.status).toLowerCase() === 'failed') {
               get().disconnectKeylessAccount();
             } else {

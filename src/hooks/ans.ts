@@ -1,9 +1,5 @@
-import {
-  Account,
-  AccountAddress,
-  AccountAddressInput,
-  KeylessPublicKey,
-} from '@aptos-labs/ts-sdk';
+import { Account, AccountAddress, type AccountAddressInput } from '@aptos-labs/ts-sdk';
+import { KeylessPublicKey } from '@aptos-labs/ts-sdk/keyless';
 import { useMutation, useQuery } from '@tanstack/react-query';
 
 import { sendAndWaitTx } from '@/api/modules/aptos';
@@ -36,8 +32,8 @@ export function useGetAnsSubdomains({
           },
         },
       });
-      const subdomain = result[0]?.subdomain;
-      const additionalSubdomains = result
+      const subdomain = result.names[0]?.subdomain;
+      const additionalSubdomains = result.names
         .slice(1)
         .map(subdomain => subdomain.subdomain);
       return { subdomain, additionalSubdomains };

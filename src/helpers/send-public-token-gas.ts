@@ -1,4 +1,5 @@
-import { Account, KeylessAccount } from '@aptos-labs/ts-sdk';
+import { Account } from '@aptos-labs/ts-sdk';
+import { KeylessAccount } from '@aptos-labs/ts-sdk/keyless';
 
 import {
   getConfidentialBalances,

@@ -1,5 +1,5 @@
 import { ConfidentialAsset } from '@aptos-labs/confidential-asset';
-import { createGasStationClient } from '@aptos-labs/gas-station-client';
+import { GasStationTransactionSubmitter } from '@aptos-labs/gas-station-client';
 import { Aptos, AptosConfig, Network, NetworkToNetworkName } from '@aptos-labs/ts-sdk';
 
 import { appConfig } from '@/config';
@@ -10,7 +10,7 @@ const aptosConfig = new AptosConfig({
     API_KEY: appConfig.APTOS_BUILD_API_KEY,
   },
   pluginSettings: {
-    TRANSACTION_SUBMITTER: createGasStationClient({
+    TRANSACTION_SUBMITTER: new GasStationTransactionSubmitter({
       network: appConfig.APTOS_NETWORK as Network,
       apiKey: appConfig.APTOS_BUILD_GAS_STATION_KEY,
     }),

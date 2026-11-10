@@ -5,18 +5,18 @@ import {
 import {
   Account,
   AccountAddress,
-  AnyNumber,
+  type AnyNumber,
   type CommittedTransactionResponse,
   Ed25519PrivateKey,
-  EphemeralKeyPair,
+  Ed25519Signature,
   GetFungibleAssetMetadataResponse,
-  KeylessAccount,
   MoveStructId,
   MoveValue,
   PrivateKey,
   PrivateKeyVariants,
   SimpleTransaction,
 } from '@aptos-labs/ts-sdk';
+import { EphemeralKeyPair, KeylessAccount } from '@aptos-labs/ts-sdk/keyless';
 import { time } from '@distributedlab/tools';
 import { sha256 } from '@noble/hashes/sha256';
 import { ethers, isHexString, parseUnits } from 'ethers';
@@ -89,12 +89,12 @@ export const validateEncryptionKeyHex = (encryptionKeyHex: string) => {
 
 export const decryptionKeyFromPrivateKey = (account: Account) => {
   const signature = account.sign(
-    TwistedEd25519PrivateKey.decryptionKeyDerivationMessage,
+    TwistedEd25519PrivateKey.getDecryptionKeySigningMessage(aptos.config.network),
   );
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-expect-error
-  return TwistedEd25519PrivateKey.fromSignature(signature);
+  return TwistedEd25519PrivateKey.fromSignature(
+    new Ed25519Signature(signature.toUint8Array()),
+  );
 };
 
 export const decryptionKeyFromPepper = (pepper: Uint8Array) => {
@@ -116,24 +116,22 @@ export const sendTransaction = async (
     throw new Error('We only support gas station for now.');
   }
 
-  const senderAuth = signer.signTransactionWithAuthenticator(transaction);
-
-  const response = await gasStationArgs.gasStationClient.simpleSignAndSubmitTransaction(
-    transaction,
-    senderAuth,
-  );
-
-  if (response.error !== undefined || response.data === undefined) {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const err = response.error as any;
-    const errorInner = err.error;
-    const statusCode = err.statusCode;
-    const message = err.message;
+  // The gas-station submitter is wired into the shared `aptos` client's
+  // pluginSettings (see ./client), so a normal signAndSubmitTransaction call
+  // routes through it.
+  try {
+    const response = await aptos.signAndSubmitTransaction({
+      signer,
+      transaction,
+    });
+    return response.hash;
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
     throw new Error(
-      `[${statusCode}] Error signing and submitting transaction for sender ${transaction.rawTransaction.sender} (seq num: ${transaction.rawTransaction.sequence_number}): ${errorInner} ${message}`,
+      `Error signing and submitting transaction for sender ${transaction.rawTransaction.sender} (seq num: ${transaction.rawTransaction.sequence_number}): ${msg}`,
+      { cause: e },
     );
   }
-  return response.data.transactionHash;
 };
 
 export const sendAndWaitTx = async (
@@ -466,15 +464,13 @@ export const getFAByCoinType = async (coinType: string): Promise<string> => {
   return fungibleAsset?.vec[0].inner;
 };
 
-export const getCoinBalanceByFaAddress = (
+export const getCoinBalanceByFaAddress = async (
   account: Account,
   tokenAddress: string,
-  minimumLedgerVersion?: AnyNumber,
 ) => {
-  return aptos.account.getAccountCoinAmount({
+  return aptos.getBalance({
     accountAddress: account.accountAddress,
-    faMetadataAddress: tokenAddress,
-    minimumLedgerVersion,
+    asset: tokenAddress,
   });
 };
 
@@ -488,14 +484,10 @@ export const getAptBalance = async (account: Account) => {
 };
 */
 
-export const getPrimaryTokenBalance = async (
-  account: Account,
-  minimumLedgerVersion?: AnyNumber,
-) => {
-  const primaryTokenBalance = await aptos.getAccountCoinAmount({
+export const getPrimaryTokenBalance = async (account: Account) => {
+  const primaryTokenBalance = await aptos.getBalance({
     accountAddress: account.accountAddress,
-    faMetadataAddress: appConfig.PRIMARY_TOKEN_ADDRESS,
-    minimumLedgerVersion,
+    asset: appConfig.PRIMARY_TOKEN_ADDRESS,
   });
 
   return primaryTokenBalance;
@@ -602,6 +594,9 @@ export const getFABalance = async (
   minimumLedgerVersion?: AnyNumber,
 ) => {
   return aptos.fungibleAsset.getCurrentFungibleAssetBalances({
+    // We pass this to ensure that the indexer has synced up to the point where
+    // the changes we made have been indexed.
+    minimumLedgerVersion,
     options: {
       where: {
         owner_address: {
@@ -612,9 +607,6 @@ export const getFABalance = async (
         },
       },
     },
-    // We pass this to ensure that the indexer has synced up to the point where the
-    // changes we made have been indexed.
-    minimumLedgerVersion,
   });
 };
 

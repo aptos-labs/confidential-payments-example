@@ -15,7 +15,7 @@
     "sourceMap": true,
     "baseUrl": ".",
     "composite": true,
-    "types": ["node", "vite/client", "@types/lodash", "@types/uuid"],
+    "types": ["node", "vite/client", "@types/lodash"],
     "paths": {
       "@/*": ["src/*"],
       "@config": ["src/config.ts"],
